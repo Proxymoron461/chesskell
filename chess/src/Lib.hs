@@ -44,8 +44,24 @@ data PieceInfo where
     Info :: Nat -> PieceInfo
 
 -- TODO: Type level char??
+-- TODO: Make operator for adding a Nat to a row name, creating a new row name (e.g. "a" :+: 1)
 data Position where
     At :: Symbol -> Nat -> Position
+
+type family ValidRow (row :: Symbol) :: Symbol where
+    ValidRow "a" = "a"
+    ValidRow "b" = "b"
+    ValidRow "c" = "c"
+    ValidRow "d" = "d"
+    ValidRow "e" = "e"
+    ValidRow "f" = "f"
+    ValidRow "g" = "g"
+    ValidRow "h" = "h"
+    ValidRow x = TypeError (Text "This row is not a valid symbol!")
+
+type family (:+:) (row :: Symbol) (offset :: Nat) :: Symbol where
+    row :+: 0 = row
+    -- TODO: Recursive definition that throws error if it goes out of bounds
 
 data Proxy a = Proxy
 
@@ -53,6 +69,8 @@ data Proxy a = Proxy
 -- TODO: Remove these
 type TestPosition = At "a" 1
 type TestPiece    = MkPiece Black Pawn (Info 0)
+type TestColumn   = TestPiece :-> (TestPiece :-> (TestPiece :-> (TestPiece :-> (TestPiece :-> (TestPiece :-> (TestPiece :-> (TestPiece :-> VEnd)))))))
+type TestBoard    = TestColumn :-> (TestColumn :-> (TestColumn :-> (TestColumn :-> (TestColumn :-> (TestColumn :-> (TestColumn :-> (TestColumn :-> VEnd)))))))
 
 type family Update (board :: Board) (pieces :: Vec n Piece) (positions :: Vec n Position) :: Board where
     Update board pieces positions = TypeError (Text "Unfinished!")
@@ -65,16 +83,19 @@ type family IsUpdateValid (from :: Board) (to :: Board) :: Board where
 -- and then a series of valid positions they can move to.
 -- TODO: Use type equality (~) to check that the piece is at that position
 class Moveable p where
-    type NextPositions p :: Position -> Board -> Vec n Position
+    type NextPositions p :: Position -> Board -> Exp (Vec n Position)
 
--- Having a go at defunctionalisation
+-- Defunctionalised evaluation of moveable pieces
 type Exp a = a -> Type
 
 type family Eval (e :: Exp a) :: a
 
 data MovePawn :: Position -> Board -> Exp (Vec n Position)
 
-type instance Eval (MovePawn pos b) = TestPosition
+-- TODO: Complete the below by checking the piece at the location!
+-- FIXME: Pawns move in different directions depending on their color - fix this
+-- FIXME: Pawns move 1 or 2 spaces depending on whether it's their first move or not
+type instance Eval (MovePawn (At row col) b) = (At row (col + 1)) :-> ((At row (col + 2)) :-> VEnd)
 
 instance Moveable Pawn where
     type NextPositions Pawn = MovePawn
