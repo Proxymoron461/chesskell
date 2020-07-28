@@ -5,15 +5,29 @@ import GHC.TypeLits
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
+data Vec (n :: Nat) (a :: *) where
+    VEnd  :: Vec 0 a
+    (:->) :: a -> Vec n a -> Vec (n + 1) a
+
+-- Type synonym for an 8x8 grid
+type Grid8x8 = Vec 8 (Vec 8 Piece)
+
 -- TODO: Dimensions of board in type??
 data Board where
-    MkBoard :: [[Piece]] -> Board
+    MkBoard :: Grid8x8 -> Board
 
 data Piece where
     MkPiece :: Team -> PieceName -> PieceInfo -> Piece
 
 data Team = Black | White
 
+-- Make singleton types for each piece??
+-- data Pawn = Pawn
+-- data Bishop = Bishop
+-- data Knight = Knight
+-- data Rook = Rook
+-- data King = King
+-- data Queen = Queen
 data PieceName = Pawn
                | Bishop
                | Knight
@@ -21,34 +35,38 @@ data PieceName = Pawn
                | King
                | Queen
 
+-- Holds the number of moves they've made.
+-- (Their current position is implicit from where they are in the board!)
 data PieceInfo where
-    Info :: (Nat, Position)
+    Info :: Nat -> PieceInfo
 
+-- TODO: Type level char??
 data Position where
-    At :: Char -> Nat
+    At :: Symbol -> Nat -> Position
 
 data Proxy a = Proxy
 
-type family Move (board :: Board) (pieces :: '[Piece]) (positions :: '[Position]) :: Board where
-    Move board pieces positions = TypeError (Text "Unfinished!")
+-- TEST TYPES
+-- TODO: Remove these
+type TestPosition = At "a" 1
+type TestPiece    = MkPiece Black Pawn (Info 0)
 
-type family IsMoveValid (from :: Board) (to :: Board) :: Board where
-    IsMoveValid _ _ = TypeError (Text "Unfinished!")
+-- FIXME: "Expected a type, but '[Piece] has kind [*]"
+type family Update (board :: Board) (pieces :: Vec n Piece) (positions :: Vec n Position) :: Board where
+    Update board pieces positions = TypeError (Text "Unfinished!")
 
--- type family All (c :: * -> Constraint) (ts :: [*]) :: Constraint where
---     All c '[]       = ()
---     All c (t ': ts) = (c t, All c ts)
+type family IsUpdateValid (from :: Board) (to :: Board) :: Board where
+    IsUpdateValid _ _ = TypeError (Text "Unfinished!")
 
--- type family Or (a :: Bool) (b :: Bool) :: Bool where
---     Or 'False b      = b
---     Or 'True  _      = 'True
+-- TODO: Make this work
+-- Associated type family for pieces that can move; takes their current position, the board,
+-- and then a series of valid positions they can move to.
+-- TODO: Use type equality (~) to check that the piece is at that position
+class Moveable p where
+    type NextPositions p :: Position -> Board -> Vec n Position
 
--- type family Some (c :: * -> Constraint) (ts :: [*]) :: Bool where
---     Some c '[]       = 'False
---     Some c (t ': ts) = Or (c t) (Some c ts)
+instance Moveable Pawn where
+    type NextPositions Pawn = 
 
--- type family Any (c :: * -> Constraint) (ts :: [*]) :: Constraint where
---     Any c ts = (Some c ts) ~ 'True
-
--- type family ValidPosStr (s :: Symbol) :: Constraint where
---     ValidPosStr s = Any (~ s) '[ 'a','b','c','d','e','f','g','h' ]
+type family MovePawn (pos :: Position) (b :: Board) :: Vec n Position where
+    MovePawn x y = TestPosition :-> VEnd

@@ -2,9 +2,9 @@ name: chess
 version: 0.1.0.0
 github: "githubuser/chess"
 license: BSD3
-author: "Author name here"
-maintainer: "example@example.com"
-copyright: "2020 Author name here"
+author: "Toby Bailey"
+maintainer: "Toby.Bailey@warwick.ac.uk"
+copyright: "2020 Toby Bailey"
 
 extra-source-files:
   - README.md
@@ -24,6 +24,7 @@ dependencies:
 
 default-extensions:
   - DataKinds
+  - PolyKinds
   - TypeFamilies
   - KindSignatures
   - GADTs
@@ -31,6 +32,7 @@ default-extensions:
   - ConstraintKinds
   - UndecidableInstances
   - TypeApplications
+  - FlexibleInstances
 
 library:
   source-dirs: src
