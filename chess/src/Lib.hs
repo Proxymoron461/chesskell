@@ -5,7 +5,10 @@ import GHC.TypeLits
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
-data Vec (n :: Nat) (a :: *) where
+-- A helpful kind synonym!
+type Type = *
+
+data Vec (n :: Nat) (a :: Type) where
     VEnd  :: Vec 0 a
     (:->) :: a -> Vec n a -> Vec (n + 1) a
 
@@ -51,7 +54,6 @@ data Proxy a = Proxy
 type TestPosition = At "a" 1
 type TestPiece    = MkPiece Black Pawn (Info 0)
 
--- FIXME: "Expected a type, but '[Piece] has kind [*]"
 type family Update (board :: Board) (pieces :: Vec n Piece) (positions :: Vec n Position) :: Board where
     Update board pieces positions = TypeError (Text "Unfinished!")
 
@@ -65,8 +67,17 @@ type family IsUpdateValid (from :: Board) (to :: Board) :: Board where
 class Moveable p where
     type NextPositions p :: Position -> Board -> Vec n Position
 
-instance Moveable Pawn where
-    type NextPositions Pawn = 
+-- Having a go at defunctionalisation
+type Exp a = a -> Type
 
-type family MovePawn (pos :: Position) (b :: Board) :: Vec n Position where
-    MovePawn x y = TestPosition :-> VEnd
+type family Eval (e :: Exp a) :: a
+
+data MovePawn :: Position -> Board -> Exp (Vec n Position)
+
+type instance Eval (MovePawn pos b) = TestPosition
+
+instance Moveable Pawn where
+    type NextPositions Pawn = MovePawn
+
+-- type family MovePawn (pos :: Position) (b :: Board) :: Vec n Position where
+--     MovePawn x y = TestPosition :-> VEnd
