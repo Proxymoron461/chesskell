@@ -172,10 +172,9 @@ type family TestPawnMoves (p :: Piece) :: Maybe (Vec n Position) where
     -- TestPawnMoves (MkPiece Black Pawn (Info m (At col row))) = Just (At col (row - 1) :-> VEnd)
     -- TestPawnMoves (MkPiece White Pawn (Info 0 (At col row))) = Just (At col (row + 1) :<> At col (row + 2))
     -- TestPawnMoves (MkPiece White Pawn (Info m (At col row))) = Just (At col (row + 1) :-> VEnd)
-    TestPawnMoves p = Just (TestPosition :-> VEnd)
-    -- TestPawnMoves (MkPiece Black Pawn (Info _ (At col row))) = Just (At col (row - 1) :-> VEnd)
-    -- TestPawnMoves (MkPiece White Pawn (Info _ (At col row))) = Just (At col (row + 1) :-> VEnd)
-    TestPawnMoves p = Nothing
+    TestPawnMoves (MkPiece Black Pawn (Info _ (At col row))) = Just (At col (row - 1) :-> VEnd)
+    TestPawnMoves (MkPiece White Pawn (Info _ (At col row))) = Just (At col (row + 1) :-> VEnd)
+    TestPawnMoves _ = Nothing
 
 type family TestPawnMoves2 (p :: PieceName) (t :: Team) (at :: Position) :: Vec n Position where
     TestPawnMoves2 Pawn Black (At col row) = (At col (row - 1)) :-> VEnd
@@ -191,6 +190,9 @@ test = Proxy
 
 vecTest :: Proxy (At "a" 2 :-> VEnd)
 vecTest = Proxy @(TestPawnMoves2 Pawn White (At "a" 1))
+
+pawnTest :: Proxy (Just (At "a" 3 :-> VEnd))
+pawnTest = Proxy @(TestPawnMoves (MkPiece Black Pawn (Info 0 (At "a" 4))))
 
 -----------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
