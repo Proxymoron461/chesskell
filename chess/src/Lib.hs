@@ -9,8 +9,12 @@ someFunc = putStrLn "someFunc"
 type Type = *
 
 data Vec (n :: Nat) (a :: Type) where
-    VEnd  :: Vec 0 a
-    (:->) :: a -> Vec n a -> Vec (n + 1) a
+    VEnd   :: Vec 0 a
+    (:->)  :: a -> Vec n a -> Vec (n + 1) a
+
+-- Helper type family, to avoid the (:-> VEnd) bit.
+type family (:<>:) (x :: a) (y :: a) :: Vec 2 a where
+    x :<>: y = x :-> (y :-> VEnd)
 
 -- Type synonym for an 8x8 grid
 type Grid8x8 = Vec 8 (Vec 8 Piece)
@@ -59,9 +63,32 @@ type family ValidRow (row :: Symbol) :: Symbol where
     ValidRow "h" = "h"
     ValidRow x = TypeError (Text "This row is not a valid symbol!")
 
-type family (:+:) (row :: Symbol) (offset :: Nat) :: Symbol where
-    row :+: 0 = row
-    -- TODO: Recursive definition that throws error if it goes out of bounds
+-- Type families to add an offset to rows!
+-- e.g. Pawn moves from row to row :+ 1, or row :- 1
+-- TODO: Parameterise these with the number of rows somehow??
+type family (:+) (row :: Symbol) (offset :: Nat) :: Symbol where
+    row :+ 0 = ValidRow row
+    "a" :+ 1 = "b"
+    "b" :+ 1 = "c"
+    "c" :+ 1 = "d"
+    "d" :+ 1 = "e"
+    "e" :+ 1 = "f"
+    "f" :+ 1 = "g"
+    "g" :+ 1 = "h"
+    "h" :+ 1 = ValidRow "z"
+    row :+ n = (row :+ 1) :+ (n - 1)
+type family (:-) (row :: Symbol) (offset :: Nat) :: Symbol where
+    row :- 0 = ValidRow row
+    "a" :- 1 = ValidRow "z"
+    "b" :- 1 = "a"
+    "c" :- 1 = "b"
+    "d" :- 1 = "c"
+    "e" :- 1 = "d"
+    "f" :- 1 = "e"
+    "g" :- 1 = "f"
+    "h" :- 1 = "g"
+    row :- n = (row :- 1) :- (n - 1)
+
 
 data Proxy a = Proxy
 
