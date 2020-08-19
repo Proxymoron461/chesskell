@@ -82,42 +82,52 @@ type Move = (Piece, Position)
 data Moves where
     Moves :: Vec n Move -> Moves
 
-type family ValidRow (row :: Symbol) :: Symbol where
-    ValidRow "a" = "a"
-    ValidRow "b" = "b"
-    ValidRow "c" = "c"
-    ValidRow "d" = "d"
-    ValidRow "e" = "e"
-    ValidRow "f" = "f"
-    ValidRow "g" = "g"
-    ValidRow "h" = "h"
-    ValidRow x = TypeError (Text "This row is not a valid symbol!")
+-- TODO: Check if in list or something??
+type family ValidRow (row :: Symbol) :: Maybe Symbol where
+    ValidRow "a" = Just "a"
+    ValidRow "b" = Just "b"
+    ValidRow "c" = Just "c"
+    ValidRow "d" = Just "d"
+    ValidRow "e" = Just "e"
+    ValidRow "f" = Just "f"
+    ValidRow "g" = Just "g"
+    ValidRow "h" = Just "h"
+    ValidRow x   = Nothing
 
 -- Type families to add an offset to columns!
 -- e.g. Pawn moves from column to column :+ 1, or column :- 1
 -- TODO: Parameterise these with the number of rows somehow??
-type family (:+) (col :: Symbol) (offset :: Nat) :: Symbol where
+type family (:+) (col :: Symbol) (offset :: Nat) :: Maybe Symbol where
     col :+ 0 = ValidRow col
-    "a" :+ 1 = "b"
-    "b" :+ 1 = "c"
-    "c" :+ 1 = "d"
-    "d" :+ 1 = "e"
-    "e" :+ 1 = "f"
-    "f" :+ 1 = "g"
-    "g" :+ 1 = "h"
-    "h" :+ 1 = ValidRow "z"
-    col :+ n = (col :+ 1) :+ (n - 1)
-type family (:-) (col :: Symbol) (offset :: Nat) :: Symbol where
+    "a" :+ 1 = Just "b"
+    "b" :+ 1 = Just "c"
+    "c" :+ 1 = Just "d"
+    "d" :+ 1 = Just "e"
+    "e" :+ 1 = Just "f"
+    "f" :+ 1 = Just "g"
+    "g" :+ 1 = Just "h"
+    "h" :+ 1 = Nothing
+    col :+ n = MaybePlusOffset (col :+ 1) (n - 1)
+type family (:-) (col :: Symbol) (offset :: Nat) :: Maybe Symbol where
     col :- 0 = ValidRow col
-    "a" :- 1 = ValidRow "z"
-    "b" :- 1 = "a"
-    "c" :- 1 = "b"
-    "d" :- 1 = "c"
-    "e" :- 1 = "d"
-    "f" :- 1 = "e"
-    "g" :- 1 = "f"
-    "h" :- 1 = "g"
-    col :- n = (col :- 1) :- (n - 1)
+    "a" :- 1 = Nothing
+    "b" :- 1 = Just "a"
+    "c" :- 1 = Just "b"
+    "d" :- 1 = Just "c"
+    "e" :- 1 = Just "d"
+    "f" :- 1 = Just "e"
+    "g" :- 1 = Just "f"
+    "h" :- 1 = Just "g"
+    col :- n = MaybeSubtractOffset (col :- 1) (n - 1)
+
+-- TODO: Figure out type level monads??
+type family MaybePlusOffset (x :: Maybe Symbol) (y :: Nat) :: Maybe Symbol where
+    MaybePlusOffset (Nothing) y = Nothing
+    MaybePlusOffset (Just x)  y = x :+ y
+type family MaybeSubtractOffset (x :: Maybe Symbol) (y :: Nat) :: Maybe Symbol where
+    MaybeSubtractOffset (Nothing) y = Nothing
+    MaybeSubtractOffset (Just x)  y = x :- y
+
 
 -- TEST TYPES
 -- TODO: Remove these
@@ -167,32 +177,21 @@ type family PawnMoves (p :: Piece) (board :: Board) :: Maybe (Vec n Position) wh
     PawnMoves (MkPiece White Pawn (Info 0 (At col row))) board = Just (At col (row + 1) :<> At col (row + 2))
     PawnMoves (MkPiece White Pawn (Info n (At col row))) board = Just (At col (row + 1) :-> VEnd)
 
-type family TestPawnMoves (p :: Piece) :: Maybe (Vec n Position) where
-    -- TestPawnMoves (MkPiece Black Pawn (Info 0 (At col row))) = Just (At col (row - 1) :<> At col (row - 2))
-    -- TestPawnMoves (MkPiece Black Pawn (Info m (At col row))) = Just (At col (row - 1) :-> VEnd)
-    -- TestPawnMoves (MkPiece White Pawn (Info 0 (At col row))) = Just (At col (row + 1) :<> At col (row + 2))
-    -- TestPawnMoves (MkPiece White Pawn (Info m (At col row))) = Just (At col (row + 1) :-> VEnd)
-    TestPawnMoves (MkPiece Black Pawn (Info _ (At col row))) = Just (At col (row - 1) :-> VEnd)
-    TestPawnMoves (MkPiece White Pawn (Info _ (At col row))) = Just (At col (row + 1) :-> VEnd)
-    TestPawnMoves _ = Nothing
-
-type family TestPawnMoves2 (p :: PieceName) (t :: Team) (at :: Position) :: Vec n Position where
-    TestPawnMoves2 Pawn Black (At col row) = (At col (row - 1)) :-> VEnd
-    TestPawnMoves2 Pawn White (At col row) = (At col (row + 1)) :-> VEnd
-    TestPawnMoves2 p t at = TypeError (Text "Bleh")
-
 type family FromJust (x :: Maybe a) (y :: a) :: a where
     FromJust Nothing y  = y
     FromJust (Just x) _ = x
 
-test :: Proxy (TestPawnMoves (MkPiece Black Pawn (Info 0 (At "a" 1))))
-test = Proxy
+pawnTest1 :: Proxy (Just (At "a" 3 :<> At "a" 2))
+pawnTest1 = Proxy @(PawnMoves (MkPiece Black Pawn (Info 0 (At "a" 4))) TestBoard)
 
-vecTest :: Proxy (At "a" 2 :-> VEnd)
-vecTest = Proxy @(TestPawnMoves2 Pawn White (At "a" 1))
+pawnTest2 :: Proxy (Just (At "a" 3 :-> VEnd))
+pawnTest2 = Proxy @(PawnMoves (MkPiece Black Pawn (Info 7 (At "a" 4))) TestBoard)
 
-pawnTest :: Proxy (Just (At "a" 3 :-> VEnd))
-pawnTest = Proxy @(TestPawnMoves (MkPiece Black Pawn (Info 0 (At "a" 4))))
+pawnTest3 :: Proxy (Just (At "a" 5 :<> At "a" 6))
+pawnTest3 = Proxy @(PawnMoves (MkPiece White Pawn (Info 0 (At "a" 4))) TestBoard)
+
+pawnTest4 :: Proxy (Just (At "a" 5 :-> VEnd))
+pawnTest4 = Proxy @(PawnMoves (MkPiece White Pawn (Info 7 (At "a" 4))) TestBoard)
 
 -----------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
