@@ -24,8 +24,9 @@ infixr 5 :<>
 type Grid8x8 = Vec 8 (Vec 8 (Maybe Piece))
 
 -- TODO: Dimensions of board in type??
-data Board where
-    MkBoard :: Grid8x8 -> Board
+type Board = Grid8x8
+-- data Board where
+--     MkBoard :: Grid8x8 -> Board
 
 data Piece where
     MkPiece :: Team -> PieceName -> PieceInfo -> Piece
@@ -132,7 +133,7 @@ type family IsUpdateValid (from :: Board) (to :: Board) (turn :: Team) :: Board 
     IsUpdateValid _ _ _ = TypeError (Text "IsUpdateValid is unfinished!")
 
 -- Rudimentary way to display type errors, for now.
-x :: Proxy (UpdateBoard (MkBoard TestBoard) White ('Moves VEnd))
+x :: Proxy (UpdateBoard TestBoard White ('Moves VEnd))
 x = Proxy
 
 
