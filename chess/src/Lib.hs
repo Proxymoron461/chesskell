@@ -125,6 +125,13 @@ type family IsUpdateValid (from :: Board) (to :: Board) (turn :: Team) :: Board 
 x :: Proxy (IsUpdateValid (MkBoard TestBoard) (MkBoard TestBoard2) White)
 x = Proxy
 
+
+
+
+
+
+-----------------------------------------------------------------------------------------------
+
 -- type family Update (board :: Board) (pieces :: Vec n Piece) (positions :: Vec n Position) :: Board where
 --     Update board pieces positions = TypeError (Text "Unfinished!")
 
