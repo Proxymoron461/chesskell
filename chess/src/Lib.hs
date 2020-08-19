@@ -83,22 +83,22 @@ data Moves where
     Moves :: Vec n Move -> Moves
 
 -- TODO: Check if in list or something??
-type family ValidRow (row :: Symbol) :: Maybe Symbol where
-    ValidRow "a" = Just "a"
-    ValidRow "b" = Just "b"
-    ValidRow "c" = Just "c"
-    ValidRow "d" = Just "d"
-    ValidRow "e" = Just "e"
-    ValidRow "f" = Just "f"
-    ValidRow "g" = Just "g"
-    ValidRow "h" = Just "h"
-    ValidRow x   = Nothing
+type family ValidColumn (row :: Symbol) :: Maybe Symbol where
+    ValidColumn "a" = Just "a"
+    ValidColumn "b" = Just "b"
+    ValidColumn "c" = Just "c"
+    ValidColumn "d" = Just "d"
+    ValidColumn "e" = Just "e"
+    ValidColumn "f" = Just "f"
+    ValidColumn "g" = Just "g"
+    ValidColumn "h" = Just "h"
+    ValidColumn x   = Nothing
 
 -- Type families to add an offset to columns!
 -- e.g. Pawn moves from column to column :+ 1, or column :- 1
 -- TODO: Parameterise these with the number of rows somehow??
 type family (:+) (col :: Symbol) (offset :: Nat) :: Maybe Symbol where
-    col :+ 0 = ValidRow col
+    col :+ 0 = ValidColumn col
     "a" :+ 1 = Just "b"
     "b" :+ 1 = Just "c"
     "c" :+ 1 = Just "d"
@@ -109,7 +109,7 @@ type family (:+) (col :: Symbol) (offset :: Nat) :: Maybe Symbol where
     "h" :+ 1 = Nothing
     col :+ n = MaybePlusOffset (col :+ 1) (n - 1)
 type family (:-) (col :: Symbol) (offset :: Nat) :: Maybe Symbol where
-    col :- 0 = ValidRow col
+    col :- 0 = ValidColumn col
     "a" :- 1 = Nothing
     "b" :- 1 = Just "a"
     "c" :- 1 = Just "b"
