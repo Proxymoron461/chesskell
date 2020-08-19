@@ -117,9 +117,6 @@ type TestBoard2   = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Noth
                     :-> EmptyRow
                     :<> EmptyRow
 
-type family Update (board :: Board) (pieces :: Vec n Piece) (positions :: Vec n Position) :: Board where
-    Update board pieces positions = TypeError (Text "Unfinished!")
-
 type family IsUpdateValid (from :: Board) (to :: Board) (turn :: Team) :: Board where
     IsUpdateValid x x _ = TypeError (Text "A move must be made - the board cannot stay exactly the same.")
     IsUpdateValid _ _ _ = TypeError (Text "Unfinished!")
@@ -127,6 +124,9 @@ type family IsUpdateValid (from :: Board) (to :: Board) (turn :: Team) :: Board 
 -- Rudimentary way to display type errors, for now.
 x :: Proxy (IsUpdateValid (MkBoard TestBoard) (MkBoard TestBoard2) White)
 x = Proxy
+
+-- type family Update (board :: Board) (pieces :: Vec n Piece) (positions :: Vec n Position) :: Board where
+--     Update board pieces positions = TypeError (Text "Unfinished!")
 
 -- -- TODO: Make this work
 -- -- Associated type family for pieces that can move; takes their current position, the board,
