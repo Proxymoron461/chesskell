@@ -7,6 +7,8 @@ someFunc = putStrLn "someFunc"
 
 -- A helpful kind synonym!
 type Type = *
+-- A datatype for Proxy types!
+data Proxy a = Proxy
 
 data Vec (n :: Nat) (a :: Type) where
     VEnd   :: Vec 0 a
@@ -15,7 +17,7 @@ infixr 4 :->
 
 -- Helper type family, to avoid the (:-> VEnd) bit.
 type family (:<>) (x :: a) (y :: a) :: Vec 2 a where
-    x :<> y = x :-> (y :-> VEnd)
+    x :<> y = x :-> y :-> VEnd
 infixr 5 :<>
 
 -- Type synonym for an 8x8 grid
@@ -55,6 +57,13 @@ data PieceInfo where
 data Position where
     At :: Symbol -> Nat -> Position
 
+type Move = (Piece, Position)
+
+-- TODO: Constrain so n < 3??
+-- Can get the piece from the initial Position pair
+data Moves where
+    Moves :: Vec n Move -> Moves
+
 type family ValidRow (row :: Symbol) :: Symbol where
     ValidRow "a" = "a"
     ValidRow "b" = "b"
@@ -92,9 +101,6 @@ type family (:-) (row :: Symbol) (offset :: Nat) :: Symbol where
     "h" :- 1 = "g"
     row :- n = (row :- 1) :- (n - 1)
 
-
-data Proxy a = Proxy
-
 -- TEST TYPES
 -- TODO: Remove these
 type TestPosition = At "a" 1
@@ -117,12 +123,16 @@ type TestBoard2   = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Noth
                     :-> EmptyRow
                     :<> EmptyRow
 
+type family UpdateBoard (board :: Board) (turn :: Team) (moves :: Moves) :: Board where
+    UpdateBoard _ _ ('Moves VEnd) = TypeError (Text "A move must be made!")
+    UpdateBoard _ _ _    = TypeError (Text "UpdateBoard is unfinished!")
+
 type family IsUpdateValid (from :: Board) (to :: Board) (turn :: Team) :: Board where
     IsUpdateValid x x _ = TypeError (Text "A move must be made - the board cannot stay exactly the same.")
-    IsUpdateValid _ _ _ = TypeError (Text "Unfinished!")
+    IsUpdateValid _ _ _ = TypeError (Text "IsUpdateValid is unfinished!")
 
 -- Rudimentary way to display type errors, for now.
-x :: Proxy (IsUpdateValid (MkBoard TestBoard) (MkBoard TestBoard2) White)
+x :: Proxy (UpdateBoard (MkBoard TestBoard) White ('Moves VEnd))
 x = Proxy
 
 
