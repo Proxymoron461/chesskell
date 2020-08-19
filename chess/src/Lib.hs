@@ -189,8 +189,8 @@ type family FromJust (x :: Maybe a) (y :: a) :: a where
 test :: Proxy (TestPawnMoves (MkPiece Black Pawn (Info 0 (At "a" 1))))
 test = Proxy
 
-myTest :: Proxy 'True
-myTest = Proxy @(In (At "a" 2) (TestPawnMoves2 Pawn White (At "a" 1)))
+vecTest :: Proxy (At "a" 2 :-> VEnd)
+vecTest = Proxy @(TestPawnMoves2 Pawn White (At "a" 1))
 
 -----------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
