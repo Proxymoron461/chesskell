@@ -12,13 +12,30 @@ data Proxy a = Proxy
 
 data Vec (n :: Nat) (a :: Type) where
     VEnd   :: Vec 0 a
-    (:->)  :: a -> Vec n a -> Vec (n + 1) a
+    (:->)  :: a -> Vec (n - 1) a -> Vec n a
 infixr 4 :->
 
 -- Helper type family, to avoid the (:-> VEnd) bit.
 type family (:<>) (x :: a) (y :: a) :: Vec 2 a where
     x :<> y = x :-> y :-> VEnd
 infixr 5 :<>
+
+type family VecToList (v :: Vec n a) :: [a] where
+    VecToList VEnd         = '[]
+    VecToList (x :-> rest) = x ': (VecToList rest)
+
+type family In (x :: a) (ys :: Vec n a) :: Bool where
+    In x (x :-> rest) = 'True
+    In x (y :-> rest) = In x rest
+    In x VEnd         = 'False
+
+type family Or (x :: Bool) (y :: Bool) :: Bool where
+    Or 'True  _ = 'True
+    Or 'False y = y
+
+-- type family If (cond :: Bool) (then :: a) (else :: a) :: a where
+--     If 'True then _  = then
+--     If 'False _ else = else
 
 -- Type synonym for an 8x8 grid
 type Grid8x8 = Vec 8 (Vec 8 (Maybe Piece))
@@ -54,7 +71,7 @@ data PieceInfo where
     Info :: Nat -> Position -> PieceInfo
 
 -- TODO: Type level char??
--- TODO: Make operator for adding a Nat to a row name, creating a new row name (e.g. "a" :+: 1)
+-- Goes column-row, e.g. At "a" 4 means first column from left, 4 up from the bottom, where Black is at the top
 data Position where
     At :: Symbol -> Nat -> Position
 
@@ -76,11 +93,11 @@ type family ValidRow (row :: Symbol) :: Symbol where
     ValidRow "h" = "h"
     ValidRow x = TypeError (Text "This row is not a valid symbol!")
 
--- Type families to add an offset to rows!
--- e.g. Pawn moves from row to row :+ 1, or row :- 1
+-- Type families to add an offset to columns!
+-- e.g. Pawn moves from column to column :+ 1, or column :- 1
 -- TODO: Parameterise these with the number of rows somehow??
-type family (:+) (row :: Symbol) (offset :: Nat) :: Symbol where
-    row :+ 0 = ValidRow row
+type family (:+) (col :: Symbol) (offset :: Nat) :: Symbol where
+    col :+ 0 = ValidRow col
     "a" :+ 1 = "b"
     "b" :+ 1 = "c"
     "c" :+ 1 = "d"
@@ -89,9 +106,9 @@ type family (:+) (row :: Symbol) (offset :: Nat) :: Symbol where
     "f" :+ 1 = "g"
     "g" :+ 1 = "h"
     "h" :+ 1 = ValidRow "z"
-    row :+ n = (row :+ 1) :+ (n - 1)
-type family (:-) (row :: Symbol) (offset :: Nat) :: Symbol where
-    row :- 0 = ValidRow row
+    col :+ n = (col :+ 1) :+ (n - 1)
+type family (:-) (col :: Symbol) (offset :: Nat) :: Symbol where
+    col :- 0 = ValidRow col
     "a" :- 1 = ValidRow "z"
     "b" :- 1 = "a"
     "c" :- 1 = "b"
@@ -100,11 +117,11 @@ type family (:-) (row :: Symbol) (offset :: Nat) :: Symbol where
     "f" :- 1 = "e"
     "g" :- 1 = "f"
     "h" :- 1 = "g"
-    row :- n = (row :- 1) :- (n - 1)
+    col :- n = (col :- 1) :- (n - 1)
 
 -- TEST TYPES
 -- TODO: Remove these
-type TestPosition = At "a" 1
+type TestPosition = At "a" 1  -- i.e. bottom left
 type TestPiece    = MkPiece Black Pawn (Info 0 TestPosition)
 type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
@@ -136,11 +153,46 @@ type family IsUpdateValid (from :: Board) (to :: Board) (turn :: Team) :: Board 
 x :: Proxy (UpdateBoard TestBoard White ('Moves VEnd))
 x = Proxy
 
+-- TODO: Check the piece's reported position is the actual position, eh
+type family PieceMoves (p :: Piece) (board :: Board) :: Maybe (Vec n Position) where
+    PieceMoves (MkPiece team Pawn info) board = PawnMoves (MkPiece team Pawn info) board
+    PieceMoves _ _ = TypeError (Text "Unfinished!")
 
+-- TODO: Include diagonal takes!
+-- TODO: Take the board into account!
+-- TODO: Return Nothing if no valid moves
+type family PawnMoves (p :: Piece) (board :: Board) :: Maybe (Vec n Position) where
+    PawnMoves (MkPiece Black Pawn (Info 0 (At col row))) board = Just (At col (row - 1) :<> At col (row - 2))
+    PawnMoves (MkPiece Black Pawn (Info n (At col row))) board = Just (At col (row - 1) :-> VEnd)
+    PawnMoves (MkPiece White Pawn (Info 0 (At col row))) board = Just (At col (row + 1) :<> At col (row + 2))
+    PawnMoves (MkPiece White Pawn (Info n (At col row))) board = Just (At col (row + 1) :-> VEnd)
 
+type family TestPawnMoves (p :: Piece) :: Maybe (Vec n Position) where
+    -- TestPawnMoves (MkPiece Black Pawn (Info 0 (At col row))) = Just (At col (row - 1) :<> At col (row - 2))
+    -- TestPawnMoves (MkPiece Black Pawn (Info m (At col row))) = Just (At col (row - 1) :-> VEnd)
+    -- TestPawnMoves (MkPiece White Pawn (Info 0 (At col row))) = Just (At col (row + 1) :<> At col (row + 2))
+    -- TestPawnMoves (MkPiece White Pawn (Info m (At col row))) = Just (At col (row + 1) :-> VEnd)
+    TestPawnMoves p = Just (TestPosition :-> VEnd)
+    -- TestPawnMoves (MkPiece Black Pawn (Info _ (At col row))) = Just (At col (row - 1) :-> VEnd)
+    -- TestPawnMoves (MkPiece White Pawn (Info _ (At col row))) = Just (At col (row + 1) :-> VEnd)
+    TestPawnMoves p = Nothing
 
+type family TestPawnMoves2 (p :: PieceName) (t :: Team) (at :: Position) :: Vec n Position where
+    TestPawnMoves2 Pawn Black (At col row) = (At col (row - 1)) :-> VEnd
+    TestPawnMoves2 Pawn White (At col row) = (At col (row + 1)) :-> VEnd
+    TestPawnMoves2 p t at = TypeError (Text "Bleh")
 
+type family FromJust (x :: Maybe a) (y :: a) :: a where
+    FromJust Nothing y  = y
+    FromJust (Just x) _ = x
 
+test :: Proxy (TestPawnMoves (MkPiece Black Pawn (Info 0 (At "a" 1))))
+test = Proxy
+
+myTest :: Proxy 'True
+myTest = Proxy @(In (At "a" 2) (TestPawnMoves2 Pawn White (At "a" 1)))
+
+-----------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
 
 -- type family Update (board :: Board) (pieces :: Vec n Piece) (positions :: Vec n Position) :: Board where
@@ -148,7 +200,7 @@ x = Proxy
 
 -- -- TODO: Make this work
 -- -- Associated type family for pieces that can move; takes their current position, the board,
--- -- and then a series of valid next boards!
+-- -- and then a series of valid next positions!
 -- -- TODO: Use type equality (~) to check that the piece is at that position
 -- class Moveable p where
 --     type NextPositions p :: Position -> Board -> Exp (Vec n Position)
