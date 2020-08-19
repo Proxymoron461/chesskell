@@ -11,10 +11,12 @@ type Type = *
 data Vec (n :: Nat) (a :: Type) where
     VEnd   :: Vec 0 a
     (:->)  :: a -> Vec n a -> Vec (n + 1) a
+infixr 4 :->
 
 -- Helper type family, to avoid the (:-> VEnd) bit.
 type family (:<>:) (x :: a) (y :: a) :: Vec 2 a where
     x :<>: y = x :-> (y :-> VEnd)
+infixr 5 :<>:
 
 -- Type synonym for an 8x8 grid
 type Grid8x8 = Vec 8 (Vec 8 Piece)
