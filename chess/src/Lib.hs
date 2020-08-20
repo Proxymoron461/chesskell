@@ -10,7 +10,7 @@ type Type = *
 -- A datatype for Proxy types!
 data Proxy a = Proxy
 
--- Defunctionalisation helpers!
+-- Defunctionalisation helpers! (thanks to https://github.com/Lysxia/first-class-families)
 type Exp a = a -> Type
 type family Eval (e :: Exp a) :: a
 
@@ -20,7 +20,7 @@ data Map :: (a -> Exp b) -> f a -> Exp (f b)
 -- Type-level monads! (Almost)
 data Apply :: (a -> Exp (f b)) -> f a -> Exp (f b)
 
--- Maybe instance of type-level functors and monads
+-- Maybe instance of type-level functors and monads (kind of)
 type instance Eval (Map f Nothing) = Nothing
 type instance Eval (Map f (Just x)) = Just (Eval (f x))
 
@@ -53,9 +53,9 @@ type family Or (x :: Bool) (y :: Bool) :: Bool where
     Or 'True  _ = 'True
     Or 'False y = y
 
--- type family If (cond :: Bool) (then :: a) (else :: a) :: a where
---     If 'True then _  = then
---     If 'False _ else = else
+type family If (cond :: Bool) (thenDo :: a) (elseDo :: a) :: a where
+    If 'True thenDo _  = thenDo
+    If 'False _ elseDo = elseDo
 
 -- Type synonym for an 8x8 grid
 type Grid8x8 = Vec 8 (Vec 8 (Maybe Piece))
@@ -102,17 +102,10 @@ type Move = (Piece, Position)
 data Moves where
     Moves :: Vec n Move -> Moves
 
--- TODO: Check if in list or something??
+type ValidColumns = "a" :-> "b" :-> "c" :-> "d" :-> "e" :-> "f" :-> "g" :<> "h"
+
 type family ValidColumn (row :: Symbol) :: Maybe Symbol where
-    ValidColumn "a" = Just "a"
-    ValidColumn "b" = Just "b"
-    ValidColumn "c" = Just "c"
-    ValidColumn "d" = Just "d"
-    ValidColumn "e" = Just "e"
-    ValidColumn "f" = Just "f"
-    ValidColumn "g" = Just "g"
-    ValidColumn "h" = Just "h"
-    ValidColumn x   = Nothing
+    ValidColumn x = If (In x ValidColumns) (Just x) Nothing
 
 -- Custom Nat class, to allow pattern matching on Nat > 2
 data MyNat where
@@ -128,11 +121,11 @@ type family MyNatToNat (n :: MyNat) :: Nat where
     MyNatToNat (S n) = 1 + (MyNatToNat n)
 
 -- Type families to add an offset to columns!
--- FIXME: :kind! Eval ((NatToMyNat 0) :+ "abc") = 'Just "abc"
+-- TODO: Customise the number of columns?? As it is, it's chess-specific.
 data (:+) :: MyNat -> Symbol -> Exp (Maybe Symbol)
 data (:-) :: MyNat -> Symbol -> Exp (Maybe Symbol)
 
-type instance Eval ((:+) Z         col) = Just col
+type instance Eval ((:+) Z         col) = ValidColumn col
 type instance Eval ((:+) (S Z)     "a") = Just "b"
 type instance Eval ((:+) (S Z)     "b") = Just "c"
 type instance Eval ((:+) (S Z)     "c") = Just "d"
@@ -143,7 +136,7 @@ type instance Eval ((:+) (S Z)     "g") = Just "h"
 type instance Eval ((:+) (S Z)     "h") = Nothing
 type instance Eval ((:+) (S (S n)) col) = Eval (Apply ((:+) (S n)) (Eval ((:+) (S Z) col)))
 
-type instance Eval ((:-) Z         col) = Just col
+type instance Eval ((:-) Z         col) = ValidColumn col
 type instance Eval ((:-) (S Z)     "a") = Nothing
 type instance Eval ((:-) (S Z)     "b") = Just "a"
 type instance Eval ((:-) (S Z)     "c") = Just "b"
