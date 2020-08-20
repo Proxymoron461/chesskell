@@ -78,6 +78,10 @@ type family FromJust (x :: Maybe a) (y :: a) :: a where
     FromJust Nothing y  = y
     FromJust (Just x) _ = x
 
+type family FlattenMaybe (x :: Maybe (Maybe a)) :: Maybe a where
+    FlattenMaybe Nothing  = Nothing
+    FlattenMaybe (Just x) = x
+
 -- Type synonym for an 8x8 grid
 type Grid8x8 = Vec 8 (Vec 8 (Maybe Piece))
 
@@ -212,10 +216,20 @@ type family IsUpdateValid (from :: Board) (to :: Board) (turn :: Team) :: Board 
 --     VecAt (x :-> xs) 0 = Just x
 --     VecAt (x :-> xs) n = VecAt xs (n - 1)
 
+-- When using Maybes, this returns another maybe!
+-- :kind! Eval (VecAt TestBoard Z) :: Maybe (Vec 8 (Maybe Piece))
+-- data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
 data VecAt :: Vec n a -> MyNat -> Exp (Maybe a)
 type instance Eval (VecAt VEnd _) = Nothing
 type instance Eval (VecAt (x :-> xs) Z) = Just x
 type instance Eval (VecAt (x :-> xs) (S n)) = Eval (VecAt xs n)
+
+-- TODO: Generalise this??
+data VecAtR :: MyNat -> Vec n a -> Exp (Maybe a)
+type instance Eval (VecAtR n v) = Eval (VecAt v n)
+
+-- data Swap :: (a -> b -> Exp c) -> Exp (b -> a -> c)
+-- type instance Eval (Swap f) = ?? 
 
 data CurryVecAt :: Vec n a -> Exp (MyNat -> Exp (Maybe a))
 type instance Eval (CurryVecAt vec) = VecAt vec
@@ -238,6 +252,7 @@ type family ColToIndex (col :: Symbol) :: Maybe Nat where
 -- :kind! Eval (Flatten (Eval (Map CurryVecAt (GetRow TestBoard 1))) (Eval (Map (NatToMyNat) (ColToIndex "a")))) :: Maybe Piece
 type family GetPieceAt (board :: Board) (at :: Position) :: Maybe Piece where
     GetPieceAt board (At col row) = Eval (Flatten (Eval (Map CurryVecAt (GetRow board row))) (Eval (Map (NatToMyNat) (ColToIndex col))))
+    -- GetPieceAt board (At col row) = FlattenMaybe (Eval (Bind (VecAtR Z) (Eval (VecAt board row))))
 
 -- Rudimentary way to display type errors, for now.
 x :: Proxy (UpdateBoard TestBoard White ('Moves VEnd))
@@ -271,6 +286,15 @@ pawnMovesTest4 = Proxy @(PawnMoves (MkPiece White Pawn (Info 7 (At "a" 4))) Test
 
 -- getPieceAtTest1 :: Proxy (Just TestPiece)
 -- getPieceAtTest1 = Proxy @(GetPieceAt TestBoard (At "a" 1))
+
+getPieceAtTest2 :: Proxy (Just TestPiece)
+getPieceAtTest2 = Proxy @(FlattenMaybe (Eval (Bind (VecAtR Z) (Eval (VecAt TestBoard Z)))))
+
+-- getRowTest1 :: Proxy (Just TestPiece)
+-- getRowTest1 = Proxy @(Eval (VecAt (GetRow TestBoard 1) Z))
+
+-- getRowTest2 :: Proxy Nothing
+-- getRowTest2 = Proxy @(GetRow TestBoard 10)
 
 -----------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
