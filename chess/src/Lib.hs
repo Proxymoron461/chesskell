@@ -22,25 +22,27 @@ type instance Eval (CurryAdd x) = Add x
 
 -- Type-level functors! (Almost)
 data Map :: (a -> Exp b) -> f a -> Exp (f b)
-
--- Type-level applicative functors! (Almost)
--- (<*>) :: Applicative f => f (a -> b) -> f a -> f b
-data Apply :: f (a -> Exp b) -> f a -> Exp (f b)
-
--- Type-level monads! (Almost)
-data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
-
--- Maybe instance of type-level functors and monads (kind of)
 type instance Eval (Map f Nothing)  = Nothing
 type instance Eval (Map f (Just x)) = Just (Eval (f x))
 
+-- Type-level applicative functors! (Almost)
+-- (<*>) :: Applicative f => f (a -> b) -> f a -> f b
 -- :kind! Eval (Map (Add 1) (Just 1)) = 'Just 2
 -- :kind! Eval (Apply (Eval (Map CurryAdd (Just 1))) (Just 5)) = 'Just 6
+data Apply :: f (a -> Exp b) -> f a -> Exp (f b)
 type instance Eval (Apply _ Nothing)         = Nothing
 type instance Eval (Apply (Just f) (Just x)) = Just (Eval (f x))
 
+-- Type-level monads! (Almost)
+data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
 type instance Eval (Bind f Nothing)  = Nothing
 type instance Eval (Bind f (Just x)) = Eval (f x)
+
+-- Some new thing - surely it already exists
+data Flatten :: f (a -> Exp (f b)) -> f a -> Exp (f b)
+type instance Eval (Flatten Nothing _)         = Nothing
+type instance Eval (Flatten (Just f) Nothing)  = Nothing
+type instance Eval (Flatten (Just f) (Just x)) = Eval (f x)
 
 
 -----------------------------------------------------------------------------------------------
@@ -230,8 +232,12 @@ type family GetRow (board :: Board) (row :: Nat) :: Maybe (Vec n a) where
 type family ColToIndex (col :: Symbol) :: Maybe Nat where
     ColToIndex col = VecIndex ValidColumns col
 
-type family GetPieceAt (board :: Board) (at :: Position) :: Maybe a where
-    GetPieceAt board (At col row) = Eval (Apply (Eval (Map CurryVecAt (GetRow board row))) (Eval (Map (NatToMyNat) (ColToIndex col))))
+-- :kind! Eval (Map (NatToMyNat) (ColToIndex "a")) :: Maybe MyNat = Just Z
+-- :kind! Eval (Map CurryVecAt (GetRow TestBoard 1)) :: Maybe (MyNat -> Exp (Maybe a))
+-- :kind! Eval (Apply (Eval (Map CurryVecAt (GetRow TestBoard 1))) (Eval (Map (NatToMyNat) (ColToIndex "a")))) :: Maybe (Maybe a)
+-- :kind! Eval (Flatten (Eval (Map CurryVecAt (GetRow TestBoard 1))) (Eval (Map (NatToMyNat) (ColToIndex "a")))) :: Maybe Piece
+type family GetPieceAt (board :: Board) (at :: Position) :: Maybe Piece where
+    GetPieceAt board (At col row) = Eval (Flatten (Eval (Map CurryVecAt (GetRow board row))) (Eval (Map (NatToMyNat) (ColToIndex col))))
 
 -- Rudimentary way to display type errors, for now.
 x :: Proxy (UpdateBoard TestBoard White ('Moves VEnd))
