@@ -14,18 +14,33 @@ data Proxy a = Proxy
 type Exp a = a -> Type
 type family Eval (e :: Exp a) :: a
 
+-- Curry-able add function!
+data Add :: Nat -> Nat -> Exp Nat
+type instance Eval (Add x y)    = x + y
+data CurryAdd :: Nat -> Exp (Nat -> Exp Nat)
+type instance Eval (CurryAdd x) = Add x
+
 -- Type-level functors! (Almost)
 data Map :: (a -> Exp b) -> f a -> Exp (f b)
 
+-- Type-level applicative functors! (Almost)
+-- (<*>) :: Applicative f => f (a -> b) -> f a -> f b
+data Apply :: f (a -> Exp b) -> f a -> Exp (f b)
+
 -- Type-level monads! (Almost)
-data Apply :: (a -> Exp (f b)) -> f a -> Exp (f b)
+data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
 
 -- Maybe instance of type-level functors and monads (kind of)
-type instance Eval (Map f Nothing) = Nothing
+type instance Eval (Map f Nothing)  = Nothing
 type instance Eval (Map f (Just x)) = Just (Eval (f x))
 
-type instance Eval (Apply f Nothing)  = Nothing
-type instance Eval (Apply f (Just x)) = Eval (f x)
+-- :kind! Eval (Map (Add 1) (Just 1)) = 'Just 2
+-- :kind! Eval (Apply (Eval (Map CurryAdd (Just 1))) (Just 5)) = 'Just 6
+type instance Eval (Apply _ Nothing)         = Nothing
+type instance Eval (Apply (Just f) (Just x)) = Just (Eval (f x))
+
+type instance Eval (Bind f Nothing)  = Nothing
+type instance Eval (Bind f (Just x)) = Eval (f x)
 
 
 -----------------------------------------------------------------------------------------------
@@ -56,6 +71,10 @@ type family Or (x :: Bool) (y :: Bool) :: Bool where
 type family If (cond :: Bool) (thenDo :: a) (elseDo :: a) :: a where
     If 'True thenDo _  = thenDo
     If 'False _ elseDo = elseDo
+
+type family FromJust (x :: Maybe a) (y :: a) :: a where
+    FromJust Nothing y  = y
+    FromJust (Just x) _ = x
 
 -- Type synonym for an 8x8 grid
 type Grid8x8 = Vec 8 (Vec 8 (Maybe Piece))
@@ -112,13 +131,19 @@ data MyNat where
     Z :: MyNat
     S :: MyNat -> MyNat
 
-type family NatToMyNat (n :: Nat) :: MyNat where
-    NatToMyNat 0 = Z
-    NatToMyNat n = S (NatToMyNat (n - 1))
+data NatToMyNat :: Nat -> Exp (MyNat)
+type instance Eval (NatToMyNat n) = NatToMyNatNonFCF n
+data MyNatToNat :: MyNat -> Exp (Nat)
+type instance Eval (MyNatToNat Z)     = 0
+type instance Eval (MyNatToNat (S n)) = 1 + (Eval (MyNatToNat n))
 
-type family MyNatToNat (n :: MyNat) :: Nat where
-    MyNatToNat Z     = 0
-    MyNatToNat (S n) = 1 + (MyNatToNat n)
+type family NatToMyNatNonFCF (n :: Nat) :: MyNat where
+    NatToMyNatNonFCF 0 = Z
+    NatToMyNatNonFCF n = S (NatToMyNatNonFCF (n - 1))
+
+-- type family MyNatToNat (n :: MyNat) :: Nat where
+--     MyNatToNat Z     = 0
+--     MyNatToNat (S n) = 1 + (MyNatToNat n)
 
 -- Type families to add an offset to columns!
 -- TODO: Customise the number of columns?? As it is, it's chess-specific.
@@ -134,7 +159,7 @@ type instance Eval ((:+) (S Z)     "e") = Just "f"
 type instance Eval ((:+) (S Z)     "f") = Just "g"
 type instance Eval ((:+) (S Z)     "g") = Just "h"
 type instance Eval ((:+) (S Z)     "h") = Nothing
-type instance Eval ((:+) (S (S n)) col) = Eval (Apply ((:+) (S n)) (Eval ((:+) (S Z) col)))
+type instance Eval ((:+) (S (S n)) col) = Eval (Bind ((:+) (S n)) (Eval ((:+) (S Z) col)))
 
 type instance Eval ((:-) Z         col) = ValidColumn col
 type instance Eval ((:-) (S Z)     "a") = Nothing
@@ -145,7 +170,7 @@ type instance Eval ((:-) (S Z)     "e") = Just "d"
 type instance Eval ((:-) (S Z)     "f") = Just "e"
 type instance Eval ((:-) (S Z)     "g") = Just "f"
 type instance Eval ((:-) (S Z)     "h") = Just "g"
-type instance Eval ((:-) (S (S n)) col) = Eval (Apply ((:-) (S n)) (Eval ((:-) (S Z) col)))
+type instance Eval ((:-) (S (S n)) col) = Eval (Bind ((:-) (S n)) (Eval ((:-) (S Z) col)))
 
 -- TEST TYPES
 -- TODO: Remove these
@@ -177,6 +202,37 @@ type family IsUpdateValid (from :: Board) (to :: Board) (turn :: Team) :: Board 
     IsUpdateValid x x _ = TypeError (Text "A move must be made - the board cannot stay exactly the same.")
     IsUpdateValid _ _ _ = TypeError (Text "IsUpdateValid is unfinished!")
 
+-- TODO: Do this mate
+-- TODO: Defunctionalise so it can be mapped over a vector??
+
+-- type family VecAt (vec :: Vec n a) (index :: Nat) :: Maybe a where
+--     VecAt VEnd _       = Nothing
+--     VecAt (x :-> xs) 0 = Just x
+--     VecAt (x :-> xs) n = VecAt xs (n - 1)
+
+data VecAt :: Vec n a -> MyNat -> Exp (Maybe a)
+type instance Eval (VecAt VEnd _) = Nothing
+type instance Eval (VecAt (x :-> xs) Z) = Just x
+type instance Eval (VecAt (x :-> xs) (S n)) = Eval (VecAt xs n)
+
+data CurryVecAt :: Vec n a -> Exp (MyNat -> Exp (Maybe a))
+type instance Eval (CurryVecAt vec) = VecAt vec
+
+type family VecIndex (vec :: Vec n a) (item :: a) :: Maybe Nat where
+    VecIndex VEnd item          = Nothing
+    VecIndex (item :-> xs) item = Just 0
+    VecIndex (x :-> xs)    item = Eval (Map (Add 1) (VecIndex xs item))
+
+type family GetRow (board :: Board) (row :: Nat) :: Maybe (Vec n a) where
+    GetRow board row = Eval (VecAt board (Eval (NatToMyNat row)))
+
+-- TODO: Maybe make this tied less to ValidColumns??
+type family ColToIndex (col :: Symbol) :: Maybe Nat where
+    ColToIndex col = VecIndex ValidColumns col
+
+type family GetPieceAt (board :: Board) (at :: Position) :: Maybe a where
+    GetPieceAt board (At col row) = Eval (Apply (Eval (Map CurryVecAt (GetRow board row))) (Eval (Map (NatToMyNat) (ColToIndex col))))
+
 -- Rudimentary way to display type errors, for now.
 x :: Proxy (UpdateBoard TestBoard White ('Moves VEnd))
 x = Proxy
@@ -195,21 +251,20 @@ type family PawnMoves (p :: Piece) (board :: Board) :: Maybe (Vec n Position) wh
     PawnMoves (MkPiece White Pawn (Info 0 (At col row))) board = Just (At col (row + 1) :<> At col (row + 2))
     PawnMoves (MkPiece White Pawn (Info n (At col row))) board = Just (At col (row + 1) :-> VEnd)
 
-type family FromJust (x :: Maybe a) (y :: a) :: a where
-    FromJust Nothing y  = y
-    FromJust (Just x) _ = x
+pawnMovesTest1 :: Proxy (Just (At "a" 3 :<> At "a" 2))
+pawnMovesTest1 = Proxy @(PawnMoves (MkPiece Black Pawn (Info 0 (At "a" 4))) TestBoard)
 
-pawnTest1 :: Proxy (Just (At "a" 3 :<> At "a" 2))
-pawnTest1 = Proxy @(PawnMoves (MkPiece Black Pawn (Info 0 (At "a" 4))) TestBoard)
+pawnMovesTest2 :: Proxy (Just (At "a" 3 :-> VEnd))
+pawnMovesTest2 = Proxy @(PawnMoves (MkPiece Black Pawn (Info 7 (At "a" 4))) TestBoard)
 
-pawnTest2 :: Proxy (Just (At "a" 3 :-> VEnd))
-pawnTest2 = Proxy @(PawnMoves (MkPiece Black Pawn (Info 7 (At "a" 4))) TestBoard)
+pawnMovesTest3 :: Proxy (Just (At "a" 5 :<> At "a" 6))
+pawnMovesTest3 = Proxy @(PawnMoves (MkPiece White Pawn (Info 0 (At "a" 4))) TestBoard)
 
-pawnTest3 :: Proxy (Just (At "a" 5 :<> At "a" 6))
-pawnTest3 = Proxy @(PawnMoves (MkPiece White Pawn (Info 0 (At "a" 4))) TestBoard)
+pawnMovesTest4 :: Proxy (Just (At "a" 5 :-> VEnd))
+pawnMovesTest4 = Proxy @(PawnMoves (MkPiece White Pawn (Info 7 (At "a" 4))) TestBoard)
 
-pawnTest4 :: Proxy (Just (At "a" 5 :-> VEnd))
-pawnTest4 = Proxy @(PawnMoves (MkPiece White Pawn (Info 7 (At "a" 4))) TestBoard)
+-- getPieceAtTest1 :: Proxy (Just TestPiece)
+-- getPieceAtTest1 = Proxy @(GetPieceAt TestBoard (At "a" 1))
 
 -----------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
