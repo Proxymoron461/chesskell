@@ -10,6 +10,26 @@ type Type = *
 -- A datatype for Proxy types!
 data Proxy a = Proxy
 
+-- Defunctionalisation helpers!
+type Exp a = a -> Type
+type family Eval (e :: Exp a) :: a
+
+-- Type-level functors! (Almost)
+data Map :: (a -> Exp b) -> f a -> Exp (f b)
+
+-- Type-level monads! (Almost)
+data Apply :: (a -> Exp (f b)) -> f a -> Exp (f b)
+
+-- Maybe instance of type-level functors and monads
+type instance Eval (Map f Nothing) = Nothing
+type instance Eval (Map f (Just x)) = Just (Eval (f x))
+
+type instance Eval (Apply f Nothing)  = Nothing
+type instance Eval (Apply f (Just x)) = Eval (f x)
+
+
+-----------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------
 data Vec (n :: Nat) (a :: Type) where
     VEnd   :: Vec 0 a
     (:->)  :: a -> Vec (n - 1) a -> Vec n a
@@ -94,40 +114,45 @@ type family ValidColumn (row :: Symbol) :: Maybe Symbol where
     ValidColumn "h" = Just "h"
     ValidColumn x   = Nothing
 
+-- Custom Nat class, to allow pattern matching on Nat > 2
+data MyNat where
+    Z :: MyNat
+    S :: MyNat -> MyNat
+
+type family NatToMyNat (n :: Nat) :: MyNat where
+    NatToMyNat 0 = Z
+    NatToMyNat n = S (NatToMyNat (n - 1))
+
+type family MyNatToNat (n :: MyNat) :: Nat where
+    MyNatToNat Z     = 0
+    MyNatToNat (S n) = 1 + (MyNatToNat n)
+
 -- Type families to add an offset to columns!
--- e.g. Pawn moves from column to column :+ 1, or column :- 1
--- TODO: Parameterise these with the number of rows somehow??
-type family (:+) (col :: Symbol) (offset :: Nat) :: Maybe Symbol where
-    col :+ 0 = ValidColumn col
-    "a" :+ 1 = Just "b"
-    "b" :+ 1 = Just "c"
-    "c" :+ 1 = Just "d"
-    "d" :+ 1 = Just "e"
-    "e" :+ 1 = Just "f"
-    "f" :+ 1 = Just "g"
-    "g" :+ 1 = Just "h"
-    "h" :+ 1 = Nothing
-    col :+ n = MaybePlusOffset (col :+ 1) (n - 1)
-type family (:-) (col :: Symbol) (offset :: Nat) :: Maybe Symbol where
-    col :- 0 = ValidColumn col
-    "a" :- 1 = Nothing
-    "b" :- 1 = Just "a"
-    "c" :- 1 = Just "b"
-    "d" :- 1 = Just "c"
-    "e" :- 1 = Just "d"
-    "f" :- 1 = Just "e"
-    "g" :- 1 = Just "f"
-    "h" :- 1 = Just "g"
-    col :- n = MaybeSubtractOffset (col :- 1) (n - 1)
+-- FIXME: :kind! Eval ((NatToMyNat 0) :+ "abc") = 'Just "abc"
+data (:+) :: MyNat -> Symbol -> Exp (Maybe Symbol)
+data (:-) :: MyNat -> Symbol -> Exp (Maybe Symbol)
 
--- TODO: Figure out type level monads??
-type family MaybePlusOffset (x :: Maybe Symbol) (y :: Nat) :: Maybe Symbol where
-    MaybePlusOffset (Nothing) y = Nothing
-    MaybePlusOffset (Just x)  y = x :+ y
-type family MaybeSubtractOffset (x :: Maybe Symbol) (y :: Nat) :: Maybe Symbol where
-    MaybeSubtractOffset (Nothing) y = Nothing
-    MaybeSubtractOffset (Just x)  y = x :- y
+type instance Eval ((:+) Z         col) = Just col
+type instance Eval ((:+) (S Z)     "a") = Just "b"
+type instance Eval ((:+) (S Z)     "b") = Just "c"
+type instance Eval ((:+) (S Z)     "c") = Just "d"
+type instance Eval ((:+) (S Z)     "d") = Just "e"
+type instance Eval ((:+) (S Z)     "e") = Just "f"
+type instance Eval ((:+) (S Z)     "f") = Just "g"
+type instance Eval ((:+) (S Z)     "g") = Just "h"
+type instance Eval ((:+) (S Z)     "h") = Nothing
+type instance Eval ((:+) (S (S n)) col) = Eval (Apply ((:+) (S n)) (Eval ((:+) (S Z) col)))
 
+type instance Eval ((:-) Z         col) = Just col
+type instance Eval ((:-) (S Z)     "a") = Nothing
+type instance Eval ((:-) (S Z)     "b") = Just "a"
+type instance Eval ((:-) (S Z)     "c") = Just "b"
+type instance Eval ((:-) (S Z)     "d") = Just "c"
+type instance Eval ((:-) (S Z)     "e") = Just "d"
+type instance Eval ((:-) (S Z)     "f") = Just "e"
+type instance Eval ((:-) (S Z)     "g") = Just "f"
+type instance Eval ((:-) (S Z)     "h") = Just "g"
+type instance Eval ((:-) (S (S n)) col) = Eval (Apply ((:-) (S n)) (Eval ((:-) (S Z) col)))
 
 -- TEST TYPES
 -- TODO: Remove these
