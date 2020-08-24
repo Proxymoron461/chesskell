@@ -262,17 +262,6 @@ type family GetRow (board :: Board) (row :: Nat) :: Maybe (Vec n a) where
 type family ColToIndex (col :: Symbol) :: Maybe Nat where
     ColToIndex col = VecIndex ValidColumns col
 
--- :kind! Eval (Map (NatToMyNat) (ColToIndex "a")) :: Maybe MyNat = Just Z
--- :kind! Eval (Map (CurryWrap VecAt) (GetRow TestBoard 1)) :: Maybe (MyNat -> Exp (Maybe a))
--- :kind! Eval (Apply (Eval (Map (CurryWrap VecAt) (GetRow TestBoard 1))) (Eval (Map (NatToMyNat) (ColToIndex "a")))) :: Maybe (Maybe a)
--- :kind! Eval (Flatten (Eval (Map (CurryWrap VecAt) (GetRow TestBoard 1))) (Eval (Map (NatToMyNat) (ColToIndex "a")))) :: Maybe Piece
--- :kind! (Eval ((Eval ((CurryWrap VecAt) <$> (Eval (VecAt TestBoard (Eval (NatToMyNat 0)))))) <*> (Eval (NatToMyNat <$> (ColToIndex "a"))))) :: Maybe (Maybe (Maybe Piece))
--- type family GetPieceAt (board :: Board) (at :: Position) :: Maybe Piece where
---     -- GetPieceAt board (At col row) = Eval (Flatten (Eval ((CurryWrap VecAt) <$> (GetRow board row))) (Eval (NatToMyNat <$> (ColToIndex col))))
---     -- GetPieceAt board (At col row) = Join (Eval (Bind ((Flip VecAt) Z) (Eval (VecAt board row))))
---     -- GetPieceAt board (At col row) = Join (Eval (Bind ((Flip VecAt) (Eval (Map (NatToMyNat) (ColToIndex col)))) (Eval (VecAt TestBoard (Eval (NatToMyNat row))))))
---     GetPieceAt board (At col row) = Eval (Join (Eval (Join (Eval ((Eval ((CurryWrap VecAt) <$> (Eval (VecAt board (Eval (NatToMyNat row)))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
-
 -- TODO: Make it cause an error when row = 0
 data GetPieceAt :: Board -> Position -> Exp (Maybe Piece)
 type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CurryWrap VecAt) <$> (Eval (VecAt board (Eval (NatToMyNat (row - 1))))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
@@ -318,12 +307,6 @@ getPieceAtTest2 = Proxy @(Eval (Join (Eval (Bind ((Flip VecAt) (Eval (NatToMyNat
 -- :kind! VecAt (Z :<> (S Z)) :: MyNat -> Exp (Maybe MyNat)
 getPieceAtTest3 :: Proxy (Just Z)
 getPieceAtTest3 = Proxy @(Eval (Join (Eval ((Eval ((CurryWrap VecAt) <$> Just (Z :<> (S Z)))) <*> Just Z))))
-
--- getRowTest1 :: Proxy (Just TestPiece)
--- getRowTest1 = Proxy @(Eval (VecAt (GetRow TestBoard 1) Z))
-
--- getRowTest2 :: Proxy Nothing
--- getRowTest2 = Proxy @(GetRow TestBoard 10)
 
 -----------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
