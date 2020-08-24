@@ -14,6 +14,16 @@ data Proxy a = Proxy
 type Exp a = a -> Type
 type family Eval (e :: Exp a) :: a
 
+-- ID function, for wrapping data in Exp
+data ID :: a -> Exp a
+type instance Eval (ID x) = x
+
+data Flip :: (a -> b -> Exp c) -> b -> a -> Exp c
+type instance Eval (Flip f b a) = Eval (f a b)
+
+data CurryWrap :: (a -> b) -> a -> Exp b
+type instance Eval (CurryWrap f a) = f a
+
 -- Curry-able add function!
 data Add :: Nat -> Nat -> Exp Nat
 type instance Eval (Add x y)    = x + y
@@ -25,24 +35,41 @@ data Map :: (a -> Exp b) -> f a -> Exp (f b)
 type instance Eval (Map f Nothing)  = Nothing
 type instance Eval (Map f (Just x)) = Just (Eval (f x))
 
+data (<$>) :: (a -> Exp b) -> f a -> Exp (f b)
+type instance Eval (f <$> x) = Eval (Map f x)
+
 -- Type-level applicative functors! (Almost)
 -- (<*>) :: Applicative f => f (a -> b) -> f a -> f b
 -- :kind! Eval (Map (Add 1) (Just 1)) = 'Just 2
 -- :kind! Eval (Apply (Eval (Map CurryAdd (Just 1))) (Just 5)) = 'Just 6
+data Pure :: a -> Exp (f a)
+type instance Eval (Pure x) = Just x
+
 data Apply :: f (a -> Exp b) -> f a -> Exp (f b)
 type instance Eval (Apply _ Nothing)         = Nothing
 type instance Eval (Apply (Just f) (Just x)) = Just (Eval (f x))
 
+data (<*>) :: f (a -> Exp b) -> f a -> Exp (f b)
+type instance Eval (f <*> x) = Eval (Apply f x)
+
 -- Type-level monads! (Almost)
+data Return :: a -> Exp (f a)
+type instance Eval (Return x) = Pure x
+
 data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
 type instance Eval (Bind f Nothing)  = Nothing
 type instance Eval (Bind f (Just x)) = Eval (f x)
 
+data (>>=) :: f a -> (a -> Exp (f b)) -> Exp (f b)
+type instance Eval (x >>= f) = Eval (Bind f x)
+
+data Join :: m (m a) -> Exp (m a)
+type instance Eval (Join Nothing)  = Nothing
+type instance Eval (Join (Just x)) = x
+
 -- Some new thing - surely it already exists
 data Flatten :: f (a -> Exp (f b)) -> f a -> Exp (f b)
-type instance Eval (Flatten Nothing _)         = Nothing
-type instance Eval (Flatten (Just f) Nothing)  = Nothing
-type instance Eval (Flatten (Just f) (Just x)) = Eval (f x)
+type instance Eval (Flatten f x) = Eval (Join (Eval (Apply f x)))
 
 
 -----------------------------------------------------------------------------------------------
@@ -77,10 +104,6 @@ type family If (cond :: Bool) (thenDo :: a) (elseDo :: a) :: a where
 type family FromJust (x :: Maybe a) (y :: a) :: a where
     FromJust Nothing y  = y
     FromJust (Just x) _ = x
-
-type family FlattenMaybe (x :: Maybe (Maybe a)) :: Maybe a where
-    FlattenMaybe Nothing  = Nothing
-    FlattenMaybe (Just x) = x
 
 -- Type synonym for an 8x8 grid
 type Grid8x8 = Vec 8 (Vec 8 (Maybe Piece))
@@ -224,15 +247,8 @@ type instance Eval (VecAt VEnd _) = Nothing
 type instance Eval (VecAt (x :-> xs) Z) = Just x
 type instance Eval (VecAt (x :-> xs) (S n)) = Eval (VecAt xs n)
 
--- TODO: Generalise this??
-data VecAtR :: MyNat -> Vec n a -> Exp (Maybe a)
-type instance Eval (VecAtR n v) = Eval (VecAt v n)
-
 -- data Swap :: (a -> b -> Exp c) -> Exp (b -> a -> c)
 -- type instance Eval (Swap f) = ?? 
-
-data CurryVecAt :: Vec n a -> Exp (MyNat -> Exp (Maybe a))
-type instance Eval (CurryVecAt vec) = VecAt vec
 
 type family VecIndex (vec :: Vec n a) (item :: a) :: Maybe Nat where
     VecIndex VEnd item          = Nothing
@@ -247,12 +263,19 @@ type family ColToIndex (col :: Symbol) :: Maybe Nat where
     ColToIndex col = VecIndex ValidColumns col
 
 -- :kind! Eval (Map (NatToMyNat) (ColToIndex "a")) :: Maybe MyNat = Just Z
--- :kind! Eval (Map CurryVecAt (GetRow TestBoard 1)) :: Maybe (MyNat -> Exp (Maybe a))
--- :kind! Eval (Apply (Eval (Map CurryVecAt (GetRow TestBoard 1))) (Eval (Map (NatToMyNat) (ColToIndex "a")))) :: Maybe (Maybe a)
--- :kind! Eval (Flatten (Eval (Map CurryVecAt (GetRow TestBoard 1))) (Eval (Map (NatToMyNat) (ColToIndex "a")))) :: Maybe Piece
-type family GetPieceAt (board :: Board) (at :: Position) :: Maybe Piece where
-    GetPieceAt board (At col row) = Eval (Flatten (Eval (Map CurryVecAt (GetRow board row))) (Eval (Map (NatToMyNat) (ColToIndex col))))
-    -- GetPieceAt board (At col row) = FlattenMaybe (Eval (Bind (VecAtR Z) (Eval (VecAt board row))))
+-- :kind! Eval (Map (CurryWrap VecAt) (GetRow TestBoard 1)) :: Maybe (MyNat -> Exp (Maybe a))
+-- :kind! Eval (Apply (Eval (Map (CurryWrap VecAt) (GetRow TestBoard 1))) (Eval (Map (NatToMyNat) (ColToIndex "a")))) :: Maybe (Maybe a)
+-- :kind! Eval (Flatten (Eval (Map (CurryWrap VecAt) (GetRow TestBoard 1))) (Eval (Map (NatToMyNat) (ColToIndex "a")))) :: Maybe Piece
+-- :kind! (Eval ((Eval ((CurryWrap VecAt) <$> (Eval (VecAt TestBoard (Eval (NatToMyNat 0)))))) <*> (Eval (NatToMyNat <$> (ColToIndex "a"))))) :: Maybe (Maybe (Maybe Piece))
+-- type family GetPieceAt (board :: Board) (at :: Position) :: Maybe Piece where
+--     -- GetPieceAt board (At col row) = Eval (Flatten (Eval ((CurryWrap VecAt) <$> (GetRow board row))) (Eval (NatToMyNat <$> (ColToIndex col))))
+--     -- GetPieceAt board (At col row) = Join (Eval (Bind ((Flip VecAt) Z) (Eval (VecAt board row))))
+--     -- GetPieceAt board (At col row) = Join (Eval (Bind ((Flip VecAt) (Eval (Map (NatToMyNat) (ColToIndex col)))) (Eval (VecAt TestBoard (Eval (NatToMyNat row))))))
+--     GetPieceAt board (At col row) = Eval (Join (Eval (Join (Eval ((Eval ((CurryWrap VecAt) <$> (Eval (VecAt board (Eval (NatToMyNat row)))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
+
+-- TODO: Make it cause an error when row = 0
+data GetPieceAt :: Board -> Position -> Exp (Maybe Piece)
+type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CurryWrap VecAt) <$> (Eval (VecAt board (Eval (NatToMyNat (row - 1))))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
 
 -- Rudimentary way to display type errors, for now.
 x :: Proxy (UpdateBoard TestBoard White ('Moves VEnd))
@@ -284,11 +307,17 @@ pawnMovesTest3 = Proxy @(PawnMoves (MkPiece White Pawn (Info 0 (At "a" 4))) Test
 pawnMovesTest4 :: Proxy (Just (At "a" 5 :-> VEnd))
 pawnMovesTest4 = Proxy @(PawnMoves (MkPiece White Pawn (Info 7 (At "a" 4))) TestBoard)
 
--- getPieceAtTest1 :: Proxy (Just TestPiece)
--- getPieceAtTest1 = Proxy @(GetPieceAt TestBoard (At "a" 1))
+getPieceAtTest1 :: Proxy (Just TestPiece)
+getPieceAtTest1 = Proxy @(Eval (GetPieceAt TestBoard (At "a" 1)))
 
+-- :k VecAtR Z :: Vec n a -> Exp (Maybe a)
 getPieceAtTest2 :: Proxy (Just TestPiece)
-getPieceAtTest2 = Proxy @(FlattenMaybe (Eval (Bind (VecAtR Z) (Eval (VecAt TestBoard Z)))))
+getPieceAtTest2 = Proxy @(Eval (Join (Eval (Bind ((Flip VecAt) (Eval (NatToMyNat 0))) (Eval (VecAt TestBoard (Eval (NatToMyNat 0))))))))
+
+-- TODO: Fix this!! Use bind!
+-- :kind! VecAt (Z :<> (S Z)) :: MyNat -> Exp (Maybe MyNat)
+getPieceAtTest3 :: Proxy (Just Z)
+getPieceAtTest3 = Proxy @(Eval (Join (Eval ((Eval ((CurryWrap VecAt) <$> Just (Z :<> (S Z)))) <*> Just Z))))
 
 -- getRowTest1 :: Proxy (Just TestPiece)
 -- getRowTest1 = Proxy @(Eval (VecAt (GetRow TestBoard 1) Z))
