@@ -260,12 +260,16 @@ x = Proxy
 data CalculateValidMoves :: Position -> Board -> Exp (Vec n Position)
 type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe VEnd ((Flip PieceCanMoveTo) board) (Eval (GetPieceAt board pos)))
 
--- -- TODO: Do this??
--- data IsTypeEqual :: a -> b -> Exp Bool
--- type instance Eval (IsTypeEqual a a) = 'True
--- type instance Eval (IsTypeEqual a b) = 'False
--- data (:==:) :: a -> b -> Exp Bool
--- type instance Eval (a :==: b) = Eval (IsTypeEqual a b)
+-- A quick way of checking if two types are equal!
+-- TODO: Test this to make sure it all works??
+data IsTypeEqual :: a -> b -> Exp Bool
+type instance Eval (IsTypeEqual a b) = IsTypeEqualNonFCF a b
+data (:==:) :: a -> b -> Exp Bool
+type instance Eval (a :==: b) = Eval (IsTypeEqual a b)
+
+type family IsTypeEqualNonFCF (x :: a) (y :: b) :: Bool where
+    IsTypeEqualNonFCF x x = 'True
+    IsTypeEqualNonFCF x y = 'False
 
 -- TODO: Write instances for each team x piece, e.g. White Pawn, Black Knight, ...
 data PieceCanMoveTo :: Piece -> Board -> Exp (Vec n Position)
