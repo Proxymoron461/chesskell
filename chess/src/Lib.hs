@@ -96,6 +96,7 @@ type family VecToList (v :: Vec n a) :: [a] where
     VecToList VEnd         = '[]
     VecToList (x :-> rest) = x ': (VecToList rest)
 
+-- Check if a particular thing is in a vector or not!
 type family In (x :: a) (ys :: Vec n a) :: Bool where
     In x (x :-> rest) = 'True
     In x (y :-> rest) = In x rest
@@ -118,8 +119,6 @@ type Grid8x8 = Vec 8 (Vec 8 (Maybe Piece))
 
 -- TODO: Dimensions of board in type??
 type Board = Grid8x8
--- data Board where
---     MkBoard :: Grid8x8 -> Board
 
 data Piece where
     MkPiece :: Team -> PieceName -> PieceInfo -> Piece
@@ -127,12 +126,6 @@ data Piece where
 data Team = Black | White
 
 -- Make singleton types for each piece??
--- data Pawn = Pawn
--- data Bishop = Bishop
--- data Knight = Knight
--- data Rook = Rook
--- data King = King
--- data Queen = Queen
 data PieceName = Pawn
                | Bishop
                | Knight
@@ -177,10 +170,6 @@ type instance Eval (MyNatToNat (S n)) = 1 + (Eval (MyNatToNat n))
 type family NatToMyNatNonFCF (n :: Nat) :: MyNat where
     NatToMyNatNonFCF 0 = Z
     NatToMyNatNonFCF n = S (NatToMyNatNonFCF (n - 1))
-
--- type family MyNatToNat (n :: MyNat) :: Nat where
---     MyNatToNat Z     = 0
---     MyNatToNat (S n) = 1 + (MyNatToNat n)
 
 -- Type families to add an offset to columns!
 -- TODO: Customise the number of columns?? As it is, it's chess-specific.
@@ -239,14 +228,6 @@ type family IsUpdateValid (from :: Board) (to :: Board) (turn :: Team) :: Board 
     IsUpdateValid x x _ = TypeError (Text "A move must be made - the board cannot stay exactly the same.")
     IsUpdateValid _ _ _ = TypeError (Text "IsUpdateValid is unfinished!")
 
--- TODO: Do this mate
--- TODO: Defunctionalise so it can be mapped over a vector??
-
--- type family VecAt (vec :: Vec n a) (index :: Nat) :: Maybe a where
---     VecAt VEnd _       = Nothing
---     VecAt (x :-> xs) 0 = Just x
---     VecAt (x :-> xs) n = VecAt xs (n - 1)
-
 -- When using Maybes, this returns another maybe!
 -- :kind! Eval (VecAt TestBoard Z) :: Maybe (Vec 8 (Maybe Piece))
 -- data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
@@ -254,9 +235,6 @@ data VecAt :: Vec n a -> MyNat -> Exp (Maybe a)
 type instance Eval (VecAt VEnd _) = Nothing
 type instance Eval (VecAt (x :-> xs) Z) = Just x
 type instance Eval (VecAt (x :-> xs) (S n)) = Eval (VecAt xs n)
-
--- data Swap :: (a -> b -> Exp c) -> Exp (b -> a -> c)
--- type instance Eval (Swap f) = ?? 
 
 type family VecIndex (vec :: Vec n a) (item :: a) :: Maybe Nat where
     VecIndex VEnd item          = Nothing
