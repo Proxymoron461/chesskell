@@ -114,6 +114,14 @@ data IsJust :: Maybe a -> Exp Bool
 type instance Eval (IsJust (Just _)) = True
 type instance Eval (IsJust Nothing)  = False
 
+data FromJust :: Maybe a -> Exp a
+type instance Eval (FromJust (Just x)) = x
+
+-- FIXME: FilterMap is not evaluating for VEnd. What's up with that?? Maybe n ~ m is undecidable??
+data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> Vec n a -> Exp (Vec m b)
+type instance Eval (FilterMap cond f (x :-> xs)) = Eval (If (Eval (cond x)) (ID (Eval (f x) :-> Eval (FilterMap cond f xs))) ((FilterMap cond f xs)))
+type instance Eval (FilterMap _    _ VEnd)       = VEnd
+
 -- Type synonym for an 8x8 grid
 type Grid8x8 = Vec 8 (Vec 8 (Maybe Piece))
 
@@ -312,6 +320,12 @@ getPieceAtTest2 = Proxy @(Eval (Join (Eval (Bind ((Flip VecAt) (Eval (NatToMyNat
 -- :kind! VecAt (Z :<> (S Z)) :: MyNat -> Exp (Maybe MyNat)
 getPieceAtTest3 :: Proxy (Just Z)
 getPieceAtTest3 = Proxy @(Eval (Join (Eval ((Eval ((CurryWrap VecAt) <$> Just (Z :<> (S Z)))) <*> Just Z))))
+
+filterMapTest1 :: Proxy (VEnd)
+filterMapTest1 = Proxy @(Eval (FilterMap IsJust FromJust (Nothing :<> Nothing)))
+
+filterMapTest2 :: Proxy ("a" :-> "c" :-> "abcd" :-> VEnd)
+filterMapTest2 = Proxy @(Eval (FilterMap IsJust FromJust (Just "a" :-> Nothing :-> Just "c" :-> Just "abcd" :-> Nothing :-> Nothing :<> Nothing)))
 
 -----------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
