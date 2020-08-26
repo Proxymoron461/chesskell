@@ -71,6 +71,14 @@ type instance Eval (Join (Just x)) = x
 data Flatten :: f (a -> Exp (f b)) -> f a -> Exp (f b)
 type instance Eval (Flatten f x) = Eval (Join (Eval (Apply f x)))
 
+data FromMaybe :: b -> (a -> Exp b) -> Maybe a -> Exp b
+type instance Eval (FromMaybe b f Nothing)  = b
+type instance Eval (FromMaybe b f (Just x)) = Eval (f x)
+
+-- TODO: Use sometimes? Delays the evaluation of type error!
+data TypeError' :: ErrorMessage -> Exp a
+type instance Eval (TypeError' msg) = TypeError msg
+
 
 -----------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
@@ -97,13 +105,13 @@ type family Or (x :: Bool) (y :: Bool) :: Bool where
     Or 'True  _ = 'True
     Or 'False y = y
 
-type family If (cond :: Bool) (thenDo :: a) (elseDo :: a) :: a where
-    If 'True thenDo _  = thenDo
-    If 'False _ elseDo = elseDo
+data If :: Bool -> Exp b -> Exp b -> Exp b
+type instance Eval (If 'True thenDo elseDo) = Eval thenDo
+type instance Eval (If 'False  thenDo elseDo) = Eval elseDo
 
-type family FromJust (x :: Maybe a) (y :: a) :: a where
-    FromJust Nothing y  = y
-    FromJust (Just x) _ = x
+data IsJust :: Maybe a -> Exp Bool
+type instance Eval (IsJust (Just _)) = True
+type instance Eval (IsJust Nothing)  = False
 
 -- Type synonym for an 8x8 grid
 type Grid8x8 = Vec 8 (Vec 8 (Maybe Piece))
@@ -153,7 +161,7 @@ data Moves where
 type ValidColumns = "a" :-> "b" :-> "c" :-> "d" :-> "e" :-> "f" :-> "g" :<> "h"
 
 type family ValidColumn (row :: Symbol) :: Maybe Symbol where
-    ValidColumn x = If (In x ValidColumns) (Just x) Nothing
+    ValidColumn x = Eval (If (In x ValidColumns) (ID (Just x)) (ID Nothing))
 
 -- Custom Nat class, to allow pattern matching on Nat > 2
 data MyNat where
@@ -270,31 +278,46 @@ type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eva
 x :: Proxy (UpdateBoard TestBoard White ('Moves VEnd))
 x = Proxy
 
--- TODO: Check the piece's reported position is the actual position, eh
-type family PieceMoves (p :: Piece) (board :: Board) :: Maybe (Vec n Position) where
-    PieceMoves (MkPiece team Pawn info) board = PawnMoves (MkPiece team Pawn info) board
-    PieceMoves _ _ = TypeError (Text "Unfinished!")
+-- TODO: Figure out how to handle the side effects of moves (e.g. taking a piece, castling)
+data CalculateValidMoves :: Position -> Board -> Exp (Vec n Position)
+type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe VEnd ((Flip PieceCanMoveTo) board) (Eval (GetPieceAt board pos)))
 
--- TODO: Include diagonal takes!
--- TODO: Take the board into account!
--- TODO: Return Nothing if no valid moves
-type family PawnMoves (p :: Piece) (board :: Board) :: Maybe (Vec n Position) where
-    PawnMoves (MkPiece Black Pawn (Info 0 (At col row))) board = Just (At col (row - 1) :<> At col (row - 2))
-    PawnMoves (MkPiece Black Pawn (Info n (At col row))) board = Just (At col (row - 1) :-> VEnd)
-    PawnMoves (MkPiece White Pawn (Info 0 (At col row))) board = Just (At col (row + 1) :<> At col (row + 2))
-    PawnMoves (MkPiece White Pawn (Info n (At col row))) board = Just (At col (row + 1) :-> VEnd)
+-- -- TODO: Do this??
+-- data IsTypeEqual :: a -> b -> Exp Bool
+-- type instance Eval (IsTypeEqual a a) = 'True
+-- type instance Eval (IsTypeEqual a b) = 'False
+-- data (:==:) :: a -> b -> Exp Bool
+-- type instance Eval (a :==: b) = Eval (IsTypeEqual a b)
 
-pawnMovesTest1 :: Proxy (Just (At "a" 3 :<> At "a" 2))
-pawnMovesTest1 = Proxy @(PawnMoves (MkPiece Black Pawn (Info 0 (At "a" 4))) TestBoard)
+-- TODO: Write instances for each team x piece, e.g. White Pawn, Black Knight, ...
+data PieceCanMoveTo :: Piece -> Board -> Exp (Vec n Position)
+type instance Eval (PieceCanMoveTo (MkPiece team name info) board) = VEnd
 
-pawnMovesTest2 :: Proxy (Just (At "a" 3 :-> VEnd))
-pawnMovesTest2 = Proxy @(PawnMoves (MkPiece Black Pawn (Info 7 (At "a" 4))) TestBoard)
+-- -- TODO: Check the piece's reported position is the actual position, eh
+-- type family PieceMoves (p :: Piece) (board :: Board) :: Maybe (Vec n Position) where
+--     PieceMoves (MkPiece team Pawn info) board = PawnMoves (MkPiece team Pawn info) board
+--     PieceMoves _ _ = TypeError (Text "Unfinished!")
 
-pawnMovesTest3 :: Proxy (Just (At "a" 5 :<> At "a" 6))
-pawnMovesTest3 = Proxy @(PawnMoves (MkPiece White Pawn (Info 0 (At "a" 4))) TestBoard)
+-- -- TODO: Include diagonal takes!
+-- -- TODO: Take the board into account!
+-- -- TODO: Return Nothing if no valid moves
+-- type family PawnMoves (p :: Piece) (board :: Board) :: Maybe (Vec n Position) where
+--     PawnMoves (MkPiece Black Pawn (Info 0 (At col row))) board = Just (At col (row - 1) :<> At col (row - 2))
+--     PawnMoves (MkPiece Black Pawn (Info n (At col row))) board = Just (At col (row - 1) :-> VEnd)
+--     PawnMoves (MkPiece White Pawn (Info 0 (At col row))) board = Just (At col (row + 1) :<> At col (row + 2))
+--     PawnMoves (MkPiece White Pawn (Info n (At col row))) board = Just (At col (row + 1) :-> VEnd)
 
-pawnMovesTest4 :: Proxy (Just (At "a" 5 :-> VEnd))
-pawnMovesTest4 = Proxy @(PawnMoves (MkPiece White Pawn (Info 7 (At "a" 4))) TestBoard)
+-- pawnMovesTest1 :: Proxy (Just (At "a" 3 :<> At "a" 2))
+-- pawnMovesTest1 = Proxy @(PawnMoves (MkPiece Black Pawn (Info 0 (At "a" 4))) TestBoard)
+
+-- pawnMovesTest2 :: Proxy (Just (At "a" 3 :-> VEnd))
+-- pawnMovesTest2 = Proxy @(PawnMoves (MkPiece Black Pawn (Info 7 (At "a" 4))) TestBoard)
+
+-- pawnMovesTest3 :: Proxy (Just (At "a" 5 :<> At "a" 6))
+-- pawnMovesTest3 = Proxy @(PawnMoves (MkPiece White Pawn (Info 0 (At "a" 4))) TestBoard)
+
+-- pawnMovesTest4 :: Proxy (Just (At "a" 5 :-> VEnd))
+-- pawnMovesTest4 = Proxy @(PawnMoves (MkPiece White Pawn (Info 7 (At "a" 4))) TestBoard)
 
 getPieceAtTest1 :: Proxy (Just TestPiece)
 getPieceAtTest1 = Proxy @(Eval (GetPieceAt TestBoard (At "a" 1)))
