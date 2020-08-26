@@ -71,13 +71,35 @@ type instance Eval (Join (Just x)) = x
 data Flatten :: f (a -> Exp (f b)) -> f a -> Exp (f b)
 type instance Eval (Flatten f x) = Eval (Join (Eval (Apply f x)))
 
-data FromMaybe :: b -> (a -> Exp b) -> Maybe a -> Exp b
-type instance Eval (FromMaybe b f Nothing)  = b
-type instance Eval (FromMaybe b f (Just x)) = Eval (f x)
-
 -- TODO: Use sometimes? Delays the evaluation of type error!
 data TypeError' :: ErrorMessage -> Exp a
 type instance Eval (TypeError' msg) = TypeError msg
+
+-- A quick way of checking if two types are equal!
+-- TODO: Test this to make sure it all works??
+data IsTypeEqual :: a -> b -> Exp Bool
+type instance Eval (IsTypeEqual a b) = IsTypeEqualNonFCF a b
+data (:==:) :: a -> b -> Exp Bool
+type instance Eval (a :==: b) = Eval (IsTypeEqual a b)
+
+type family IsTypeEqualNonFCF (x :: a) (y :: b) :: Bool where
+    IsTypeEqualNonFCF x x = 'True
+    IsTypeEqualNonFCF x y = 'False
+
+data If :: Bool -> Exp b -> Exp b -> Exp b
+type instance Eval (If 'True thenDo elseDo) = Eval thenDo
+type instance Eval (If 'False  thenDo elseDo) = Eval elseDo
+
+data IsJust :: Maybe a -> Exp Bool
+type instance Eval (IsJust (Just _)) = True
+type instance Eval (IsJust Nothing)  = False
+
+data FromJust :: Maybe a -> Exp a
+type instance Eval (FromJust (Just x)) = x
+
+data FromMaybe :: b -> (a -> Exp b) -> Maybe a -> Exp b
+type instance Eval (FromMaybe b f Nothing)  = b
+type instance Eval (FromMaybe b f (Just x)) = Eval (f x)
 
 
 -----------------------------------------------------------------------------------------------
@@ -105,17 +127,6 @@ type family In (x :: a) (ys :: Vec n a) :: Bool where
 type family Or (x :: Bool) (y :: Bool) :: Bool where
     Or 'True  _ = 'True
     Or 'False y = y
-
-data If :: Bool -> Exp b -> Exp b -> Exp b
-type instance Eval (If 'True thenDo elseDo) = Eval thenDo
-type instance Eval (If 'False  thenDo elseDo) = Eval elseDo
-
-data IsJust :: Maybe a -> Exp Bool
-type instance Eval (IsJust (Just _)) = True
-type instance Eval (IsJust Nothing)  = False
-
-data FromJust :: Maybe a -> Exp a
-type instance Eval (FromJust (Just x)) = x
 
 -- FIXME: FilterMap is not evaluating for VEnd. What's up with that?? Maybe n ~ m is undecidable??
 data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> Vec n a -> Exp (Vec m b)
@@ -267,17 +278,6 @@ x = Proxy
 -- TODO: Figure out how to handle the side effects of moves (e.g. taking a piece, castling)
 data CalculateValidMoves :: Position -> Board -> Exp (Vec n Position)
 type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe VEnd ((Flip PieceCanMoveTo) board) (Eval (GetPieceAt board pos)))
-
--- A quick way of checking if two types are equal!
--- TODO: Test this to make sure it all works??
-data IsTypeEqual :: a -> b -> Exp Bool
-type instance Eval (IsTypeEqual a b) = IsTypeEqualNonFCF a b
-data (:==:) :: a -> b -> Exp Bool
-type instance Eval (a :==: b) = Eval (IsTypeEqual a b)
-
-type family IsTypeEqualNonFCF (x :: a) (y :: b) :: Bool where
-    IsTypeEqualNonFCF x x = 'True
-    IsTypeEqualNonFCF x y = 'False
 
 -- TODO: Write instances for each team x piece, e.g. White Pawn, Black Knight, ...
 data PieceCanMoveTo :: Piece -> Board -> Exp (Vec n Position)
