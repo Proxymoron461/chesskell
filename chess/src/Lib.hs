@@ -144,7 +144,7 @@ data PieceName = Pawn
 -- While their position is implicit from where they are in the board, it's
 -- helpful!
 data PieceInfo where
-    Info :: Nat -> Position -> PieceInfo
+    Info :: MyNat -> Position -> PieceInfo
 
 -- TODO: Type level char??
 -- Goes column-row, e.g. At "a" 4 means first column from left, 4 up from the bottom, where Black is at the top
@@ -212,7 +212,7 @@ type instance Eval ((:-) (S (S n)) col) = Eval (Bind ((:-) (S n)) (Eval ((:-) (S
 -- TEST TYPES
 -- TODO: Remove these
 type TestPosition = At "a" 1  -- i.e. bottom left
-type TestPiece    = MkPiece Black Pawn (Info 0 TestPosition)
+type TestPiece    = MkPiece Black Pawn (Info Z TestPosition)
 type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :-> EmptyRow
