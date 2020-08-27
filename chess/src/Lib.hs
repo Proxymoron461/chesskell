@@ -125,15 +125,19 @@ type family VecToList (v :: Vec n a) :: [a] where
     VecToList VEnd         = '[]
     VecToList (x :-> rest) = x ': (VecToList rest)
 
--- Check if a particular thing is in a vector or not!
-type family In (x :: a) (ys :: Vec n a) :: Bool where
-    In x (x :-> rest) = 'True
-    In x (y :-> rest) = In x rest
-    In x VEnd         = 'False
+-- Membership checking for vectors
+type family Elem (x :: a) (ys :: Vec n a) :: Bool where
+    Elem x (y :-> rest) = Eval ((Eval (x :==: y)) :||: (ID (Elem x rest)))
+    Elem x VEnd         = 'False
 
-type family Or (x :: Bool) (y :: Bool) :: Bool where
-    Or 'True  _ = 'True
-    Or 'False y = y
+-- :kind! Eval (Or True (TypeError' (Text "eeeeh")))
+-- A lazy version of Or, which only evaluates its' second param if the first fails.
+data LazyOr :: Bool -> Exp Bool -> Exp Bool
+type instance Eval (LazyOr True  _) = True
+type instance Eval (LazyOr False x) = Eval x
+
+data (:||:) :: Bool -> Exp Bool -> Exp Bool
+type instance Eval (x :||: y) = Eval (LazyOr x y)
 
 -- FIXME: FilterMap is not evaluating for VEnd. What's up with that?? Maybe n ~ m is undecidable??
 data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> Vec n a -> Exp (Vec m b)
@@ -180,7 +184,7 @@ data Moves where
 type ValidColumns = "a" :-> "b" :-> "c" :-> "d" :-> "e" :-> "f" :-> "g" :<> "h"
 
 type family ValidColumn (row :: Symbol) :: Maybe Symbol where
-    ValidColumn x = Eval (If (In x ValidColumns) (ID (Just x)) (ID Nothing))
+    ValidColumn x = Eval (If (Elem x ValidColumns) (ID (Just x)) (ID Nothing))
 
 -- Custom Nat class, to allow pattern matching on Nat > 2
 data MyNat where
