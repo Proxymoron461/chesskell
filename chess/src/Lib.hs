@@ -25,17 +25,16 @@ infixr 6 .
 data Flip :: (a -> b -> Exp c) -> b -> a -> Exp c
 type instance Eval (Flip f b a) = Eval (f a b)
 
+-- Wrapping up a function, so that you can curry it at multiple layers!
+-- TODO: If required, allow curry wrapping at multiple layers??
 data CurryWrap :: (a -> b) -> a -> Exp b
 type instance Eval (CurryWrap f a) = f a
-
 data CW :: (a -> b) -> a -> Exp b
 type instance Eval (CW f a) = Eval (CurryWrap f a)
 
 -- Curry-able add function!
 data Add :: Nat -> Nat -> Exp Nat
 type instance Eval (Add x y)    = x + y
-data CurryAdd :: Nat -> Exp (Nat -> Exp Nat)
-type instance Eval (CurryAdd x) = Add x
 
 -- Type-level functors! (Almost)
 data Map :: (a -> Exp b) -> f a -> Exp (f b)
@@ -52,7 +51,7 @@ type instance Eval (f <$> x) = Eval (Map f x)
 -- Type-level applicative functors! (Almost)
 -- (<*>) :: Applicative f => f (a -> b) -> f a -> f b
 -- :kind! Eval (Map (Add 1) (Just 1)) = 'Just 2
--- :kind! Eval (Apply (Eval (Map CurryAdd (Just 1))) (Just 5)) = 'Just 6
+-- :kind! Eval (Apply (Eval (Map (CW Add) (Just 1))) (Just 5)) = 'Just 6
 data Pure :: a -> Exp (f a)
 type instance Eval (Pure x) = Just x
 
@@ -300,7 +299,7 @@ type instance Eval (IsBlack (MkPiece team _ _)) = Eval (team :==: Black)
 data IsWhite :: Piece -> Exp (Bool)
 type instance Eval (IsWhite (MkPiece team _ _)) = Eval (team :==: White)
 
--- TODO: Figure out how to handle the side effects of moves (e.g. taking a piece, castling)
+-- TODO: Figure out how to handle the side effects of moves (e.g. taking a piece, castling, replacing a piece with another)
 data CalculateValidMoves :: Position -> Board -> Exp (Vec n Position)
 type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe VEnd ((Flip PieceCanMoveTo) board) (Eval (GetPieceAt board pos)))
 
