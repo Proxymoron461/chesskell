@@ -18,6 +18,10 @@ type family Eval (e :: Exp a) :: a
 data ID :: a -> Exp a
 type instance Eval (ID x) = x
 
+data (.) :: (b -> Exp c) -> (a -> Exp b) -> a -> Exp c
+type instance Eval ((.) g f x) = Eval (g (Eval (f x)))
+infixr 6 .
+
 data Flip :: (a -> b -> Exp c) -> b -> a -> Exp c
 type instance Eval (Flip f b a) = Eval (f a b)
 
