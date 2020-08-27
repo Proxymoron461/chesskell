@@ -266,21 +266,21 @@ type instance Eval (VecAt VEnd _) = Nothing
 type instance Eval (VecAt (x :-> xs) Z) = Just x
 type instance Eval (VecAt (x :-> xs) (S n)) = Eval (VecAt xs n)
 
-type family VecIndex (vec :: Vec n a) (item :: a) :: Maybe Nat where
-    VecIndex VEnd item          = Nothing
-    VecIndex (item :-> xs) item = Just 0
-    VecIndex (x :-> xs)    item = Eval (Map (Add 1) (VecIndex xs item))
+data (!!) :: Vec n a -> MyNat -> Exp (Maybe a)
+type instance Eval (vec !! nat) = Eval (VecAt vec nat)
 
-type family GetRow (board :: Board) (row :: Nat) :: Maybe (Vec n a) where
-    GetRow board row = Eval (VecAt board (Eval (NatToMyNat row)))
+type family ElemIndex (vec :: Vec n a) (item :: a) :: Maybe Nat where
+    ElemIndex VEnd item          = Nothing
+    ElemIndex (item :-> xs) item = Just 0
+    ElemIndex (x :-> xs)    item = Eval (Map (Add 1) (ElemIndex xs item))
 
 -- TODO: Maybe make this tied less to ValidColumns??
 type family ColToIndex (col :: Symbol) :: Maybe Nat where
-    ColToIndex col = VecIndex ValidColumns col
+    ColToIndex col = ElemIndex ValidColumns col
 
 -- TODO: Make it cause an error when row = 0
 data GetPieceAt :: Board -> Position -> Exp (Maybe Piece)
-type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CurryWrap VecAt) <$> (Eval (VecAt board (Eval (NatToMyNat (row - 1))))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
+type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CurryWrap (!!)) <$> (Eval (board !! (Eval (NatToMyNat (row - 1))))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
 
 -- Rudimentary way to display type errors, for now.
 x :: Proxy (UpdateBoard TestBoard White ('Moves VEnd))
@@ -331,12 +331,12 @@ getPieceAtTest1 = Proxy @(Eval (GetPieceAt TestBoard (At "a" 1)))
 
 -- :k VecAtR Z :: Vec n a -> Exp (Maybe a)
 getPieceAtTest2 :: Proxy (Just TestPiece)
-getPieceAtTest2 = Proxy @(Eval (Join (Eval (Bind ((Flip VecAt) (Eval (NatToMyNat 0))) (Eval (VecAt TestBoard (Eval (NatToMyNat 0))))))))
+getPieceAtTest2 = Proxy @(Eval (Join (Eval (Bind ((Flip (!!)) (Eval (NatToMyNat 0))) (Eval (TestBoard !! (Eval (NatToMyNat 0))))))))
 
 -- TODO: Fix this!! Use bind!
 -- :kind! VecAt (Z :<> (S Z)) :: MyNat -> Exp (Maybe MyNat)
 getPieceAtTest3 :: Proxy (Just Z)
-getPieceAtTest3 = Proxy @(Eval (Join (Eval ((Eval ((CurryWrap VecAt) <$> Just (Z :<> (S Z)))) <*> Just Z))))
+getPieceAtTest3 = Proxy @(Eval (Join (Eval ((Eval ((CurryWrap (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z))))
 
 filterMapTest1 :: Proxy (VEnd)
 filterMapTest1 = Proxy @(Eval (FilterMap IsJust FromJust (Nothing :<> Nothing)))
