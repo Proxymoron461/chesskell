@@ -32,8 +32,12 @@ type instance Eval (CurryAdd x) = Add x
 
 -- Type-level functors! (Almost)
 data Map :: (a -> Exp b) -> f a -> Exp (f b)
+-- Maybe instance
 type instance Eval (Map f Nothing)  = Nothing
 type instance Eval (Map f (Just x)) = Just (Eval (f x))
+-- Vector instance
+type instance Eval (Map f VEnd)       = VEnd
+type instance Eval (Map f (x :-> xs)) = Eval (f x) :-> Eval (Map f xs)
 
 data (<$>) :: (a -> Exp b) -> f a -> Exp (f b)
 type instance Eval (f <$> x) = Eval (Map f x)
@@ -96,6 +100,9 @@ type instance Eval (IsJust Nothing)  = False
 
 data FromJust :: Maybe a -> Exp a
 type instance Eval (FromJust (Just x)) = x
+
+data ToJust :: a -> Exp (Maybe a)
+type instance Eval (ToJust x) = Just x
 
 data FromMaybe :: b -> (a -> Exp b) -> Maybe a -> Exp b
 type instance Eval (FromMaybe b f Nothing)  = b
