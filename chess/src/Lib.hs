@@ -24,6 +24,9 @@ type instance Eval (Flip f b a) = Eval (f a b)
 data CurryWrap :: (a -> b) -> a -> Exp b
 type instance Eval (CurryWrap f a) = f a
 
+data CW :: (a -> b) -> a -> Exp b
+type instance Eval (CW f a) = Eval (CurryWrap f a)
+
 -- Curry-able add function!
 data Add :: Nat -> Nat -> Exp Nat
 type instance Eval (Add x y)    = x + y
@@ -280,7 +283,7 @@ type family ColToIndex (col :: Symbol) :: Maybe Nat where
 
 -- TODO: Make it cause an error when row = 0
 data GetPieceAt :: Board -> Position -> Exp (Maybe Piece)
-type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CurryWrap (!!)) <$> (Eval (board !! (Eval (NatToMyNat (row - 1))))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
+type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CW (!!)) <$> (Eval (board !! (Eval (NatToMyNat (row - 1))))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
 
 -- Rudimentary way to display type errors, for now.
 x :: Proxy (UpdateBoard TestBoard White ('Moves VEnd))
@@ -336,7 +339,7 @@ getPieceAtTest2 = Proxy @(Eval (Join (Eval (Bind ((Flip (!!)) (Eval (NatToMyNat 
 -- TODO: Fix this!! Use bind!
 -- :kind! VecAt (Z :<> (S Z)) :: MyNat -> Exp (Maybe MyNat)
 getPieceAtTest3 :: Proxy (Just Z)
-getPieceAtTest3 = Proxy @(Eval (Join (Eval ((Eval ((CurryWrap (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z))))
+getPieceAtTest3 = Proxy @(Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z))))
 
 filterMapTest1 :: Proxy (VEnd)
 filterMapTest1 = Proxy @(Eval (FilterMap IsJust FromJust (Nothing :<> Nothing)))
