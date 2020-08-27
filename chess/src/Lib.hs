@@ -286,6 +286,12 @@ type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eva
 x :: Proxy (UpdateBoard TestBoard White ('Moves VEnd))
 x = Proxy
 
+data IsBlack :: Piece -> Exp (Bool)
+type instance Eval (IsBlack (MkPiece team _ _)) = Eval (team :==: Black)
+
+data IsWhite :: Piece -> Exp (Bool)
+type instance Eval (IsWhite (MkPiece team _ _)) = Eval (team :==: White)
+
 -- TODO: Figure out how to handle the side effects of moves (e.g. taking a piece, castling)
 data CalculateValidMoves :: Position -> Board -> Exp (Vec n Position)
 type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe VEnd ((Flip PieceCanMoveTo) board) (Eval (GetPieceAt board pos)))
