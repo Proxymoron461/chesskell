@@ -26,7 +26,7 @@ data Flip :: (a -> b -> Exp c) -> b -> a -> Exp c
 type instance Eval (Flip f b a) = Eval (f a b)
 
 -- Wrapping up a function, so that you can curry it at multiple layers!
--- TODO: If required, allow curry wrapping at multiple layers??
+-- TODO: If required, allow curry wrapping at multiple layers, for futype (???) = TypeError (Text "Function undefined!")nctions like (a -> b -> c) ??
 data CurryWrap :: (a -> b) -> a -> Exp b
 type instance Eval (CurryWrap f a) = f a
 data CW :: (a -> b) -> a -> Exp b
@@ -145,6 +145,22 @@ type instance Eval (LazyOr False x) = Eval x
 
 data (:||:) :: Bool -> Exp Bool -> Exp Bool
 type instance Eval (x :||: y) = Eval (LazyOr x y)
+
+data LazyAnd :: Bool -> Exp Bool -> Exp Bool
+type instance Eval (LazyAnd False _) = False
+type instance Eval (LazyAnd True x)  = Eval x
+
+data (:&&:) :: Bool -> Exp Bool -> Exp Bool
+type instance Eval (x :&&: y) = Eval (LazyAnd x y)
+
+data Any :: (a -> Exp Bool) -> Vec n a -> Exp Bool
+type instance Eval (Any p VEnd)       = False
+type instance Eval (Any p (x :-> xs)) = Eval (Eval (p x) :||: Any p xs)
+
+data All :: (a -> Exp Bool) -> Vec n a -> Exp Bool
+type instance Eval (All p VEnd)       = True
+type instance Eval (All p (x :-> xs)) = Eval (Eval (p x) :&&: All p xs)
+
 
 -- FIXME: FilterMap is not evaluating for VEnd. What's up with that?? Maybe n ~ m is undecidable??
 data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> Vec n a -> Exp (Vec m b)
@@ -300,12 +316,25 @@ data IsWhite :: Piece -> Exp (Bool)
 type instance Eval (IsWhite (MkPiece team _ _)) = Eval (team :==: White)
 
 -- TODO: Figure out how to handle the side effects of moves (e.g. taking a piece, castling, replacing a piece with another)
+-- TODO: Maybe represent the boards that the piece can move to? A new function, MovePiece, which handles any side effects??
+-- Returns an empty vector if the board is empty at that position!
 data CalculateValidMoves :: Position -> Board -> Exp (Vec n Position)
 type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe VEnd ((Flip PieceCanMoveTo) board) (Eval (GetPieceAt board pos)))
 
 -- TODO: Write instances for each team x piece, e.g. White Pawn, Black Knight, ...
 data PieceCanMoveTo :: Piece -> Board -> Exp (Vec n Position)
-type instance Eval (PieceCanMoveTo (MkPiece team name info) board) = VEnd
+type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece White Pawn info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece Black Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece White Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece Black Knight info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece White Knight info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece Black Rook info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece White Rook info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece Black Queen info) board)  = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece White Queen info) board)  = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece Black King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece White King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 
 -- -- TODO: Check the piece's reported position is the actual position, eh
 -- type family PieceMoves (p :: Piece) (board :: Board) :: Maybe (Vec n Position) where

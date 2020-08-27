@@ -54,4 +54,5 @@ So the reusable/abstracted/proxied parts need to be:
   - Chess, it can be 8x8, but noughts and crosses is 3x3 - it needs to be flexible
 - Rule checker
   - Maybe allow the rule checker to specify the available teams, as well as the dimensions of the grid/board??
+  - Check kind equality to do this?
 - Event handler??
