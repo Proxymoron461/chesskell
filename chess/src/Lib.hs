@@ -78,9 +78,10 @@ type instance Eval (Join (Just x)) = x
 data Flatten :: f (a -> Exp (f b)) -> f a -> Exp (f b)
 type instance Eval (Flatten f x) = Eval (Join (Eval (Apply f x)))
 
--- TODO: Use sometimes? Delays the evaluation of type error!
-data TypeError' :: ErrorMessage -> Exp a
-type instance Eval (TypeError' msg) = TypeError msg
+-- This delays the evaluation of the type error!
+-- (Thanks https://blog.poisson.chat/posts/2018-08-06-one-type-family.html#fnref4)
+data TE' :: ErrorMessage -> Exp a
+type instance Eval (TE' msg) = TypeError msg
 
 -- A quick way of checking if two types are equal!
 -- TODO: Test this to make sure it all works??
@@ -133,7 +134,7 @@ type family Elem (x :: a) (ys :: Vec n a) :: Bool where
     Elem x (y :-> rest) = Eval ((Eval (x :==: y)) :||: (ID (Elem x rest)))
     Elem x VEnd         = 'False
 
--- :kind! Eval (Or True (TypeError' (Text "eeeeh")))
+-- :kind! Eval (Or True (TE' (Text "eeeeh")))
 -- A lazy version of Or, which only evaluates its' second param if the first fails.
 data LazyOr :: Bool -> Exp Bool -> Exp Bool
 type instance Eval (LazyOr True  _) = True
