@@ -189,6 +189,8 @@ data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> t a -> Exp (t b)
 type instance Eval (FilterMap p f (x ': xs)) = Eval (If (Eval (p x)) (ID (Eval (f x) ': Eval (FilterMap p f xs))) (FilterMap p f xs))
 type instance Eval (FilterMap p f '[])       = '[]
 
+data Filter :: (a -> Exp Bool) -> t a -> Exp (t b)
+
 -- Type synonym for an 8x8 grid
 type Grid8x8 = Vec 8 (Vec 8 (Maybe Piece))
 
@@ -351,3 +353,46 @@ getPieceAtTest2 = Proxy @(Eval (Join (Eval (Bind ((Flip (!!)) (Eval (NatToMyNat 
 -- :kind! VecAt (Z :<> (S Z)) :: MyNat -> Exp (Maybe MyNat)
 getPieceAtTest3 :: Proxy (Just Z)
 getPieceAtTest3 = Proxy @(Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z))))
+
+-----------------------------------------------------------------------------------------------
+
+data SNat (n :: MyNat) where
+    SZ :: SNat Z
+    SS :: SNat n -> SNat (S n)
+
+type family MyNatToSNat (n :: MyNat) :: SNat n where
+    MyNatToSNat Z     = SZ
+    MyNatToSNat (S n) = SS (MyNatToSNat n)
+
+data Vector (n :: MyNat) (a :: Type) where
+    VNil  :: Vector Z a
+    (:+>) :: a -> Vector n a -> Vector (S n) a
+
+type instance Eval (Map f VNil)       = VNil
+type instance Eval (Map f (x :+> xs)) = Eval (f x) :+> Eval (Map f xs)
+
+data MyNatLength :: [a] -> Exp MyNat
+type instance Eval (MyNatLength '[]) = Z
+type instance Eval (MyNatLength (x ': xs)) = S (Eval (MyNatLength xs))
+
+-- TODO: Introduce safety for when you give the wrong length??
+data ListToVectorHelper :: [a] -> SNat n -> Exp (Vector n a)
+type instance Eval (ListToVectorHelper '[] SZ) = VNil
+type instance Eval (ListToVectorHelper (x ': xs) (SS n)) = x :+> Eval (ListToVectorHelper xs n)
+
+-- -- FIXME: The below cause type errors, but ListToVectorHelper works if you put in the RHS manually.
+-- data ListToVector :: [a] -> Exp (Vector n a)
+-- type instance Eval (ListToVector xs) = Eval (ListToVectorHelper xs (MyNatToSNat (Eval (MyNatLength xs))))
+--
+-- type family ListToVector (xs :: [a]) :: Vector n a where
+--     ListToVector xs = Eval (ListToVectorHelper xs (MyNatToSNat (Eval (MyNatLength xs))))
+
+type TestVector = "a" :+> ("c" :+> VNil)
+type TestList = '["a","b","c"]
+
+-- data MyFilter :: (a -> Exp Bool) -> Vector n a -> Exp (Either (Vector n b) (Vector m c))
+-- type instance Eval (MyFilter p VNil)       = Left VNil
+-- type instance Eval (MyFilter p (x :+> xs)) = Eval (If (Eval (p x)) (ID (Left (x :+> Eval (Filter p xs)))) (ID (Right (Eval (Filter p xs)))))
+--
+-- myFilterTest1 :: Proxy (Left (Just "a" :+> (Just "c" :+> VNil)))
+-- myFilterTest1 = Proxy @(Eval (MyFilter IsJust (Just "a" :+> (Nothing :+> (Just "c" :+> (Nothing :+> VNil))))))
