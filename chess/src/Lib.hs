@@ -44,6 +44,9 @@ type instance Eval (Map f (Just x)) = Just (Eval (f x))
 -- Vector instance
 type instance Eval (Map f VEnd)       = VEnd
 type instance Eval (Map f (x :-> xs)) = Eval (f x) :-> Eval (Map f xs)
+-- List instance
+type instance Eval (Map f '[])       = '[]
+type instance Eval (Map f (x ': xs)) = Eval (f x) ': Eval (Map f xs)
 
 data (<$>) :: (a -> Exp b) -> f a -> Exp (f b)
 type instance Eval (f <$> x) = Eval (Map f x)
@@ -115,9 +118,14 @@ data FromMaybe :: b -> (a -> Exp b) -> Maybe a -> Exp b
 type instance Eval (FromMaybe b f Nothing)  = b
 type instance Eval (FromMaybe b f (Just x)) = Eval (f x)
 
+data Const :: a -> b -> Exp a
+type instance Eval (Const a _) = a
+
 
 -----------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
+
+-- FIXME: a -> Vec n -> Vec (n + 1) a causes issues. Why??
 data Vec (n :: Nat) (a :: Type) where
     VEnd   :: Vec 0 a
     (:->)  :: a -> Vec (n - 1) a -> Vec n a
@@ -128,9 +136,18 @@ type family (:<>) (x :: a) (y :: a) :: Vec 2 a where
     x :<> y = x :-> y :-> VEnd
 infixr 5 :<>
 
-type family VecToList (v :: Vec n a) :: [a] where
-    VecToList VEnd         = '[]
-    VecToList (x :-> rest) = x ': (VecToList rest)
+data VecToList :: Vec n a -> Exp [a]
+type instance Eval (VecToList (x :-> xs)) = x ': Eval (VecToList xs)
+type instance Eval (VecToList VEnd)       = '[]
+
+-- -- FIXME: :kind! Eval (ListToVec '[]) :: Vec n a = Eval (ListToVec '[]). It's not reducing!
+-- data ListToVec :: forall n. KnownNat n => [a] -> Exp (Vec n a)
+-- type instance Eval (ListToVec (x ': xs)) = x :-> Eval (ListToVec xs)
+-- type instance Eval (ListToVec '[])       = VEnd
+--
+-- -- This type checks - so clearly something's happening. What??
+-- x :: Proxy VEnd
+-- x = Proxy @(Eval (ListToVec '[]))
 
 -- Membership checking for vectors
 type family Elem (x :: a) (ys :: Vec n a) :: Bool where
@@ -161,11 +178,16 @@ data All :: (a -> Exp Bool) -> Vec n a -> Exp Bool
 type instance Eval (All p VEnd)       = True
 type instance Eval (All p (x :-> xs)) = Eval (Eval (p x) :&&: All p xs)
 
+data Length :: t a -> Exp Nat
+type instance Eval (Length VEnd)       = 0
+type instance Eval (Length (x :-> xs)) = 1 + Eval (Length xs)
+type instance Eval (Length '[])        = 0
+type instance Eval (Length (x ': xs))  = 1 + Eval (Length xs)
 
--- FIXME: FilterMap is not evaluating for VEnd. What's up with that?? Maybe n ~ m is undecidable??
-data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> Vec n a -> Exp (Vec m b)
-type instance Eval (FilterMap cond f (x :-> xs)) = Eval (If (Eval (cond x)) (ID (Eval (f x) :-> Eval (FilterMap cond f xs))) ((FilterMap cond f xs)))
-type instance Eval (FilterMap _    _ VEnd)       = VEnd
+-- TODO: FilterMap instance for vectors??
+data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> t a -> Exp (t b)
+type instance Eval (FilterMap p f (x ': xs)) = Eval (If (Eval (p x)) (ID (Eval (f x) ': Eval (FilterMap p f xs))) (FilterMap p f xs))
+type instance Eval (FilterMap p f '[])       = '[]
 
 -- Type synonym for an 8x8 grid
 type Grid8x8 = Vec 8 (Vec 8 (Maybe Piece))
@@ -329,9 +351,3 @@ getPieceAtTest2 = Proxy @(Eval (Join (Eval (Bind ((Flip (!!)) (Eval (NatToMyNat 
 -- :kind! VecAt (Z :<> (S Z)) :: MyNat -> Exp (Maybe MyNat)
 getPieceAtTest3 :: Proxy (Just Z)
 getPieceAtTest3 = Proxy @(Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z))))
-
-filterMapTest1 :: Proxy (VEnd)
-filterMapTest1 = Proxy @(Eval (FilterMap IsJust FromJust (Nothing :<> Nothing)))
-
-filterMapTest2 :: Proxy ("a" :-> "c" :-> "abcd" :-> VEnd)
-filterMapTest2 = Proxy @(Eval (FilterMap IsJust FromJust (Just "a" :-> Nothing :-> Just "c" :-> Just "abcd" :-> Nothing :-> Nothing :<> Nothing)))
