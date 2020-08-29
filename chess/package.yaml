@@ -26,7 +26,6 @@ default-extensions:
   - DataKinds
   - PolyKinds
   - TypeFamilies
-  - KindSignatures
   - GADTs
   - TypeOperators
   - ConstraintKinds
