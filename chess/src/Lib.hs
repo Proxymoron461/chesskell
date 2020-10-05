@@ -236,6 +236,9 @@ data PieceInfo where
 data GetMoveCount :: PieceInfo -> Exp MyNat
 type instance Eval (GetMoveCount (Info x _)) = x
 
+data GetPosition :: PieceInfo -> Exp Position
+type instance Eval (GetPosition (Info _ x)) = x
+
 -- TODO: Type level char??
 -- Goes column-row, e.g. At "a" 4 means first column from left, 4 up from the bottom, where Black is at the top
 data Position where
@@ -377,7 +380,7 @@ type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe '[] ((Flip 
 -- TODO: Write instances for each team x piece, e.g. White Pawn, Black Knight, ...
 -- TODO: Check that the piece's reported position is its' actual position
 data PieceCanMoveTo :: Piece -> Board -> Exp [Position]
--- type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)))
+-- type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) )
 type instance Eval (PieceCanMoveTo (MkPiece White Pawn info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece Black Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece White Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
