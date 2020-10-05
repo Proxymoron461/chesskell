@@ -140,18 +140,6 @@ data VecToList :: Vec n a -> Exp [a]
 type instance Eval (VecToList (x :-> xs)) = x ': Eval (VecToList xs)
 type instance Eval (VecToList VEnd)       = '[]
 
--- -- FIXME: :kind! Eval (ListToVec '[]) :: Vec n a = Eval (ListToVec '[]). It's not reducing!
--- data ListToVec :: forall n. KnownNat n => [a] -> Exp (Vec n a)
--- type instance Eval (ListToVec (x ': xs)) = x :-> Eval (ListToVec xs)
--- type instance Eval (ListToVec '[])       = VEnd
---
--- -- This type checks - so clearly something's happening. What??
--- x :: Proxy VEnd
--- x = Proxy @(Eval (ListToVec '[]))
-
--- data ListToVec :: [a] -> Exp (Vec n a)
--- type instance Eval (ListToVec xs) = Eval (ListToVecHelper xs (MyNatToSNat (Eval (MyNatLength xs))))
-
 -- Membership checking for vectors
 type family Elem (x :: a) (ys :: Vec n a) :: Bool where
     Elem x (y :-> rest) = Eval ((Eval (x :==: y)) :||: (ID (Elem x rest)))
@@ -188,20 +176,18 @@ type instance Eval (Length '[])        = 0
 type instance Eval (Length (x ': xs))  = 1 + Eval (Length xs)
 
 -- TODO: FilterMap instance for vectors??
-data LFilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> [a] -> Exp [b]
-type instance Eval (LFilterMap p f (x ': xs)) = Eval (If (Eval (p x)) (ID (Eval (f x) ': Eval (LFilterMap p f xs))) (LFilterMap p f xs))
-type instance Eval (LFilterMap p f '[])       = '[]
+data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> [a] -> Exp [b]
+type instance Eval (FilterMap p f (x ': xs)) = Eval (If (Eval (p x)) (ID (Eval (f x) ': Eval (FilterMap p f xs))) (FilterMap p f xs))
+type instance Eval (FilterMap p f '[])       = '[]
 
-data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> Vec n a -> Exp (Vec m b)
--- type instance Eval (FilterMap p f xs) = 
-
+-- TODO: Kind-polymorphic Filter instances??
 data Filter :: (a -> Exp Bool) -> t a -> Exp (t b)
 
 -- Type synonym for an 8x8 grid
 type Eight = S (S (S (S (S (S (S (S Z)))))))
 type Grid8x8 = Vec Eight (Vec Eight (Maybe Piece))
 
--- TODO: Dimensions of board in type??
+-- TODO: Dimensions of board in kind??
 type Board = Grid8x8
 
 data Piece where
@@ -306,6 +292,7 @@ type instance Eval (VecAt VEnd _)           = Nothing
 type instance Eval (VecAt (x :-> xs) Z)     = Just x
 type instance Eval (VecAt (x :-> xs) (S n)) = Eval (VecAt xs n)
 
+-- :kind! Eval (("a" :-> "b" :<> "c") !! (S (S Z))) = 'Just "c"
 data (!!) :: Vec n a -> MyNat -> Exp (Maybe a)
 type instance Eval (vec !! nat) = Eval (VecAt vec nat)
 
@@ -371,58 +358,8 @@ type family MyNatToSNat (n :: MyNat) :: SNat n where
     MyNatToSNat Z     = SZ
     MyNatToSNat (S n) = SS (MyNatToSNat n)
 
-data Vector (n :: MyNat) (a :: Type) where
-    VNil  :: Vector Z a
-    (:+>) :: a -> Vector n a -> Vector (S n) a
-
-type instance Eval (Map f VNil)       = VNil
-type instance Eval (Map f (x :+> xs)) = Eval (f x) :+> Eval (Map f xs)
-
 data MyNatLength :: [a] -> Exp MyNat
 type instance Eval (MyNatLength '[]) = Z
 type instance Eval (MyNatLength (x ': xs)) = S (Eval (MyNatLength xs))
 
-type family MyNatLength2 (xs :: [a]) :: MyNat where
-    MyNatLength2 '[] = Z
-    MyNatLength2 (x ': xs) = S (MyNatLength2 xs)
-
-type family SLength (xs :: [a]) :: SNat n where
-    SLength xs = MyNatToSNat (MyNatLength2 xs)
-    -- SLength '[] = SZ
-    -- SLength (x ': xs) = SS (SLength xs)
-
--- type family SLength (xs :: [a]) :: SNat n
--- type instance SLength xs = MyNatToSNat (MyNatLength2 xs)
-
--- TODO: Introduce safety for when you give the wrong length??
-data ListToVectorHelper :: [a] -> SNat n -> Exp (Vector n a)
-type instance Eval (ListToVectorHelper '[] SZ) = VNil
-type instance Eval (ListToVectorHelper (x ': xs) (SS n)) = x :+> Eval (ListToVectorHelper xs n)
-
--- data ListToVecHelper :: [a] -> SNat n -> Exp (Vec n a)
--- type instance Eval (ListToVecHelper '[] SZ) = VEnd
--- type instance Eval (ListToVecHelper (x ': xs) (SS n)) = x :-> Eval (ListToVecHelper xs n)
-
-type family ListToVecHelper (xs :: [a]) (n :: SNat m) :: Vec m a where
-    ListToVecHelper '[] SZ = VEnd
-    ListToVecHelper (x ': xs) (SS n) = x :-> ListToVecHelper xs n
-
-type family ListToVec (xs :: [a]) :: Vec n a where
-    ListToVec xs = ListToVecHelper xs (SLength xs)
-
--- -- FIXME: The below cause type errors, but ListToVectorHelper works if you put in the RHS manually.
--- data ListToVector :: [a] -> Exp (Vector n a)
--- type instance Eval (ListToVector xs) = Eval (ListToVectorHelper xs (MyNatToSNat (Eval (MyNatLength xs))))
---
--- type family ListToVector (xs :: [a]) :: Vector n a where
---     ListToVector xs = Eval (ListToVectorHelper xs (MyNatToSNat (Eval (MyNatLength xs))))
-
-type TestVector = "a" :+> ("c" :+> VNil)
 type TestList = '["a","b","c"]
-
--- data MyFilter :: (a -> Exp Bool) -> Vector n a -> Exp (Either (Vector n b) (Vector m c))
--- type instance Eval (MyFilter p VNil)       = Left VNil
--- type instance Eval (MyFilter p (x :+> xs)) = Eval (If (Eval (p x)) (ID (Left (x :+> Eval (Filter p xs)))) (ID (Right (Eval (Filter p xs)))))
---
--- myFilterTest1 :: Proxy (Left (Just "a" :+> (Just "c" :+> VNil)))
--- myFilterTest1 = Proxy @(Eval (MyFilter IsJust (Just "a" :+> (Nothing :+> (Just "c" :+> (Nothing :+> VNil))))))
