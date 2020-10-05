@@ -243,6 +243,8 @@ data Position where
 
 type ValidColumns = "a" :-> "b" :-> "c" :-> "d" :-> "e" :-> "f" :-> "g" :<> "h"
 
+type ValidRows = 1 :-> 2 :-> 3 :-> 4 :-> 5 :-> 6 :-> 7 :<> 8
+
 -- type family ValidColumn (row :: Symbol) :: Maybe Symbol where
 --     ValidColumn x = Eval (If (Elem x ValidColumns) (ID (Just x)) (ID Nothing))
 
@@ -251,6 +253,12 @@ type instance Eval (ValidColumn x) = Eval (If (Elem x ValidColumns) (ID (Just x)
 
 data IsValidColumn :: Symbol -> Exp Bool
 type instance Eval (IsValidColumn x) = Eval (IsJust (Eval (ValidColumn x)))
+
+data IsValidRow :: Nat -> Exp Bool
+type instance Eval (IsValidRow x) = Eval (If (Elem x ValidRows) (ID True) (ID False))
+
+data IsValidPosition :: Position -> Exp Bool
+type instance Eval (IsValidPosition (At col row)) = Eval ((Eval (IsValidColumn col)) :&&: (IsValidRow row))
 
 data IsOpposingTeam :: Piece -> Piece -> Exp Bool
 type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece White _ _)) = False
@@ -356,6 +364,10 @@ type instance Eval (IsBlack (MkPiece team _ _)) = Eval (team :==: Black)
 data IsWhite :: Piece -> Exp Bool
 type instance Eval (IsWhite (MkPiece team _ _)) = Eval (team :==: White)
 
+data GetFreePositions :: [Position] -> Board -> Exp [Position]
+type instance Eval (GetFreePositions '[] _) = '[]
+type instance Eval (GetFreePositions (p ': ps) board) = Eval (If (Eval ((Eval (IsPieceAt board p)) :||: ((Not . IsValidPosition) p))) (GetFreePositions ps board) (ID (p ': (Eval (GetFreePositions ps board)))))
+
 -- TODO: Figure out how to handle the side effects of moves (e.g. taking a piece, castling, replacing a piece with another)
 -- TODO: Maybe represent the boards that the piece can move to? A new function, MovePiece, which handles any side effects??
 -- Returns an empty vector if the board is empty at that position!
@@ -365,7 +377,7 @@ type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe '[] ((Flip 
 -- TODO: Write instances for each team x piece, e.g. White Pawn, Black Knight, ...
 -- TODO: Check that the piece's reported position is its' actual position
 data PieceCanMoveTo :: Piece -> Board -> Exp [Position]
-type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
+-- type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)))
 type instance Eval (PieceCanMoveTo (MkPiece White Pawn info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece Black Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece White Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
@@ -381,7 +393,7 @@ type instance Eval (PieceCanMoveTo (MkPiece White King info) board)   = TypeErro
 -- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
 -- TODO: Handle moves that can move multiple pieces (e.g. castling)
 -- TODO: Handle takes (i.e. moves that remove pieces from play)
--- TODO: Move the piece/pieces, update those pieces' position info,
+-- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
 data Move :: Position -> Board -> Exp (Maybe Board)
 type instance Eval (Move pos board) = TypeError (Text "Not implemented!")
 
