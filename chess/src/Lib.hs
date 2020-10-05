@@ -100,9 +100,17 @@ type family IsTypeEqualNonFCF (x :: a) (y :: b) :: Bool where
     IsTypeEqualNonFCF x x = 'True
     IsTypeEqualNonFCF x y = 'False
 
+-- :kind! Eval (If (Eval (IsJust (Eval (GetPieceAt TestBoard (At "a" 1))))) (ID "yes") (ID "no")) = "yes"
+-- :kind! Eval (If (Eval (IsJust (Eval (GetPieceAt TestBoard (At "a" 2))))) (ID "yes") (ID "no")) = "no"
 data If :: Bool -> Exp b -> Exp b -> Exp b
 type instance Eval (If 'True thenDo elseDo) = Eval thenDo
 type instance Eval (If 'False  thenDo elseDo) = Eval elseDo
+
+-- :kind! Eval (MaybeIf IsValidColumn (Just "a")) = 'True
+-- :kind! Eval (MaybeIf IsValidColumn (Just "z")) = 'False
+data MaybeIf :: (a -> Exp Bool) -> Maybe a -> Exp Bool
+type instance Eval (MaybeIf p Nothing)  = False
+type instance Eval (MaybeIf p (Just x)) = Eval (p x)
 
 data IsJust :: Maybe a -> Exp Bool
 type instance Eval (IsJust (Just _)) = True
@@ -216,8 +224,14 @@ data Position where
 
 type ValidColumns = "a" :-> "b" :-> "c" :-> "d" :-> "e" :-> "f" :-> "g" :<> "h"
 
-type family ValidColumn (row :: Symbol) :: Maybe Symbol where
-    ValidColumn x = Eval (If (Elem x ValidColumns) (ID (Just x)) (ID Nothing))
+-- type family ValidColumn (row :: Symbol) :: Maybe Symbol where
+--     ValidColumn x = Eval (If (Elem x ValidColumns) (ID (Just x)) (ID Nothing))
+
+data ValidColumn :: Symbol -> Exp (Maybe Symbol)
+type instance Eval (ValidColumn x) = Eval (If (Elem x ValidColumns) (ID (Just x)) (ID Nothing))
+
+data IsValidColumn :: Symbol -> Exp Bool
+type instance Eval (IsValidColumn x) = Eval (IsJust (Eval (ValidColumn x)))
 
 -- Custom Nat class, to allow pattern matching on Nat > 2
 data MyNat where
@@ -240,7 +254,7 @@ type family NatToMyNatNonFCF (n :: Nat) :: MyNat where
 data (:+) :: MyNat -> Symbol -> Exp (Maybe Symbol)
 data (:-) :: MyNat -> Symbol -> Exp (Maybe Symbol)
 
-type instance Eval ((:+) Z         col) = ValidColumn col
+type instance Eval ((:+) Z         col) = Eval (ValidColumn col)
 type instance Eval ((:+) (S Z)     "a") = Just "b"
 type instance Eval ((:+) (S Z)     "b") = Just "c"
 type instance Eval ((:+) (S Z)     "c") = Just "d"
@@ -251,7 +265,7 @@ type instance Eval ((:+) (S Z)     "g") = Just "h"
 type instance Eval ((:+) (S Z)     "h") = Nothing
 type instance Eval ((:+) (S (S n)) col) = Eval (Bind ((:+) (S n)) (Eval ((:+) (S Z) col)))
 
-type instance Eval ((:-) Z         col) = ValidColumn col
+type instance Eval ((:-) Z         col) = Eval (ValidColumn col)
 type instance Eval ((:-) (S Z)     "a") = Nothing
 type instance Eval ((:-) (S Z)     "b") = Just "a"
 type instance Eval ((:-) (S Z)     "c") = Just "b"
@@ -268,14 +282,6 @@ type TestPosition = At "a" 1  -- i.e. bottom left
 type TestPiece    = MkPiece Black Pawn (Info Z TestPosition)
 type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :<> EmptyRow
-type TestBoard2   = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :-> EmptyRow
                     :-> EmptyRow
                     :-> EmptyRow
