@@ -328,6 +328,9 @@ type family ColToIndex (col :: Symbol) :: Maybe Nat where
 data GetPieceAt :: Board -> Position -> Exp (Maybe Piece)
 type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CW (!!)) <$> (Eval (board !! (Eval (NatToMyNat (row - 1))))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
 
+data IsPieceAt :: Board -> Position -> Exp Bool
+type instance Eval (IsPieceAt board pos) = Eval (IsJust (Eval (GetPieceAt board pos)))
+
 data IsBlack :: Piece -> Exp Bool
 type instance Eval (IsBlack (MkPiece team _ _)) = Eval (team :==: Black)
 
@@ -355,6 +358,12 @@ type instance Eval (PieceCanMoveTo (MkPiece Black Queen info) board)  = TypeErro
 type instance Eval (PieceCanMoveTo (MkPiece White Queen info) board)  = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece Black King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece White King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
+
+-- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
+-- TODO: Handle moves that can move multiple pieces (e.g. castling)
+-- TODO: Move the piece/pieces, update those pieces' position info, 
+data Move :: Position -> Board -> Exp (Maybe Board)
+type instance Eval (Move pos board) = TypeError (Text "Not implemented!")
 
 getPieceAtTest1 :: Proxy (Just TestPiece)
 getPieceAtTest1 = Proxy @(Eval (GetPieceAt TestBoard (At "a" 1)))
