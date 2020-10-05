@@ -126,13 +126,13 @@ type instance Eval (Const a _) = a
 -----------------------------------------------------------------------------------------------
 
 -- FIXME: a -> Vec n -> Vec (n + 1) a causes issues. Why??
-data Vec (n :: Nat) (a :: Type) where
-    VEnd   :: Vec 0 a
-    (:->)  :: a -> Vec (n - 1) a -> Vec n a
+data Vec (n :: MyNat) (a :: Type) where
+    VEnd   :: Vec Z a
+    (:->)  :: a -> Vec n a -> Vec (S n) a
 infixr 4 :->
 
 -- Helper type family, to avoid the (:-> VEnd) bit.
-type family (:<>) (x :: a) (y :: a) :: Vec 2 a where
+type family (:<>) (x :: a) (y :: a) :: Vec (S (S Z)) a where
     x :<> y = x :-> y :-> VEnd
 infixr 5 :<>
 
@@ -148,6 +148,9 @@ type instance Eval (VecToList VEnd)       = '[]
 -- -- This type checks - so clearly something's happening. What??
 -- x :: Proxy VEnd
 -- x = Proxy @(Eval (ListToVec '[]))
+
+-- data ListToVec :: [a] -> Exp (Vec n a)
+-- type instance Eval (ListToVec xs) = Eval (ListToVecHelper xs (MyNatToSNat (Eval (MyNatLength xs))))
 
 -- Membership checking for vectors
 type family Elem (x :: a) (ys :: Vec n a) :: Bool where
@@ -185,14 +188,18 @@ type instance Eval (Length '[])        = 0
 type instance Eval (Length (x ': xs))  = 1 + Eval (Length xs)
 
 -- TODO: FilterMap instance for vectors??
-data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> t a -> Exp (t b)
-type instance Eval (FilterMap p f (x ': xs)) = Eval (If (Eval (p x)) (ID (Eval (f x) ': Eval (FilterMap p f xs))) (FilterMap p f xs))
-type instance Eval (FilterMap p f '[])       = '[]
+data LFilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> [a] -> Exp [b]
+type instance Eval (LFilterMap p f (x ': xs)) = Eval (If (Eval (p x)) (ID (Eval (f x) ': Eval (LFilterMap p f xs))) (LFilterMap p f xs))
+type instance Eval (LFilterMap p f '[])       = '[]
+
+data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> Vec n a -> Exp (Vec m b)
+-- type instance Eval (FilterMap p f xs) = 
 
 data Filter :: (a -> Exp Bool) -> t a -> Exp (t b)
 
 -- Type synonym for an 8x8 grid
-type Grid8x8 = Vec 8 (Vec 8 (Maybe Piece))
+type Eight = S (S (S (S (S (S (S (S Z)))))))
+type Grid8x8 = Vec Eight (Vec Eight (Maybe Piece))
 
 -- TODO: Dimensions of board in type??
 type Board = Grid8x8
@@ -315,21 +322,21 @@ type family ColToIndex (col :: Symbol) :: Maybe Nat where
 data GetPieceAt :: Board -> Position -> Exp (Maybe Piece)
 type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CW (!!)) <$> (Eval (board !! (Eval (NatToMyNat (row - 1))))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
 
-data IsBlack :: Piece -> Exp (Bool)
+data IsBlack :: Piece -> Exp Bool
 type instance Eval (IsBlack (MkPiece team _ _)) = Eval (team :==: Black)
 
-data IsWhite :: Piece -> Exp (Bool)
+data IsWhite :: Piece -> Exp Bool
 type instance Eval (IsWhite (MkPiece team _ _)) = Eval (team :==: White)
 
 -- TODO: Figure out how to handle the side effects of moves (e.g. taking a piece, castling, replacing a piece with another)
 -- TODO: Maybe represent the boards that the piece can move to? A new function, MovePiece, which handles any side effects??
 -- Returns an empty vector if the board is empty at that position!
-data CalculateValidMoves :: Position -> Board -> Exp (Vec n Position)
-type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe VEnd ((Flip PieceCanMoveTo) board) (Eval (GetPieceAt board pos)))
+data CalculateValidMoves :: Position -> Board -> Exp [Position]
+type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe '[] ((Flip PieceCanMoveTo) board) (Eval (GetPieceAt board pos)))
 
 -- TODO: Write instances for each team x piece, e.g. White Pawn, Black Knight, ...
 -- TODO: Check that the piece's reported position is its' actual position
-data PieceCanMoveTo :: Piece -> Board -> Exp (Vec n Position)
+data PieceCanMoveTo :: Piece -> Board -> Exp [Position]
 type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece White Pawn info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece Black Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
@@ -375,10 +382,33 @@ data MyNatLength :: [a] -> Exp MyNat
 type instance Eval (MyNatLength '[]) = Z
 type instance Eval (MyNatLength (x ': xs)) = S (Eval (MyNatLength xs))
 
+type family MyNatLength2 (xs :: [a]) :: MyNat where
+    MyNatLength2 '[] = Z
+    MyNatLength2 (x ': xs) = S (MyNatLength2 xs)
+
+type family SLength (xs :: [a]) :: SNat n where
+    SLength xs = MyNatToSNat (MyNatLength2 xs)
+    -- SLength '[] = SZ
+    -- SLength (x ': xs) = SS (SLength xs)
+
+-- type family SLength (xs :: [a]) :: SNat n
+-- type instance SLength xs = MyNatToSNat (MyNatLength2 xs)
+
 -- TODO: Introduce safety for when you give the wrong length??
 data ListToVectorHelper :: [a] -> SNat n -> Exp (Vector n a)
 type instance Eval (ListToVectorHelper '[] SZ) = VNil
 type instance Eval (ListToVectorHelper (x ': xs) (SS n)) = x :+> Eval (ListToVectorHelper xs n)
+
+-- data ListToVecHelper :: [a] -> SNat n -> Exp (Vec n a)
+-- type instance Eval (ListToVecHelper '[] SZ) = VEnd
+-- type instance Eval (ListToVecHelper (x ': xs) (SS n)) = x :-> Eval (ListToVecHelper xs n)
+
+type family ListToVecHelper (xs :: [a]) (n :: SNat m) :: Vec m a where
+    ListToVecHelper '[] SZ = VEnd
+    ListToVecHelper (x ': xs) (SS n) = x :-> ListToVecHelper xs n
+
+type family ListToVec (xs :: [a]) :: Vec n a where
+    ListToVec xs = ListToVecHelper xs (SLength xs)
 
 -- -- FIXME: The below cause type errors, but ListToVectorHelper works if you put in the RHS manually.
 -- data ListToVector :: [a] -> Exp (Vector n a)
