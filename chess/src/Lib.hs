@@ -205,7 +205,9 @@ type instance Eval (FilterMap p f (x ': xs)) = Eval (If (Eval (p x)) (ID (Eval (
 type instance Eval (FilterMap p f '[])       = '[]
 
 -- TODO: Kind-polymorphic Filter instances??
-data Filter :: (a -> Exp Bool) -> t a -> Exp (t b)
+data Filter :: (a -> Exp Bool) -> [a] -> Exp [a]
+type instance Eval (Filter p '[]) = '[]
+type instance Eval (Filter p (x ': xs)) = Eval (If (Eval (p x)) (ID (x ': Eval (Filter p xs))) (Filter p xs))
 
 -- Type synonym for an 8x8 grid
 type Eight = S (S (S (S (S (S (S (S Z)))))))
@@ -262,6 +264,20 @@ type instance Eval (IsValidRow x) = Eval (If (Elem x ValidRows) (ID True) (ID Fa
 
 data IsValidPosition :: Position -> Exp Bool
 type instance Eval (IsValidPosition (At col row)) = Eval ((Eval (IsValidColumn col)) :&&: (IsValidRow row))
+
+-- -- FIXME: This can go out of bounds, and cause an evaluation problem (nats cannot go below 0)
+-- data GetNBelow :: Position -> MyNat -> Exp [Position]
+-- type instance Eval (GetNBelow p n) = Eval (Filter IsValidPosition (Eval (GetNBelowNoChecks p n)))
+
+-- data GetNBelowNoChecks :: Position -> MyNat -> Exp [Position]
+-- type instance Eval (GetNBelowNoChecks (At col row) Z)     = '[]
+-- type instance Eval (GetNBelowNoChecks (At col row) (S n)) = (At col (row - (Eval (MyNatToNat (S n))))) ': Eval (GetNBelowNoChecks (At col row) n)
+
+data GetTwoBelow :: Position -> Exp [Position]
+type instance Eval (GetTwoBelow (At col row)) = Eval (Filter IsValidPosition [At col (row - 1), At col (row - 2)])
+
+data GetTwoAbove :: Position -> Exp [Position]
+type instance Eval (GetTwoAbove (At col row)) = Eval (Filter IsValidPosition [At col (row + 1), At col (row + 2)])
 
 data IsOpposingTeam :: Piece -> Piece -> Exp Bool
 type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece White _ _)) = False
@@ -380,7 +396,7 @@ type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe '[] ((Flip 
 -- TODO: Write instances for each team x piece, e.g. White Pawn, Black Knight, ...
 -- TODO: Check that the piece's reported position is its' actual position
 data PieceCanMoveTo :: Piece -> Board -> Exp [Position]
--- type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) )
+-- type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) () ())
 type instance Eval (PieceCanMoveTo (MkPiece White Pawn info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece Black Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece White Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
