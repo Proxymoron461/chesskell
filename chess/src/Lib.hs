@@ -233,6 +233,9 @@ data PieceName = Pawn
 data PieceInfo where
     Info :: MyNat -> Position -> PieceInfo
 
+data GetMoveCount :: PieceInfo -> Exp MyNat
+type instance Eval (GetMoveCount (Info x _)) = x
+
 -- TODO: Type level char??
 -- Goes column-row, e.g. At "a" 4 means first column from left, 4 up from the bottom, where Black is at the top
 data Position where
