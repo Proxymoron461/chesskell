@@ -169,6 +169,10 @@ type instance Eval (LazyAnd True x)  = Eval x
 data (:&&:) :: Bool -> Exp Bool -> Exp Bool
 type instance Eval (x :&&: y) = Eval (LazyAnd x y)
 
+data Not :: Bool -> Exp Bool
+type instance Eval (Not True)  = False
+type instance Eval (Not False) = True
+
 data Any :: (a -> Exp Bool) -> Vec n a -> Exp Bool
 type instance Eval (Any p VEnd)       = False
 type instance Eval (Any p (x :-> xs)) = Eval (Eval (p x) :||: Any p xs)
@@ -232,6 +236,15 @@ type instance Eval (ValidColumn x) = Eval (If (Elem x ValidColumns) (ID (Just x)
 
 data IsValidColumn :: Symbol -> Exp Bool
 type instance Eval (IsValidColumn x) = Eval (IsJust (Eval (ValidColumn x)))
+
+data IsOpposingTeam :: Piece -> Piece -> Exp Bool
+type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece White _ _)) = False
+type instance Eval (IsOpposingTeam (MkPiece Black _ _) (MkPiece Black _ _)) = False
+type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece Black _ _)) = True
+type instance Eval (IsOpposingTeam (MkPiece Black _ _) (MkPiece White _ _)) = True
+
+data IsSameTeam :: Piece -> Piece -> Exp Bool
+type instance Eval (IsSameTeam p1 p2) = Eval (Not (Eval (IsOpposingTeam p1 p2)))
 
 -- Custom Nat class, to allow pattern matching on Nat > 2
 data MyNat where
