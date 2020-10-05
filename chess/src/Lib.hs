@@ -18,6 +18,8 @@ type family Eval (e :: Exp a) :: a
 data ID :: a -> Exp a
 type instance Eval (ID x) = x
 
+-- :kind! Eval ((Not . IsZero) (S Z)) = True
+-- :kind! Eval ((Not . IsZero) Z) = False
 data (.) :: (b -> Exp c) -> (a -> Exp b) -> a -> Exp c
 type instance Eval ((.) g f x) = Eval (g (Eval (f x)))
 infixr 6 .
@@ -116,6 +118,9 @@ data IsJust :: Maybe a -> Exp Bool
 type instance Eval (IsJust (Just _)) = True
 type instance Eval (IsJust Nothing)  = False
 
+data IsNothing :: Maybe a -> Exp Bool
+type instance Eval (IsNothing x) = Eval ((Not . IsJust) x)
+
 data FromJust :: Maybe a -> Exp a
 type instance Eval (FromJust (Just x)) = x
 
@@ -128,6 +133,13 @@ type instance Eval (FromMaybe b f (Just x)) = Eval (f x)
 
 data Const :: a -> b -> Exp a
 type instance Eval (Const a _) = a
+
+
+-- :kind! Eval (Holds [IsJust, MaybeIf IsZero] (Just Z)) = 'True
+-- :kind! Eval (Holds [IsJust, MaybeIf IsZero] (Just (S Z))) = 'False
+data Holds :: [a -> Exp Bool] -> a -> Exp Bool
+type instance Eval (Holds '[] x)       = True
+type instance Eval (Holds (f ': fs) x) = Eval ((Eval (f x)) :&&: (Holds fs x))
 
 
 -----------------------------------------------------------------------------------------------
@@ -251,6 +263,10 @@ data MyNat where
     Z :: MyNat
     S :: MyNat -> MyNat
 
+data IsZero :: MyNat -> Exp Bool
+type instance Eval (IsZero Z)     = True
+type instance Eval (IsZero (S n)) = False
+
 data MyNatToNat :: MyNat -> Exp Nat
 type instance Eval (MyNatToNat Z)     = 0
 type instance Eval (MyNatToNat (S n)) = 1 + (Eval (MyNatToNat n))
@@ -361,7 +377,8 @@ type instance Eval (PieceCanMoveTo (MkPiece White King info) board)   = TypeErro
 
 -- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
 -- TODO: Handle moves that can move multiple pieces (e.g. castling)
--- TODO: Move the piece/pieces, update those pieces' position info, 
+-- TODO: Handle takes (i.e. moves that remove pieces from play)
+-- TODO: Move the piece/pieces, update those pieces' position info,
 data Move :: Position -> Board -> Exp (Maybe Board)
 type instance Eval (Move pos board) = TypeError (Text "Not implemented!")
 
