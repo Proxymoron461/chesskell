@@ -81,11 +81,15 @@ Of course, the specific error and relevant information will depend on the exact 
 
 \subsection{Resources}
 
+Developing this program requires a computer (and Operating System) which can run the latest version of GHC (8.10.2, at the time of writing). Luckily, it runs on most Linux distributions, as well as Windows and MacOS. In other words, it runs on almost all consumer-grade PCs, and so luckily development is unlikely to be a problem. Additionally, the development environment will be the same as the "production" environment; it is a tool designed for those involved in the compilation process.
+
+The only other thing required is a set of the rules for chess; there are many rulesets, casual or otherwise. The project will use the FIDE official ruleset, because it gives comprehensive, detailed rules that are widely used \footnote{It also includes rules for the players themselves, but these meta-rules are beyond the scope of the project.}.
+
 \subsection{Risks}
 
 The biggest risk with this project is that it is unachievable. Haskell's type-level computations are limited in scope, and other languages (such as Idris) have fully dependent types and so can express things at the type-level that Haskell may simply not be able to yet.
 
-Should this be the case, I will attempt the project in a fully dependently-typed language, such as Idris; and if even that should fail, then there will be lots of work done on implementing a two-player game at the type-level, and will surely be a specific reason as to why it is impossible. Future research could then build on this foundation, attempting to find ways around this individual problem.
+Should this be the case, the project will be re-attempted in a fully dependently-typed language, such as Idris; and if even that should fail, then there will be lots of work done on implementing a two-player game at the type-level, and will surely be a specific reason as to why it is impossible. Future research could then build on this foundation, attempting to find ways around this individual problem.
 
 There are, of course, other risks not associated with the project; in 2020, there is a large-scale pandemic going on, which could pose considerable personal risk. However, by following Government and University guidelines, the chances of contracting COVID-19 will be kept to a minimum, and hopefully the project will not be interrupted by sudden illness.
 
