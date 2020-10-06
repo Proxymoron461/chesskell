@@ -1,6 +1,7 @@
 \documentclass[12pt, a4paper]{scrartcl}
 \usepackage[utf8]{inputenc}
 \usepackage{hyperref}
+\usepackage{listings}
 
 \title{Chesskell: Embedding a Two-Player Game in Haskell's type system}
 \subtitle{3rd Year Project Specification}
@@ -34,9 +35,11 @@ Chess is for two players/teams, who are denoted Black and White after the colour
 
 The term "game" is rather loose, and encompasses many physical actions and software programs. Chess is complex, has a win condition, and involves multiple players; modelling it at the type-level is a challenge, and would prove that type-level computation is fit for eliminating certain errors in video games.
 
-This type-level model will be interacted with via a Haskell-embedded DSL, for describing games of chess. This EDSL will be modelled on Algebraic Notation, a method of writing down the moves associated with a particular match of chess.
+This type-level model will be interacted with via a Haskell-embedded Domain-Specific Language (DSL), for describing games of chess. This Embedded DSL (EDSL) will be modelled on Algebraic Notation, a method of writing down the moves associated with a particular match of chess.
 
 The resulting program will take in as input a Haskell source file, describing one (or more) matches of chess in the EDSL. This file will be compiled, and in doing so, the type-level model of chess will be compared against the game described by the EDSL, and the compilation will fail if the described game breaks the International Chess Federation (FIDE) rules of chess.
+
+The success of this project will be gauged against a data set of chess games, expressed via the EDSL; many of which will be incorrect and break the rules of chess in one way or another. The final program must successfully compile the games which do not break the rules, and must fail to compile those which break them.
 
 \section{Project Requirements}
 
@@ -57,6 +60,19 @@ The below list splits the requirements into \emph{Functional} and \emph{Non-Func
 
 \subsection{Evaluation and Testing}
 
+As noted earlier, the final project's success will be evaluated against a curated data set of chess games. However, binary success is not the only helpful metric; the final project must compile within a reasonable time, and must output helpful errors that explain the chess rule which was broken, in the case of failure.
+
+Compiling within a "reasonable time" is nebulous; if the program compiles within 5 minutes on a consumer-grade laptop, then it will be enough. Additionally, the errors must specify the exact move which breaks the rule, which piece broke it, and the way in which the rule was broken.
+
+For example, "Error - broken rule" is unacceptable, and should be replaced with something more akin to the following:
+
+\begin{lstlisting}
+Error on move 6:
+    Black Pawn has moved to d4, but it can only move to: d5, d6.
+\end{lstlisting}
+
+Of course, the specific error and relevant information will depend on the exact rule broken; but error messages which point to the exact transgression are \emph{always} helpful.
+
 \section{Timetable/Plan}
 
 % TODO: Follow MG's advice and get that timetable going in 2 week chunks. Maybe a nice graph? Ask BL.
@@ -67,6 +83,16 @@ The below list splits the requirements into \emph{Functional} and \emph{Non-Func
 
 \subsection{Risks}
 
+The biggest risk with this project is that it is unachievable. Haskell's type-level computations are limited in scope, and other languages (such as Idris) have fully dependent types and so can express things at the type-level that Haskell may simply not be able to yet.
+
+Should this be the case, I will attempt the project in a fully dependently-typed language, such as Idris; and if even that should fail, then there will be lots of work done on implementing a two-player game at the type-level, and will surely be a specific reason as to why it is impossible. Future research could then build on this foundation, attempting to find ways around this individual problem.
+
+There are, of course, other risks not associated with the project; in 2020, there is a large-scale pandemic going on, which could pose considerable personal risk. However, by following Government and University guidelines, the chances of contracting COVID-19 will be kept to a minimum, and hopefully the project will not be interrupted by sudden illness.
+
+Planning out the project, as above, to account for other deadlines and busy periods during University life should also help mitigate the risk of delaying the project.
+
 \subsection{Ethical Considerations}
+
+As this project is undertaken alone, with no involvement from third parties (aside from the project supervisor), there are no additional legal, professional, or ethical considerations to consider. There will be no personal data processing, and no pre-existing Haskell type-level chess implementation to plagiarise.
 
 \end{document}
