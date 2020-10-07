@@ -137,6 +137,7 @@ type instance Eval (Const a _) = a
 
 -- :kind! Eval (Holds [IsJust, MaybeIf IsZero] (Just Z)) = 'True
 -- :kind! Eval (Holds [IsJust, MaybeIf IsZero] (Just (S Z))) = 'False
+-- Applies a list of predicates to a value, and only passes if all the predicates are true.
 data Holds :: [a -> Exp Bool] -> a -> Exp Bool
 type instance Eval (Holds '[] x)       = True
 type instance Eval (Holds (f ': fs) x) = Eval ((Eval (f x)) :&&: (Holds fs x))
@@ -369,6 +370,29 @@ type instance Eval (IsOpposingTeam (MkPiece Black _ _) (MkPiece White _ _)) = Tr
 
 data IsSameTeam :: Piece -> Piece -> Exp Bool
 type instance Eval (IsSameTeam p1 p2) = Eval ((Not . (IsOpposingTeam p1)) p2)
+
+data HasTeam :: Team -> Piece -> Exp Bool
+type instance Eval (HasTeam White (MkPiece White _ _)) = True
+type instance Eval (HasTeam Black (MkPiece Black _ _)) = True
+type instance Eval (HasTeam White (MkPiece Black _ _)) = False
+type instance Eval (HasTeam Black (MkPiece White _ _)) = False
+
+-- Type families for getting all available squares in a straight line, with nothing in the way
+-- TODO: Make similar families for Right, Above, and Below
+data GetReachableLeft :: Team -> Board -> Position -> Exp [Position]
+type instance Eval (GetReachableLeft team board pos) = Eval (TakeWhilePlus (Not . (IsPieceAt board)) ((MaybeIf (Not . (HasTeam team))) . (GetPieceAt board)) (Eval (GetAllLeft pos)))
+
+getReachableLeftTest1 :: Proxy '[ At "c" 2, At "b" 2, At "a" 2]
+getReachableLeftTest1 = Proxy @(Eval (GetReachableLeft Black TestBoard2 (At "d" 2)))
+getReachableLeftTest2 :: Proxy '[ At "c" 2, At "b" 2]
+getReachableLeftTest2 = Proxy @(Eval (GetReachableLeft White TestBoard2 (At "d" 2)))
+getReachableLeftTest3 :: Proxy '[ At "b" 1, At "a" 1]
+getReachableLeftTest3 = Proxy @(Eval (GetReachableLeft White TestBoard (At "c" 1)))
+getReachableLeftTest4 :: Proxy '[ At "b" 1 ]
+getReachableLeftTest4 = Proxy @(Eval (GetReachableLeft Black TestBoard (At "c" 1)))
+-- -- FIXME: :kind! Eval (GetReachableLeft Black TestBoard (At "a" 5)) = '[], but the below doesn't reduce when compiling??
+-- getReachableLeftTest5 :: Proxy '[]
+-- getReachableLeftTest5 = Proxy @(Eval (GetReachableLeft Black TestBoard (At "a" 1)))
 
 -- Custom Nat class, to allow pattern matching on Nat > 2
 data MyNat where
