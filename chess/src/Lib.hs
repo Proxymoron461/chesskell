@@ -360,6 +360,16 @@ type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Noth
                     :-> EmptyRow
                     :<> EmptyRow
 
+type TestWhitePawn = MkPiece White Pawn (Info Z (At "a" 2))
+type TestBoard2   = EmptyRow
+                    :-> (Just TestWhitePawn :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
+                    :-> EmptyRow
+                    :-> EmptyRow
+                    :-> EmptyRow
+                    :-> EmptyRow
+                    :-> EmptyRow
+                    :<> EmptyRow
+
 -- When using Maybes, this returns another maybe!
 -- :kind! Eval (VecAt TestBoard Z) :: Maybe (Vec 8 (Maybe Piece))
 -- data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
@@ -407,8 +417,8 @@ type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe '[] ((Flip 
 -- TODO: Write instances for each team x piece, e.g. White Pawn, Black Knight, ...
 -- TODO: Check that the piece's reported position is its' actual position
 data PieceCanMoveTo :: Piece -> Board -> Exp [Position]
--- type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) () ())
-type instance Eval (PieceCanMoveTo (MkPiece White Pawn info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStart (MkPiece Black Pawn info) board) (TypeError (Text "Not implemented non-starting pawn code yet!")))
+type instance Eval (PieceCanMoveTo (MkPiece White Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStart (MkPiece White Pawn info) board) (TypeError (Text "Not implemented non-starting pawn code yet!")))
 type instance Eval (PieceCanMoveTo (MkPiece Black Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece White Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece Black Knight info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
@@ -420,6 +430,13 @@ type instance Eval (PieceCanMoveTo (MkPiece White Queen info) board)  = TypeErro
 type instance Eval (PieceCanMoveTo (MkPiece Black King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece White King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 
+-- Type family for where a pawn can move when it is in its' starting position.
+-- TODO: Take into account that a pawn can take from here! Check those diagonals
+data PawnStart :: Piece -> Board -> Exp [Position]
+type instance Eval (PawnStart (MkPiece Black Pawn info) board) = Eval (GetFreePositions (Eval (GetTwoBelow (Eval (GetPosition info)))) board)
+type instance Eval (PawnStart (MkPiece White Pawn info) board) = Eval (GetFreePositions (Eval (GetTwoAbove (Eval (GetPosition info)))) board)
+
+-- Type family for actually moving the piece, and handling the side effects.
 -- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
 -- TODO: Handle moves that can move multiple pieces (e.g. castling)
 -- TODO: Handle takes (i.e. moves that remove pieces from play)
@@ -437,6 +454,9 @@ getPieceAtTest2 = Proxy @(Eval (Join (Eval (Bind ((Flip (!!)) (Eval (NatToMyNat 
 -- :kind! VecAt (Z :<> (S Z)) :: MyNat -> Exp (Maybe MyNat)
 getPieceAtTest3 :: Proxy (Just Z)
 getPieceAtTest3 = Proxy @(Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z))))
+
+pieceCanMoveToWhitePawnTest :: Proxy ( '[ At "a" 3, At "a" 4 ] )
+pieceCanMoveToWhitePawnTest = Proxy @(Eval (PieceCanMoveTo TestWhitePawn TestBoard2))
 
 -----------------------------------------------------------------------------------------------
 
