@@ -242,15 +242,15 @@ data GetPosition :: PieceInfo -> Exp Position
 type instance Eval (GetPosition (Info _ x)) = x
 
 data PieceMoveCount :: Piece -> Exp MyNat
-type instance Eval (PieceMoveCount (MkPiece _ _ info)) = GetMoveCount info
+type instance Eval (PieceMoveCount (MkPiece _ _ info)) = Eval (GetMoveCount info)
 
 data PiecePosition :: Piece -> Exp Position
-type instance Eval (PiecePosition (MkPiece _ _ info)) = GetPosition info
+type instance Eval (PiecePosition (MkPiece _ _ info)) = Eval (GetPosition info)
 
 data PieceTeam :: Piece -> Exp Team
 type instance Eval (PieceTeam (MkPiece team _ _)) = team
 
-data PieceType :: Piece -> Exp Team
+data PieceType :: Piece -> Exp PieceName
 type instance Eval (PieceType (MkPiece _ name _)) = name
 
 -- TODO: Type level char??
@@ -277,13 +277,21 @@ type instance Eval (IsValidRow x) = Eval (If (Elem x ValidRows) (ID True) (ID Fa
 data IsValidPosition :: Position -> Exp Bool
 type instance Eval (IsValidPosition (At col row)) = Eval ((Eval (IsValidColumn col)) :&&: (IsValidRow row))
 
--- -- FIXME: This can go out of bounds, and cause an evaluation problem (nats cannot go below 0)
--- data GetNBelow :: Position -> MyNat -> Exp [Position]
--- type instance Eval (GetNBelow p n) = Eval (Filter IsValidPosition (Eval (GetNBelowNoChecks p n)))
+-- Generates a range between two values, non-inclusive of the first argument
+data RangeBetween :: Nat -> Nat -> Exp [Nat]
+type instance Eval (RangeBetween n m) = Eval (RangeBetweenHelper n m (CmpNat n m))
 
--- data GetNBelowNoChecks :: Position -> MyNat -> Exp [Position]
--- type instance Eval (GetNBelowNoChecks (At col row) Z)     = '[]
--- type instance Eval (GetNBelowNoChecks (At col row) (S n)) = (At col (row - (Eval (MyNatToNat (S n))))) ': Eval (GetNBelowNoChecks (At col row) n)
+data RangeBetweenHelper :: Nat -> Nat -> Ordering -> Exp [Nat]
+type instance Eval (RangeBetweenHelper n m LT) = (n + 1) ': (Eval (RangeBetweenHelper (n + 1) m (CmpNat (n + 1) m)))
+type instance Eval (RangeBetweenHelper n m EQ) = '[]
+type instance Eval (RangeBetweenHelper n m GT) = (n - 1) ': (Eval (RangeBetweenHelper (n - 1) m (CmpNat (n - 1) m)))
+
+-- TODO: Type family for getting all the ones below that are free in a straight line!
+data GetAllBelow :: Position -> Exp [Position]
+type instance Eval (GetAllBelow (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row 0)))))
+
+data GetNBelow :: Nat -> Position -> Exp [Position]
+type instance Eval (GetNBelow n (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row (row - n))))))
 
 data GetTwoBelow :: Position -> Exp [Position]
 type instance Eval (GetTwoBelow pos) = Eval (Filter IsValidPosition (Eval (GetTwoBelowNoChecks pos)))
@@ -444,6 +452,7 @@ type instance Eval (PieceCanMoveTo (MkPiece White King info) board)   = TypeErro
 
 -- Type family for where a pawn can move when it is in its' starting position.
 -- TODO: Take into account that a pawn can take from here! Check those diagonals
+-- FIXME: This would allow a pawn to leap over another piece - to move two spaces, the one directly in front of it must be free
 data PawnStart :: Piece -> Board -> Exp [Position]
 type instance Eval (PawnStart (MkPiece Black Pawn info) board) = Eval (GetFreePositions (Eval (GetTwoBelow (Eval (GetPosition info)))) board)
 type instance Eval (PawnStart (MkPiece White Pawn info) board) = Eval (GetFreePositions (Eval (GetTwoAbove (Eval (GetPosition info)))) board)
