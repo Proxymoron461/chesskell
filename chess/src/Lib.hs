@@ -33,6 +33,8 @@ data CurryWrap :: (a -> b) -> a -> Exp b
 type instance Eval (CurryWrap f a) = f a
 data CW :: (a -> b) -> a -> Exp b
 type instance Eval (CW f a) = Eval (CurryWrap f a)
+data CW2 :: (a -> b -> c) -> a -> b -> Exp c
+type instance Eval (CW2 f a b) = f a b
 
 -- Curry-able add function!
 data Add :: Nat -> Nat -> Exp Nat
@@ -219,6 +221,12 @@ data TakeWhilePlus :: (a -> Exp Bool) -> (a -> Exp Bool) -> [a] -> Exp [a]
 type instance Eval (TakeWhilePlus p q '[]) = '[]
 type instance Eval (TakeWhilePlus p q (x ': xs)) = Eval (If (Eval (p x)) (ID (x ': Eval (TakeWhilePlus p q xs))) (If (Eval (q x)) (ID '[ x ]) (ID '[])))
 
+-- :kind! Eval (ZipWith '["a", "b"] '[1, 2] (CW2 At)) = '[ 'At "a" 1, 'At "b" 2]
+data ZipWith :: [a] -> [b] -> (a -> b -> Exp c) -> Exp [c]
+type instance Eval (ZipWith '[] _ _) = '[]
+type instance Eval (ZipWith _ '[] _) = '[]
+type instance Eval (ZipWith (x ': xs) (y ': ys) f) = Eval (f x y) ': Eval (ZipWith xs ys f)
+
 -- Type synonym for an 8x8 grid
 type Eight = S (S (S (S (S (S (S (S Z)))))))
 type Grid8x8 = Vec Eight (Vec Eight (Maybe Piece))
@@ -299,13 +307,33 @@ type instance Eval (RangeBetweenHelper n m GT) = (n - 1) ': (Eval (RangeBetweenH
 data RangeBetweenMyNat :: Nat -> Nat -> Exp [MyNat]
 type instance Eval (RangeBetweenMyNat n m) = Eval (Map NatToMyNat (Eval (RangeBetween n m)))
 
--- -- Generates a range between two Char values, non-inclusive of the first argument
--- -- It will only go from lowercase "a" to lowercase "z"
--- -- TODO: Is this worth it??
--- data CharRangeBetween :: Symbol -> Symbol -> Exp [Symbol]
--- type instance Eval (CharRangeBetween a b) = 
+-- Generates a range between two Char values, non-inclusive of the first argument
+-- It will only go from lowercase "a" to lowercase "z"
+-- TODO: Is this worth it??
+data CharRangeBetween :: Symbol -> Symbol -> Exp [Symbol]
+type instance Eval (CharRangeBetween a b) = Eval (CharRangeBetweenHelper a b (CmpSymbol a b))
 
--- TODO: Type family for getting all the ones below that are free in a straight line!
+data CharRangeBetweenHelper :: Symbol -> Symbol -> Ordering -> Exp [Symbol]
+type instance Eval (CharRangeBetweenHelper a b LT) = Eval (TakeWhile (CharLessThan b) (Eval (Map FromJust (Eval (Filter IsJust (Eval (Map ((Flip (:+)) a) (Eval (RangeBetweenMyNat 0 8)))))))))
+type instance Eval (CharRangeBetweenHelper a b EQ) = '[]
+type instance Eval (CharRangeBetweenHelper a b GT) = Eval (TakeWhile (CharGreaterThan b) (Eval (Map FromJust (Eval (Filter IsJust (Eval (Map ((Flip (:-)) a) (Eval (RangeBetweenMyNat 0 8)))))))))
+
+data CharLessThan :: Symbol -> Symbol -> Exp Bool
+type instance Eval (CharLessThan b a) = Eval (IsLTEQ (CmpSymbol a b))
+
+data CharGreaterThan :: Symbol -> Symbol -> Exp Bool
+type instance Eval (CharGreaterThan b a) = Eval (IsGTEQ (CmpSymbol a b))
+
+data IsLTEQ :: Ordering -> Exp Bool
+type instance Eval (IsLTEQ LT) = True
+type instance Eval (IsLTEQ EQ) = True
+type instance Eval (IsLTEQ GT) = False
+
+data IsGTEQ :: Ordering -> Exp Bool
+type instance Eval (IsGTEQ LT) = False
+type instance Eval (IsGTEQ EQ) = True
+type instance Eval (IsGTEQ GT) = True
+
 data GetAllBelow :: Position -> Exp [Position]
 type instance Eval (GetAllBelow (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row 0)))))
 
@@ -337,11 +365,13 @@ type instance Eval (GetTwoAbove pos) = Eval (GetNAbove 2 pos)
 data GetNRight :: Nat -> Position -> Exp [Position]
 type instance Eval (GetNRight n pos) = Eval (Filter IsValidPosition (Eval (GetNRightPositionsNoChecks n pos)))
 
+-- TODO: Combine with GetNLeftMaybes to achieve DRY?
 data GetNRightMaybes :: Nat -> Position -> Exp [Maybe Symbol]
 type instance Eval (GetNRightMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:+)) col) (Eval (RangeBetweenMyNat 0 n)))))
 
+-- TODO: Combine with GetNLeftPositionsNoChecks to achieve DRY?
 data GetNRightPositionsNoChecks :: Nat -> Position -> Exp [Position]
-type instance Eval (GetNRightPositionsNoChecks n (At col row)) = Eval (Map (((Flip FCFAt) row) . FromJust) (Eval (GetNRightMaybes n (At col row))))
+type instance Eval (GetNRightPositionsNoChecks n (At col row)) = Eval (Map (((Flip (CW2 At)) row) . FromJust) (Eval (GetNRightMaybes n (At col row))))
 
 data GetAllRight :: Position -> Exp [Position]
 type instance Eval (GetAllRight pos) = Eval (GetNRight 8 pos)
@@ -354,13 +384,22 @@ data GetNLeftMaybes :: Nat -> Position -> Exp [Maybe Symbol]
 type instance Eval (GetNLeftMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:-)) col) (Eval (RangeBetweenMyNat 0 n)))))
 
 data GetNLeftPositionsNoChecks :: Nat -> Position -> Exp [Position]
-type instance Eval (GetNLeftPositionsNoChecks n (At col row)) = Eval (Map (((Flip FCFAt) row) . FromJust) (Eval (GetNLeftMaybes n (At col row))))
+type instance Eval (GetNLeftPositionsNoChecks n (At col row)) = Eval (Map (((Flip (CW2 At)) row) . FromJust) (Eval (GetNLeftMaybes n (At col row))))
 
 data GetAllLeft :: Position -> Exp [Position]
 type instance Eval (GetAllLeft pos) = Eval (GetNLeft 8 pos)
 
-data FCFAt :: Symbol -> Nat -> Exp Position
-type instance Eval (FCFAt col row) = At col row
+data GetAllDiagNW :: Position -> Exp [Position]
+type instance Eval (GetAllDiagNW (At col row)) = Eval (ZipWith (Eval (CharRangeBetween col "h")) (Eval (RangeBetween row 8)) (CW2 At))
+
+data GetAllDiagSW :: Position -> Exp [Position]
+type instance Eval (GetAllDiagSW (At col row)) = Eval (ZipWith (Eval (CharRangeBetween col "h")) (Eval (RangeBetween row 1)) (CW2 At))
+
+data GetAllDiagSE :: Position -> Exp [Position]
+type instance Eval (GetAllDiagSE (At col row)) = Eval (ZipWith (Eval (CharRangeBetween col "a")) (Eval (RangeBetween row 1)) (CW2 At))
+
+data GetAllDiagNE :: Position -> Exp [Position]
+type instance Eval (GetAllDiagNE (At col row)) = Eval (ZipWith (Eval (CharRangeBetween col "a")) (Eval (RangeBetween row 8)) (CW2 At))
 
 data IsOpposingTeam :: Piece -> Piece -> Exp Bool
 type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece White _ _)) = False
