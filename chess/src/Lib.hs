@@ -331,7 +331,7 @@ data GetNRightMaybes :: Nat -> Position -> Exp [Maybe Symbol]
 type instance Eval (GetNRightMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:+)) col) (Eval (RangeBetweenMyNat 0 n)))))
 
 data GetNRightPositionsNoChecks :: Nat -> Position -> Exp [Position]
-type instance Eval (GetNRightPositionsNoChecks n (At col row)) = Eval (Map ((Flip FCFAt) row) (Eval (Map FromJust (Eval (GetNRightMaybes n (At col row))))))
+type instance Eval (GetNRightPositionsNoChecks n (At col row)) = Eval (Map (((Flip FCFAt) row) . FromJust) (Eval (GetNRightMaybes n (At col row))))
 
 data GetAllRight :: Position -> Exp [Position]
 type instance Eval (GetAllRight pos) = Eval (GetNRight 8 pos)
@@ -344,7 +344,7 @@ data GetNLeftMaybes :: Nat -> Position -> Exp [Maybe Symbol]
 type instance Eval (GetNLeftMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:-)) col) (Eval (RangeBetweenMyNat 0 n)))))
 
 data GetNLeftPositionsNoChecks :: Nat -> Position -> Exp [Position]
-type instance Eval (GetNLeftPositionsNoChecks n (At col row)) = Eval (Map ((Flip FCFAt) row) (Eval (Map FromJust (Eval (GetNLeftMaybes n (At col row))))))
+type instance Eval (GetNLeftPositionsNoChecks n (At col row)) = Eval (Map (((Flip FCFAt) row) . FromJust) (Eval (GetNLeftMaybes n (At col row))))
 
 data GetAllLeft :: Position -> Exp [Position]
 type instance Eval (GetAllLeft pos) = Eval (GetNLeft 8 pos)
@@ -359,7 +359,7 @@ type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece Black _ _)) = Tr
 type instance Eval (IsOpposingTeam (MkPiece Black _ _) (MkPiece White _ _)) = True
 
 data IsSameTeam :: Piece -> Piece -> Exp Bool
-type instance Eval (IsSameTeam p1 p2) = Eval (Not (Eval (IsOpposingTeam p1 p2)))
+type instance Eval (IsSameTeam p1 p2) = Eval ((Not . (IsOpposingTeam p1)) p2)
 
 -- Custom Nat class, to allow pattern matching on Nat > 2
 data MyNat where
