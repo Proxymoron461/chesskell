@@ -291,21 +291,19 @@ data GetAllBelow :: Position -> Exp [Position]
 type instance Eval (GetAllBelow (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row 0)))))
 
 data GetNBelow :: Nat -> Position -> Exp [Position]
-type instance Eval (GetNBelow n (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row (row - n))))))
+type instance Eval (GetNBelow n (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row (Eval (SafeMinus row n)))))))
+
+-- Takes in x and y, and performs x - y with a lower bound of 0
+data SafeMinus :: Nat -> Nat -> Exp Nat
+type instance Eval (SafeMinus x y) = Eval (SafeMinusHelper x y (CmpNat x y))
+
+data SafeMinusHelper :: Nat -> Nat -> Ordering -> Exp Nat
+type instance Eval (SafeMinusHelper x y LT) = 0
+type instance Eval (SafeMinusHelper x y EQ) = 0
+type instance Eval (SafeMinusHelper x y GT) = x - y
 
 data GetTwoBelow :: Position -> Exp [Position]
-type instance Eval (GetTwoBelow pos) = Eval (Filter IsValidPosition (Eval (GetTwoBelowNoChecks pos)))
-
-data GetTwoBelowNoChecks :: Position -> Exp [Position]
-type instance Eval (GetTwoBelowNoChecks (At col row)) = Eval (Map (CW (At "a")) (Eval (GetTwoBelowRowSafe row)))
-
-data GetTwoBelowRowSafe :: Nat -> Exp [Nat]
-type instance Eval (GetTwoBelowRowSafe n) = Eval (GetTwoBelowHelperMyNat (Eval (NatToMyNat n)))
-
-data GetTwoBelowHelperMyNat :: MyNat -> Exp [Nat]
-type instance Eval (GetTwoBelowHelperMyNat Z) = '[]
-type instance Eval (GetTwoBelowHelperMyNat (S Z)) = '[0]
-type instance Eval (GetTwoBelowHelperMyNat (S (S n))) = '[Eval (MyNatToNat n), Eval (MyNatToNat (S n))]
+type instance Eval (GetTwoBelow pos) = Eval (GetNBelow 2 pos)
 
 data GetTwoAbove :: Position -> Exp [Position]
 type instance Eval (GetTwoAbove (At col row)) = Eval (Filter IsValidPosition [At col (row + 1), At col (row + 2)])
