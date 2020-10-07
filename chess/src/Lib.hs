@@ -336,6 +336,19 @@ type instance Eval (GetNRightPositionsNoChecks n (At col row)) = Eval (Map ((Fli
 data GetAllRight :: Position -> Exp [Position]
 type instance Eval (GetAllRight pos) = Eval (GetNRight 8 pos)
 
+data GetNLeft :: Nat -> Position -> Exp [Position]
+type instance Eval (GetNLeft n pos) = Eval (Filter IsValidPosition (Eval (GetNLeftPositionsNoChecks n pos)))
+
+-- Can reverse with RangeBetweenMyNat (n + 1) 1
+data GetNLeftMaybes :: Nat -> Position -> Exp [Maybe Symbol]
+type instance Eval (GetNLeftMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:-)) col) (Eval (RangeBetweenMyNat 0 n)))))
+
+data GetNLeftPositionsNoChecks :: Nat -> Position -> Exp [Position]
+type instance Eval (GetNLeftPositionsNoChecks n (At col row)) = Eval (Map ((Flip FCFAt) row) (Eval (Map FromJust (Eval (GetNLeftMaybes n (At col row))))))
+
+data GetAllLeft :: Position -> Exp [Position]
+type instance Eval (GetAllLeft pos) = Eval (GetNLeft 8 pos)
+
 data FCFAt :: Symbol -> Nat -> Exp Position
 type instance Eval (FCFAt col row) = At col row
 
