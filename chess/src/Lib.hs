@@ -305,8 +305,14 @@ type instance Eval (SafeMinusHelper x y GT) = x - y
 data GetTwoBelow :: Position -> Exp [Position]
 type instance Eval (GetTwoBelow pos) = Eval (GetNBelow 2 pos)
 
+data GetAllAbove :: Position -> Exp [Position]
+type instance Eval (GetAllAbove (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row 8)))))
+
+data GetNAbove :: Nat -> Position -> Exp [Position]
+type instance Eval (GetNAbove n (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row (row + n))))))
+
 data GetTwoAbove :: Position -> Exp [Position]
-type instance Eval (GetTwoAbove (At col row)) = Eval (Filter IsValidPosition [At col (row + 1), At col (row + 2)])
+type instance Eval (GetTwoAbove pos) = Eval (GetNAbove 2 pos)
 
 data IsOpposingTeam :: Piece -> Piece -> Exp Bool
 type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece White _ _)) = False
