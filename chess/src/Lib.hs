@@ -28,7 +28,6 @@ data Flip :: (a -> b -> Exp c) -> b -> a -> Exp c
 type instance Eval (Flip f b a) = Eval (f a b)
 
 -- Wrapping up a function, so that you can curry it at multiple layers!
--- TODO: If required, allow curry wrapping at multiple layers, for futype (???) = TypeError (Text "Function undefined!")nctions like (a -> b -> c) ??
 data CurryWrap :: (a -> b) -> a -> Exp b
 type instance Eval (CurryWrap f a) = f a
 data CW :: (a -> b) -> a -> Exp b
@@ -227,6 +226,17 @@ type instance Eval (ZipWith '[] _ _) = '[]
 type instance Eval (ZipWith _ '[] _) = '[]
 type instance Eval (ZipWith (x ': xs) (y ': ys) f) = Eval (f x y) ': Eval (ZipWith xs ys f)
 
+data Foldr :: (a -> b -> Exp b) -> b -> [a] -> Exp b
+type instance Eval (Foldr f z '[])       = z
+type instance Eval (Foldr f z (x ': xs)) = Eval (f x (Eval (Foldr f z xs)))
+
+data (++) :: [a] -> [a] -> Exp [a]
+type instance Eval ('[] ++ ys) = ys
+type instance Eval ((x ': xs) ++ ys) = x ': (Eval (xs ++ ys))
+
+data Concat :: [[a]] -> Exp [a]
+type instance Eval (Concat xs) = Eval (Foldr (++) '[] xs)
+
 -- Type synonym for an 8x8 grid
 type Eight = S (S (S (S (S (S (S (S Z)))))))
 type Grid8x8 = Vec Eight (Vec Eight (Maybe Piece))
@@ -309,7 +319,6 @@ type instance Eval (RangeBetweenMyNat n m) = Eval (Map NatToMyNat (Eval (RangeBe
 
 -- Generates a range between two Char values, non-inclusive of the first argument
 -- It will only go from lowercase "a" to lowercase "z"
--- TODO: Is this worth it??
 data CharRangeBetween :: Symbol -> Symbol -> Exp [Symbol]
 type instance Eval (CharRangeBetween a b) = Eval (CharRangeBetweenHelper a b (CmpSymbol a b))
 
@@ -417,21 +426,23 @@ type instance Eval (HasTeam White (MkPiece Black _ _)) = False
 type instance Eval (HasTeam Black (MkPiece White _ _)) = False
 
 -- Type families for getting all available squares in a straight line, with nothing in the way
--- TODO: Make similar families for Right, Above, and Below
-data AllReachableFunc :: (Position -> Exp [Position]) -> Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableFunc f team board pos) = Eval (TakeWhilePlus (Not . (IsPieceAt board)) ((MaybeIf (Not . (HasTeam team))) . (GetPieceAt board)) (Eval (f pos)))
+data AllReachableFunc :: Team -> Board -> Position -> (Position -> Exp [Position]) -> Exp [Position]
+type instance Eval (AllReachableFunc team board pos f) = Eval (TakeWhilePlus (Not . (IsPieceAt board)) ((MaybeIf (Not . (HasTeam team))) . (GetPieceAt board)) (Eval (f pos)))
 
 data AllReachableLeft :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableLeft team board pos) = Eval (AllReachableFunc GetAllLeft team board pos)
+type instance Eval (AllReachableLeft team board pos) = Eval (AllReachableFunc team board pos GetAllLeft)
 
 data AllReachableRight :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableRight team board pos) = Eval (AllReachableFunc GetAllRight team board pos)
+type instance Eval (AllReachableRight team board pos) = Eval (AllReachableFunc team board pos GetAllRight)
 
 data AllReachableAbove :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableAbove team board pos) = Eval (AllReachableFunc GetAllAbove team board pos)
+type instance Eval (AllReachableAbove team board pos) = Eval (AllReachableFunc team board pos GetAllAbove)
 
 data AllReachableBelow :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableBelow team board pos) = Eval (AllReachableFunc GetAllBelow team board pos)
+type instance Eval (AllReachableBelow team board pos) = Eval (AllReachableFunc team board pos GetAllBelow)
+
+data AllReachableDiag :: Team -> Board -> Position -> Exp [Position]
+type instance Eval (AllReachableDiag team board pos) = Eval (Concat (Eval (Map (AllReachableFunc team board pos) '[ GetAllDiagNW, GetAllDiagSW, GetAllDiagSE, GetAllDiagNE ])))
 
 getReachableLeftTest1 :: Proxy '[ At "c" 2, At "b" 2, At "a" 2]
 getReachableLeftTest1 = Proxy @(Eval (AllReachableLeft Black TestBoard2 (At "d" 2)))
