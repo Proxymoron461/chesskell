@@ -241,6 +241,18 @@ type instance Eval (GetMoveCount (Info x _)) = x
 data GetPosition :: PieceInfo -> Exp Position
 type instance Eval (GetPosition (Info _ x)) = x
 
+data PieceMoveCount :: Piece -> Exp MyNat
+type instance Eval (PieceMoveCount (MkPiece _ _ info)) = GetMoveCount info
+
+data PiecePosition :: Piece -> Exp Position
+type instance Eval (PiecePosition (MkPiece _ _ info)) = GetPosition info
+
+data PieceTeam :: Piece -> Exp Team
+type instance Eval (PieceTeam (MkPiece team _ _)) = team
+
+data PieceType :: Piece -> Exp Team
+type instance Eval (PieceType (MkPiece _ name _)) = name
+
 -- TODO: Type level char??
 -- Goes column-row, e.g. At "a" 4 means first column from left, 4 up from the bottom, where Black is at the top
 data Position where
