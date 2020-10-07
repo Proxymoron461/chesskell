@@ -274,7 +274,18 @@ type instance Eval (IsValidPosition (At col row)) = Eval ((Eval (IsValidColumn c
 -- type instance Eval (GetNBelowNoChecks (At col row) (S n)) = (At col (row - (Eval (MyNatToNat (S n))))) ': Eval (GetNBelowNoChecks (At col row) n)
 
 data GetTwoBelow :: Position -> Exp [Position]
-type instance Eval (GetTwoBelow (At col row)) = Eval (Filter IsValidPosition [At col (row - 1), At col (row - 2)])
+type instance Eval (GetTwoBelow pos) = Eval (Filter IsValidPosition (Eval (GetTwoBelowNoChecks pos)))
+
+data GetTwoBelowNoChecks :: Position -> Exp [Position]
+type instance Eval (GetTwoBelowNoChecks (At col row)) = Eval (Map (CW (At "a")) (Eval (GetTwoBelowRowSafe row)))
+
+data GetTwoBelowRowSafe :: Nat -> Exp [Nat]
+type instance Eval (GetTwoBelowRowSafe n) = Eval (GetTwoBelowHelperMyNat (Eval (NatToMyNat n)))
+
+data GetTwoBelowHelperMyNat :: MyNat -> Exp [Nat]
+type instance Eval (GetTwoBelowHelperMyNat Z) = '[]
+type instance Eval (GetTwoBelowHelperMyNat (S Z)) = '[0]
+type instance Eval (GetTwoBelowHelperMyNat (S (S n))) = '[Eval (MyNatToNat n), Eval (MyNatToNat (S n))]
 
 data GetTwoAbove :: Position -> Exp [Position]
 type instance Eval (GetTwoAbove (At col row)) = Eval (Filter IsValidPosition [At col (row + 1), At col (row + 2)])
