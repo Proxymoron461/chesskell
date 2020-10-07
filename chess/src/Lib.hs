@@ -277,7 +277,7 @@ type instance Eval (IsValidRow x) = Eval (If (Elem x ValidRows) (ID True) (ID Fa
 data IsValidPosition :: Position -> Exp Bool
 type instance Eval (IsValidPosition (At col row)) = Eval ((Eval (IsValidColumn col)) :&&: (IsValidRow row))
 
--- Generates a range between two values, non-inclusive of the first argument
+-- Generates a range between two Nat values, non-inclusive of the first argument
 data RangeBetween :: Nat -> Nat -> Exp [Nat]
 type instance Eval (RangeBetween n m) = Eval (RangeBetweenHelper n m (CmpNat n m))
 
@@ -285,6 +285,15 @@ data RangeBetweenHelper :: Nat -> Nat -> Ordering -> Exp [Nat]
 type instance Eval (RangeBetweenHelper n m LT) = (n + 1) ': (Eval (RangeBetweenHelper (n + 1) m (CmpNat (n + 1) m)))
 type instance Eval (RangeBetweenHelper n m EQ) = '[]
 type instance Eval (RangeBetweenHelper n m GT) = (n - 1) ': (Eval (RangeBetweenHelper (n - 1) m (CmpNat (n - 1) m)))
+
+data RangeBetweenMyNat :: Nat -> Nat -> Exp [MyNat]
+type instance Eval (RangeBetweenMyNat n m) = Eval (Map NatToMyNat (Eval (RangeBetween n m)))
+
+-- -- Generates a range between two Char values, non-inclusive of the first argument
+-- -- It will only go from lowercase "a" to lowercase "z"
+-- -- TODO: Is this worth it??
+-- data CharRangeBetween :: Symbol -> Symbol -> Exp [Symbol]
+-- type instance Eval (CharRangeBetween a b) = 
 
 -- TODO: Type family for getting all the ones below that are free in a straight line!
 data GetAllBelow :: Position -> Exp [Position]
@@ -313,6 +322,22 @@ type instance Eval (GetNAbove n (At col row)) = Eval (Filter IsValidPosition (Ev
 
 data GetTwoAbove :: Position -> Exp [Position]
 type instance Eval (GetTwoAbove pos) = Eval (GetNAbove 2 pos)
+
+-- (:+) :: MyNat -> Symbol -> Exp (Maybe Symbol)
+data GetNRight :: Nat -> Position -> Exp [Position]
+type instance Eval (GetNRight n pos) = Eval (Filter IsValidPosition (Eval (GetNRightPositionsNoChecks n pos)))
+
+data GetNRightMaybes :: Nat -> Position -> Exp [Maybe Symbol]
+type instance Eval (GetNRightMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:+)) col) (Eval (RangeBetweenMyNat 0 n)))))
+
+data GetNRightPositionsNoChecks :: Nat -> Position -> Exp [Position]
+type instance Eval (GetNRightPositionsNoChecks n (At col row)) = Eval (Map ((Flip FCFAt) row) (Eval (Map FromJust (Eval (GetNRightMaybes n (At col row))))))
+
+data GetAllRight :: Position -> Exp [Position]
+type instance Eval (GetAllRight pos) = Eval (GetNRight 8 pos)
+
+data FCFAt :: Symbol -> Nat -> Exp Position
+type instance Eval (FCFAt col row) = At col row
 
 data IsOpposingTeam :: Piece -> Piece -> Exp Bool
 type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece White _ _)) = False
