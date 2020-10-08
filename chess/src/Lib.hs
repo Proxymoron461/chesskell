@@ -489,15 +489,18 @@ type instance Eval (NReachableDiagSE team board pos n) = Eval (NReachableFunc te
 
 getReachableLeftTest1 :: Proxy '[ At "c" 2, At "b" 2, At "a" 2]
 getReachableLeftTest1 = Proxy @(Eval (AllReachableLeft Black TestBoard2 (At "d" 2)))
+
 getReachableLeftTest2 :: Proxy '[ At "c" 2, At "b" 2]
 getReachableLeftTest2 = Proxy @(Eval (AllReachableLeft White TestBoard2 (At "d" 2)))
+
 getReachableLeftTest3 :: Proxy '[ At "b" 1, At "a" 1]
 getReachableLeftTest3 = Proxy @(Eval (AllReachableLeft White TestBoard (At "c" 1)))
+
 getReachableLeftTest4 :: Proxy '[ At "b" 1 ]
 getReachableLeftTest4 = Proxy @(Eval (AllReachableLeft Black TestBoard (At "c" 1)))
--- -- FIXME: :kind! Eval (AllReachableLeft Black TestBoard (At "a" 5)) = '[], but the below doesn't reduce when compiling??
--- getReachableLeftTest5 :: Proxy '[]
--- getReachableLeftTest5 = Proxy @(Eval (AllReachableLeft Black TestBoard (At "a" 1)))
+
+getReachableLeftTest5 :: Proxy ('[] :: [Position])
+getReachableLeftTest5 = Proxy @(Eval (AllReachableLeft Black TestBoard (At "a" 1)))
 
 -- Custom Nat class, to allow pattern matching on Nat > 2
 data MyNat where
@@ -666,9 +669,8 @@ pieceCanMoveToWhitePawnTest = Proxy @(Eval (PieceCanMoveTo TestWhitePawn TestBoa
 pawnTakePositionsBlackTest :: Proxy ( '[ At "a" 7, At "c" 7])
 pawnTakePositionsBlackTest = Proxy @(Eval (PawnTakePositions TestBlackPawn TestBoard2))
 
--- -- FIXME: Again, this checks out in the repl but doesn't compile.
--- pawnTakePositionsWhiteTest :: Proxy '[]
--- pawnTakePositionsWhiteTest = Proxy @(Eval (PawnTakePositions TestWhitePawn TestBoard2))
+pawnTakePositionsWhiteTest :: Proxy ('[] :: [Position])
+pawnTakePositionsWhiteTest = Proxy @(Eval (PawnTakePositions TestWhitePawn TestBoard2))
 
 -----------------------------------------------------------------------------------------------
 
