@@ -450,6 +450,12 @@ type instance Eval (AllReachableAbove team board pos) = Eval (AllReachableFunc t
 data AllReachableBelow :: Team -> Board -> Position -> Exp [Position]
 type instance Eval (AllReachableBelow team board pos) = Eval (AllReachableFunc team board pos GetAllBelow)
 
+data AllReachableStraightLine :: Team -> Board -> Position -> Exp [Position]
+type instance Eval (AllReachableStraightLine team board pos) = Eval (Concat (Eval (Map (AllReachableFunc team board pos) '[ GetAllLeft, GetAllRight, GetAllAbove, GetAllBelow ])))
+
+data AllReachableLineAndDiag :: Team -> Board -> Position -> Exp [Position]
+type instance Eval (AllReachableLineAndDiag team board pos) = Eval ((Eval (AllReachableStraightLine team board pos)) ++ (Eval (AllReachableDiag team board pos)))
+
 -- Reachable square type families for all diagonal directions at once: helpful
 -- for Bishops and Queens!
 data AllReachableDiag :: Team -> Board -> Position -> Exp [Position]
@@ -637,23 +643,24 @@ type instance Eval (GetFreePositions (p ': ps) board) = Eval (If (Eval ((Eval (I
 
 -- TODO: Figure out how to handle the side effects of moves (e.g. taking a piece, castling, replacing a piece with another)
 -- TODO: Maybe represent the boards that the piece can move to? A new function, MovePiece, which handles any side effects??
--- Returns an empty vector if the board is empty at that position!
+-- Returns an empty list if the board is empty at that position!
 data CalculateValidMoves :: Position -> Board -> Exp [Position]
 type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe '[] ((Flip PieceCanMoveTo) board) (Eval (GetPieceAt board pos)))
 
 -- TODO: Finish instances for each team x piece, e.g. White Pawn, Black Knight, ...
 -- TODO: Check that the piece's reported position is its' actual position
+-- TODO: Test all this!!! Near-urgently!
 data PieceCanMoveTo :: Piece -> Board -> Exp [Position]
 type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece Black Pawn info) board) (PawnPostStart (MkPiece Black Pawn info) board))
 type instance Eval (PieceCanMoveTo (MkPiece White Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece White Pawn info) board) (PawnPostStart (MkPiece White Pawn info) board))
-type instance Eval (PieceCanMoveTo (MkPiece Black Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
-type instance Eval (PieceCanMoveTo (MkPiece White Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece Black Bishop info) board) = Eval (AllReachableDiag Black board (Eval (GetPosition info)))
+type instance Eval (PieceCanMoveTo (MkPiece White Bishop info) board) = Eval (AllReachableDiag White board (Eval (GetPosition info)))
 type instance Eval (PieceCanMoveTo (MkPiece Black Knight info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece White Knight info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
-type instance Eval (PieceCanMoveTo (MkPiece Black Rook info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
-type instance Eval (PieceCanMoveTo (MkPiece White Rook info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
-type instance Eval (PieceCanMoveTo (MkPiece Black Queen info) board)  = TypeError (Text "Not written PieceCanMoveTo yet!")
-type instance Eval (PieceCanMoveTo (MkPiece White Queen info) board)  = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece Black Rook info) board)   = Eval (AllReachableStraightLine Black board (Eval (GetPosition info)))
+type instance Eval (PieceCanMoveTo (MkPiece White Rook info) board)   = Eval (AllReachableStraightLine White board (Eval (GetPosition info)))
+type instance Eval (PieceCanMoveTo (MkPiece Black Queen info) board)  = Eval (AllReachableLineAndDiag Black board (Eval (GetPosition info)))
+type instance Eval (PieceCanMoveTo (MkPiece White Queen info) board)  = Eval (AllReachableLineAndDiag White board (Eval (GetPosition info)))
 type instance Eval (PieceCanMoveTo (MkPiece Black King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece White King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 
