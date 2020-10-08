@@ -517,30 +517,6 @@ type instance Eval (PawnReachableAbove board pos n) = Eval (GetFreePositions (Ev
 data PawnReachableBelow :: Board -> Position -> Nat -> Exp [Position]
 type instance Eval (PawnReachableBelow board pos n) = Eval (GetFreePositions (Eval (NReachableBelow Black board pos n)) board)
 
-getReachableLeftTest1 :: Proxy '[ At "c" 2, At "b" 2, At "a" 2]
-getReachableLeftTest1 = Proxy @(Eval (AllReachableLeft Black TestBoard2 (At "d" 2)))
-
-getReachableLeftTest2 :: Proxy '[ At "c" 2, At "b" 2]
-getReachableLeftTest2 = Proxy @(Eval (AllReachableLeft White TestBoard2 (At "d" 2)))
-
-getReachableLeftTest3 :: Proxy '[ At "b" 1, At "a" 1]
-getReachableLeftTest3 = Proxy @(Eval (AllReachableLeft White TestBoard (At "c" 1)))
-
-getReachableLeftTest4 :: Proxy '[ At "b" 1 ]
-getReachableLeftTest4 = Proxy @(Eval (AllReachableLeft Black TestBoard (At "c" 1)))
-
-getReachableLeftTest5 :: Proxy ('[] :: [Position])
-getReachableLeftTest5 = Proxy @(Eval (AllReachableLeft Black TestBoard (At "a" 1)))
-
-pawnReachableAboveTest1 :: Proxy ('[] :: [Position])
-pawnReachableAboveTest1 = Proxy @(Eval (PawnReachableAbove TestBoard2 (At "b" 7) 2))
-
-pawnReachableAboveTest2 :: Proxy ('[ At "d" 5, At "d" 6] )
-pawnReachableAboveTest2 = Proxy @(Eval (PawnReachableAbove TestBoard2 (At "d" 4) 2))
-
-pawnReachableBelowTest1 :: Proxy ('[] :: [Position])
-pawnReachableBelowTest1 = Proxy @(Eval (PawnReachableBelow TestBoard2 (At "a" 3) 2))
-
 -- Custom Nat class, to allow pattern matching on Nat > 2
 data MyNat where
     Z :: MyNat
@@ -590,34 +566,6 @@ type instance Eval ((:-) (S Z)     "f") = Just "e"
 type instance Eval ((:-) (S Z)     "g") = Just "f"
 type instance Eval ((:-) (S Z)     "h") = Just "g"
 type instance Eval ((:-) (S (S n)) col) = Eval (Bind ((:-) (S n)) (Eval ((:-) (S Z) col)))
-
--- TEST TYPES
--- TODO: Remove these
--- NOTE: These boards are upside-down - the first row is the last one visually
-type TestPosition = At "a" 1  -- i.e. bottom left
-type TestPiece    = MkPiece Black Pawn (Info Z TestPosition)
-type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
-type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :<> EmptyRow
-
-type TestWhitePawn = MkPiece White Pawn (Info Z (At "a" 2))
-type TestWhitePawn2 = MkPiece White Pawn (Info Z (At "a" 7))
-type TestWhitePawn3 = MkPiece White Pawn (Info Z (At "b" 3))
-type TestBlackPawn = MkPiece Black Pawn (Info Z (At "b" 8))
-type TestBoard2   = EmptyRow
-                    :-> (Just TestWhitePawn :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
-                    :-> (Nothing :-> Just TestWhitePawn3 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :-> (Just TestWhitePawn2 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
-                    :<> (Nothing :-> Just TestBlackPawn :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
 
 -- When using Maybes, this returns another maybe!
 -- :kind! Eval (VecAt TestBoard Z) :: Maybe (Vec 8 (Maybe Piece))
@@ -700,26 +648,6 @@ type instance Eval (PawnPostStart pawn board) = Eval ((Eval (PawnMove pawn board
 -- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
 data Move :: Position -> Board -> Exp (Maybe Board)
 type instance Eval (Move pos board) = TypeError (Text "Not implemented!")
-
-getPieceAtTest1 :: Proxy (Just TestPiece)
-getPieceAtTest1 = Proxy @(Eval (GetPieceAt TestBoard (At "a" 1)))
-
--- :k VecAtR Z :: Vec n a -> Exp (Maybe a)
-getPieceAtTest2 :: Proxy (Just TestPiece)
-getPieceAtTest2 = Proxy @(Eval (Join (Eval (Bind ((Flip (!!)) (Eval (NatToMyNat 0))) (Eval (TestBoard !! (Eval (NatToMyNat 0))))))))
-
--- :kind! VecAt (Z :<> (S Z)) :: MyNat -> Exp (Maybe MyNat)
-getPieceAtTest3 :: Proxy (Just Z)
-getPieceAtTest3 = Proxy @(Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z))))
-
-pieceCanMoveToWhitePawnTest :: Proxy ( '[ At "a" 3, At "a" 4 ] )
-pieceCanMoveToWhitePawnTest = Proxy @(Eval (PieceCanMoveTo TestWhitePawn TestBoard2))
-
-pawnTakePositionsBlackTest :: Proxy ( '[ At "a" 7, At "c" 7])
-pawnTakePositionsBlackTest = Proxy @(Eval (PawnTakePositions TestBlackPawn TestBoard2))
-
-pawnTakePositionsWhiteTest :: Proxy ('[] :: [Position])
-pawnTakePositionsWhiteTest = Proxy @(Eval (PawnTakePositions TestWhitePawn TestBoard2))
 
 -----------------------------------------------------------------------------------------------
 
