@@ -57,3 +57,8 @@ tests:
       - -with-rtsopts=-N
     dependencies:
       - chess
+      - hspec
+      - should-not-typecheck
+      - deepseq
+      - HUnit
+      - singletons

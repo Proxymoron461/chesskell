@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6bfe272f7e296a7e30cff8563e3ad24d4d30113893982c1ef5f959fde8f1edf3
+-- hash: 3a7bb2081fba1a00979325080f227362755aec0bc81311d1eabeebf426fed23b
 
 name:           chess
 version:        0.1.0.0
@@ -60,6 +60,11 @@ test-suite chess-test
   default-extensions: DataKinds PolyKinds TypeFamilies GADTs TypeOperators ConstraintKinds UndecidableInstances TypeApplications FlexibleInstances
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      HUnit
+    , base >=4.7 && <5
     , chess
+    , deepseq
+    , hspec
+    , should-not-typecheck
+    , singletons
   default-language: Haskell2010

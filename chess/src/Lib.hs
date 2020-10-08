@@ -541,9 +541,6 @@ pawnReachableAboveTest2 = Proxy @(Eval (PawnReachableAbove TestBoard2 (At "d" 4)
 pawnReachableBelowTest1 :: Proxy ('[] :: [Position])
 pawnReachableBelowTest1 = Proxy @(Eval (PawnReachableBelow TestBoard2 (At "a" 3) 2))
 
-pawnReachableBelowTest2 :: Proxy ('[ At "d" 3, At "d" 2] )
-pawnReachableBelowTest2 = Proxy @(Eval (PawnReachableBelow TestBoard2 (At "d" 4) 2))
-
 -- Custom Nat class, to allow pattern matching on Nat > 2
 data MyNat where
     Z :: MyNat
