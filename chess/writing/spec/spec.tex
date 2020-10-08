@@ -101,15 +101,13 @@ Of course, the specific error and relevant information will depend on the exact 
 
 The plan for the project will be split into two- or four-week chunks, dating from October 2020 until April 2021. Certain portions of the project will be allocated as empty space; this is because in practice, projects rarely go exactly smoothly to plan, and so should something go awry, having breathing room to fix it would be ideal.
 
-The initial research stage took place over the summer of 2020; as such, it is not included below.
-
 \subsection{Weeks 1-2: 5th to 18th October}
 
-Work on modelling chess at the type-level will begin here. The system will be designed in a broad-strokes level, with function \footnote{At the type-level, it will be \emph{type family} signatures. However, the word "function" is used here for simplicity.} signatures written out ready to be populated. The work will purely be on the type-level model; not on the EDSL.
+The initial research stage will take place over these two weeks; multiple approaches to type-level computation and modelling of programs will be considered, and an appropriate one will be selected. Additionally, work on modelling chess at the type-level will begin at the same time, to perform an initial general test of different approaches' feasibility. The system will be designed in a broad-strokes level, with function \footnote{At the type-level, it will be \emph{type family} signatures. However, the word "function" is used here for simplicity.} signatures written out ready to be populated. The work will purely be on the type-level model; not on the EDSL.
 
 \subsection{Weeks 3-4: 19th October to 1st November}
 
-Once the broad-strokes design is complete, the type-level model will be implemented. It will be tested, function by function, until each individual function is deemed to be working; at which point the model will be wired together.
+Once the broad-strokes design is complete, the type-level model will be implemented in full. It will be written and tested, function by function, until each individual function is deemed to be working; at which point the model will be wired together.
 
 \subsection{Weeks 5-6: 2nd to 15th November}
 
@@ -119,11 +117,11 @@ However, assuming that the project is going well, this is the time to draw out t
 
 \subsection{Weeks 7-8: 16th to 29th November}
 
-The EDSL should be fully planned out, and as such this section of time will be taken to implementing it in its' entirety.
+The EDSL should be fully planned out, and as such this section of time will be taken to implementing it in its' entirety. The development approach is dependent on the plan, but it should be put together piece by piece, with internal daily deadlines for features.
 
 \subsection{Weeks 9-10: 30th November to 13th December}
 
-This space is set for testing of the (near-complete) system against a curated data set, and fixing any potential problems that arise.
+This space is set for testing of the (near-complete) system against a curated data set, and fixing any potential problems that arise. The test will involve piping the data set to the type-level model via the EDSL, and as such will be integration and system testing, with unit testing taking place during development.
 
 \subsection{Weeks 11-14: 14th December 2020 to 10th January 2021}
 
