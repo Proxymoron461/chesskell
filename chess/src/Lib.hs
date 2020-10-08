@@ -58,19 +58,16 @@ type instance Eval (f <$> x) = Eval (Map f x)
 -- (<*>) :: Applicative f => f (a -> b) -> f a -> f b
 -- :kind! Eval (Map (Add 1) (Just 1)) = 'Just 2
 -- :kind! Eval (Apply (Eval (Map (CW Add) (Just 1))) (Just 5)) = 'Just 6
-data Pure :: a -> Exp (f a)
-type instance Eval (Pure x) = Just x
+-- :kind! Eval ((Eval ((CW Plus) <$> [2,1,0])) <*> [1,2,3]) = '[3,4,5,2,3,4,1,2,3]
 
 data Apply :: f (a -> Exp b) -> f a -> Exp (f b)
 type instance Eval (Apply _ Nothing)         = Nothing
 type instance Eval (Apply (Just f) (Just x)) = Just (Eval (f x))
+type instance Eval (Apply '[] _) = '[]
+type instance Eval (Apply (f ': fs) xs) = Eval (Eval (f <$> xs) ++ Eval (Apply fs xs))
 
 data (<*>) :: f (a -> Exp b) -> f a -> Exp (f b)
 type instance Eval (f <*> x) = Eval (Apply f x)
-
--- Type-level monads! (Almost)
-data Return :: a -> Exp (f a)
-type instance Eval (Return x) = Pure x
 
 data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
 type instance Eval (Bind f Nothing)  = Nothing
@@ -201,6 +198,10 @@ type instance Eval (Length VEnd)       = 0
 type instance Eval (Length (x :-> xs)) = 1 + Eval (Length xs)
 type instance Eval (Length '[])        = 0
 type instance Eval (Length (x ': xs))  = 1 + Eval (Length xs)
+
+data Tail :: [a] -> Exp [a]
+type instance Eval (Tail '[])       = '[]
+type instance Eval (Tail (x ': xs)) = xs
 
 -- TODO: FilterMap instance for vectors??
 data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> [a] -> Exp [b]
@@ -367,17 +368,11 @@ type instance Eval (SafeMinusHelper x y LT) = 0
 type instance Eval (SafeMinusHelper x y EQ) = 0
 type instance Eval (SafeMinusHelper x y GT) = x - y
 
-data GetTwoBelow :: Position -> Exp [Position]
-type instance Eval (GetTwoBelow pos) = Eval (GetNBelow 2 pos)
-
 data GetAllAbove :: Position -> Exp [Position]
 type instance Eval (GetAllAbove (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row 8)))))
 
 data GetNAbove :: Nat -> Position -> Exp [Position]
 type instance Eval (GetNAbove n (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row (row + n))))))
-
-data GetTwoAbove :: Position -> Exp [Position]
-type instance Eval (GetTwoAbove pos) = Eval (GetNAbove 2 pos)
 
 -- (:+) :: MyNat -> Symbol -> Exp (Maybe Symbol)
 data GetNRight :: Nat -> Position -> Exp [Position]
@@ -418,6 +413,14 @@ type instance Eval (GetAllDiagSE (At col row)) = Eval (ZipWith (Eval (CharRangeB
 
 data GetAllDiagNE :: Position -> Exp [Position]
 type instance Eval (GetAllDiagNE (At col row)) = Eval (ZipWith (Eval (CharRangeBetween col "a")) (Eval (RangeBetween row 8)) (CW2 At))
+
+-- :kind! Eval ((Eval ((CW Plus) <$> [2,1,0])) <*> [1,2,3])
+-- NOTE: Uses Tail to remove the current position!
+data GetAdjacent :: Position -> Exp [Position]
+type instance Eval (GetAdjacent (At col row)) = Eval (Tail (Eval ((Eval (CW (CW2 At) <$> (Eval (GetAdjacentColumns col)))) <*> '[row, row + 1, Eval (SafeMinus row 1)])))
+
+data GetAdjacentColumns :: Symbol -> Exp [Symbol]
+type instance Eval (GetAdjacentColumns col) = col ': Eval (Map FromJust (Eval (Filter IsJust '[Eval ((S Z) :+ col), Eval ((S Z) :- col)])))
 
 data IsOpposingTeam :: Piece -> Piece -> Exp Bool
 type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece White _ _)) = False
@@ -477,6 +480,7 @@ type instance Eval (AllReachableDiagNE team board pos) = Eval (AllReachableFunc 
 -- TODO: Reachable squares for L-shape (knights!)
 
 -- General function, for taking the first N reachable positions from a particular direction.
+-- NOTE: Relies on each directional function giving them in order of distance from the player
 -- NOTE: Does not work with AllReachableDiag, as that will only be in one direction.
 data NReachableFunc :: Team -> Board -> Position -> (Team -> Board -> Position -> Exp [Position]) -> Nat -> Exp [Position]
 type instance Eval (NReachableFunc team board pos f n) = Eval (Take n (Eval (f team board pos)))
@@ -498,6 +502,12 @@ type instance Eval (NReachableBelow team board pos n) = Eval (NReachableFunc tea
 
 data NReachableAbove :: Team -> Board -> Position -> Nat -> Exp [Position]
 type instance Eval (NReachableAbove team board pos n) = Eval (NReachableFunc team board pos AllReachableAbove n)
+
+data NReachableLeft :: Team -> Board -> Position -> Nat -> Exp [Position]
+type instance Eval (NReachableLeft team board pos n) = Eval (NReachableFunc team board pos AllReachableLeft n)
+
+data NReachableRight :: Team -> Board -> Position -> Nat -> Exp [Position]
+type instance Eval (NReachableRight team board pos n) = Eval (NReachableFunc team board pos AllReachableRight n)
 
 -- The pawn is the only piece whose attack rules differ from its' movement rules;
 -- so it requires a special case.
@@ -542,6 +552,9 @@ data MyNat where
 data IsZero :: MyNat -> Exp Bool
 type instance Eval (IsZero Z)     = True
 type instance Eval (IsZero (S n)) = False
+
+data Plus :: Nat -> Nat -> Exp Nat
+type instance Eval (Plus x y) = x + y
 
 data MyNatToNat :: MyNat -> Exp Nat
 type instance Eval (MyNatToNat Z)     = 0
