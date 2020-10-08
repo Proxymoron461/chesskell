@@ -487,6 +487,20 @@ type instance Eval (NReachableDiagSW team board pos n) = Eval (NReachableFunc te
 data NReachableDiagSE :: Team -> Board -> Position -> Nat -> Exp [Position]
 type instance Eval (NReachableDiagSE team board pos n) = Eval (NReachableFunc team board pos AllReachableDiagSE n)
 
+data NReachableBelow :: Team -> Board -> Position -> Nat -> Exp [Position]
+type instance Eval (NReachableBelow team board pos n) = Eval (NReachableFunc team board pos AllReachableBelow n)
+
+data NReachableAbove :: Team -> Board -> Position -> Nat -> Exp [Position]
+type instance Eval (NReachableAbove team board pos n) = Eval (NReachableFunc team board pos AllReachableAbove n)
+
+-- The pawn is the only piece whose attack rules differ from its' movement rules;
+-- so it requires a special case.
+data PawnReachableAbove :: Board -> Position -> Nat -> Exp [Position]
+type instance Eval (PawnReachableAbove board pos n) = Eval (GetFreePositions (Eval (NReachableAbove White board pos n)) board)
+
+data PawnReachableBelow :: Board -> Position -> Nat -> Exp [Position]
+type instance Eval (PawnReachableBelow board pos n) = Eval (GetFreePositions (Eval (NReachableBelow Black board pos n)) board)
+
 getReachableLeftTest1 :: Proxy '[ At "c" 2, At "b" 2, At "a" 2]
 getReachableLeftTest1 = Proxy @(Eval (AllReachableLeft Black TestBoard2 (At "d" 2)))
 
@@ -501,6 +515,18 @@ getReachableLeftTest4 = Proxy @(Eval (AllReachableLeft Black TestBoard (At "c" 1
 
 getReachableLeftTest5 :: Proxy ('[] :: [Position])
 getReachableLeftTest5 = Proxy @(Eval (AllReachableLeft Black TestBoard (At "a" 1)))
+
+pawnReachableAboveTest1 :: Proxy ('[] :: [Position])
+pawnReachableAboveTest1 = Proxy @(Eval (PawnReachableAbove TestBoard2 (At "b" 7) 2))
+
+pawnReachableAboveTest2 :: Proxy ('[ At "d" 5, At "d" 6] )
+pawnReachableAboveTest2 = Proxy @(Eval (PawnReachableAbove TestBoard2 (At "d" 4) 2))
+
+pawnReachableBelowTest1 :: Proxy ('[] :: [Position])
+pawnReachableBelowTest1 = Proxy @(Eval (PawnReachableBelow TestBoard2 (At "a" 3) 2))
+
+pawnReachableBelowTest2 :: Proxy ('[ At "d" 3, At "d" 2] )
+pawnReachableBelowTest2 = Proxy @(Eval (PawnReachableBelow TestBoard2 (At "d" 4) 2))
 
 -- Custom Nat class, to allow pattern matching on Nat > 2
 data MyNat where
@@ -631,12 +657,15 @@ type instance Eval (PieceCanMoveTo (MkPiece White Queen info) board)  = TypeErro
 type instance Eval (PieceCanMoveTo (MkPiece Black King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece White King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 
--- Type family for where a pawn can move when it is in its' starting position.
--- TODO: Take into account that a pawn can take from here! Check those diagonals
--- FIXME: This would allow a pawn to leap over another piece - to move two spaces, the one directly in front of it must be free
+-- Type family for where a pawn can move when it is in its' starting position
 data PawnStart :: Piece -> Board -> Exp [Position]
-type instance Eval (PawnStart (MkPiece Black Pawn info) board) = Eval (GetFreePositions (Eval (GetTwoBelow (Eval (GetPosition info)))) board)
-type instance Eval (PawnStart (MkPiece White Pawn info) board) = Eval (GetFreePositions (Eval (GetTwoAbove (Eval (GetPosition info)))) board)
+type instance Eval (PawnStart pawn board) = Eval ((Eval (PawnInitialTwoMove pawn board)) ++ (Eval (PawnTakePositions pawn board)))
+
+-- Type family for getting the initial pawn two-forward move!
+-- TODO: Throw a type error if the Pawn has already moved??
+data PawnInitialTwoMove :: Piece -> Board -> Exp [Position]
+type instance Eval (PawnInitialTwoMove (MkPiece Black Pawn info) board) = Eval (PawnReachableBelow board (Eval (GetPosition info)) 2)
+type instance Eval (PawnInitialTwoMove (MkPiece White Pawn info) board) = Eval (PawnReachableAbove board (Eval (GetPosition info)) 2)
 
 -- Pawns can take diagonally in front of themselves: so this gets those positions if a take is possible!
 -- TODO: Handle "en passant" takes
