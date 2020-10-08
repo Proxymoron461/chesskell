@@ -641,11 +641,11 @@ type instance Eval (GetFreePositions (p ': ps) board) = Eval (If (Eval ((Eval (I
 data CalculateValidMoves :: Position -> Board -> Exp [Position]
 type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe '[] ((Flip PieceCanMoveTo) board) (Eval (GetPieceAt board pos)))
 
--- TODO: Write instances for each team x piece, e.g. White Pawn, Black Knight, ...
+-- TODO: Finish instances for each team x piece, e.g. White Pawn, Black Knight, ...
 -- TODO: Check that the piece's reported position is its' actual position
 data PieceCanMoveTo :: Piece -> Board -> Exp [Position]
-type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStart (MkPiece Black Pawn info) board) (TypeError (Text "Not implemented non-starting pawn code yet!")))
-type instance Eval (PieceCanMoveTo (MkPiece White Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStart (MkPiece White Pawn info) board) (TypeError (Text "Not implemented non-starting pawn code yet!")))
+type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece Black Pawn info) board) (PawnPostStart (MkPiece Black Pawn info) board))
+type instance Eval (PieceCanMoveTo (MkPiece White Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece White Pawn info) board) (PawnPostStart (MkPiece White Pawn info) board))
 type instance Eval (PieceCanMoveTo (MkPiece Black Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece White Bishop info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
 type instance Eval (PieceCanMoveTo (MkPiece Black Knight info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
@@ -658,20 +658,23 @@ type instance Eval (PieceCanMoveTo (MkPiece Black King info) board)   = TypeErro
 type instance Eval (PieceCanMoveTo (MkPiece White King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
 
 -- Type family for where a pawn can move when it is in its' starting position
-data PawnStart :: Piece -> Board -> Exp [Position]
-type instance Eval (PawnStart pawn board) = Eval ((Eval (PawnInitialTwoMove pawn board)) ++ (Eval (PawnTakePositions pawn board)))
+data PawnStartMove :: Piece -> Board -> Exp [Position]
+type instance Eval (PawnStartMove pawn board) = Eval ((Eval (PawnMove pawn board 2)) ++ (Eval (PawnTakePositions pawn board)))
 
 -- Type family for getting the initial pawn two-forward move!
 -- TODO: Throw a type error if the Pawn has already moved??
-data PawnInitialTwoMove :: Piece -> Board -> Exp [Position]
-type instance Eval (PawnInitialTwoMove (MkPiece Black Pawn info) board) = Eval (PawnReachableBelow board (Eval (GetPosition info)) 2)
-type instance Eval (PawnInitialTwoMove (MkPiece White Pawn info) board) = Eval (PawnReachableAbove board (Eval (GetPosition info)) 2)
+data PawnMove :: Piece -> Board -> Nat -> Exp [Position]
+type instance Eval (PawnMove (MkPiece Black Pawn info) board n) = Eval (PawnReachableBelow board (Eval (GetPosition info)) n)
+type instance Eval (PawnMove (MkPiece White Pawn info) board n) = Eval (PawnReachableAbove board (Eval (GetPosition info)) n)
 
 -- Pawns can take diagonally in front of themselves: so this gets those positions if a take is possible!
 -- TODO: Handle "en passant" takes
 data PawnTakePositions :: Piece -> Board -> Exp [Position]
 type instance Eval (PawnTakePositions (MkPiece Black Pawn info) board) = Eval ((Eval (NReachableDiagSE Black board (Eval (GetPosition info)) 1)) ++ (Eval (NReachableDiagSW Black board (Eval (GetPosition info)) 1)))
 type instance Eval (PawnTakePositions (MkPiece White Pawn info) board) = Eval ((Eval (NReachableDiagNE White board (Eval (GetPosition info)) 1)) ++ (Eval (NReachableDiagNW White board (Eval (GetPosition info)) 1)))
+
+data PawnPostStart :: Piece -> Board -> Exp [Position]
+type instance Eval (PawnPostStart pawn board) = Eval ((Eval (PawnMove pawn board 1)) ++ (Eval (PawnTakePositions pawn board)))
 
 -- Type family for actually moving the piece, and handling the side effects.
 -- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
