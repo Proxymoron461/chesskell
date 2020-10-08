@@ -99,6 +99,7 @@ type instance Eval (IsTypeEqual a b) = IsTypeEqualNonFCF a b
 data (:==:) :: a -> b -> Exp Bool
 type instance Eval (a :==: b) = Eval (IsTypeEqual a b)
 
+-- TODO: Maybe make y have kind a as well?
 type family IsTypeEqualNonFCF (x :: a) (y :: b) :: Bool where
     IsTypeEqualNonFCF x x = 'True
     IsTypeEqualNonFCF x y = 'False
@@ -210,6 +211,14 @@ type instance Eval (FilterMap p f '[])       = '[]
 data Filter :: (a -> Exp Bool) -> [a] -> Exp [a]
 type instance Eval (Filter p '[]) = '[]
 type instance Eval (Filter p (x ': xs)) = Eval (If (Eval (p x)) (ID (x ': Eval (Filter p xs))) (Filter p xs))
+
+data Take :: Nat -> [a] -> Exp [a]
+type instance Eval (Take n xs) = Eval (TakeMyNat (Eval (NatToMyNat n)) xs)
+
+data TakeMyNat :: MyNat -> [a] -> Exp [a]
+type instance Eval (TakeMyNat Z     _)         = '[]
+type instance Eval (TakeMyNat (S n) '[])       = '[]
+type instance Eval (TakeMyNat (S n) (x ': xs)) = x ': Eval (TakeMyNat n xs)
 
 data TakeWhile :: (a -> Exp Bool) -> [a] -> Exp [a]
 type instance Eval (TakeWhile p xs) = Eval (TakeWhilePlus p (Const False) xs)
@@ -441,8 +450,42 @@ type instance Eval (AllReachableAbove team board pos) = Eval (AllReachableFunc t
 data AllReachableBelow :: Team -> Board -> Position -> Exp [Position]
 type instance Eval (AllReachableBelow team board pos) = Eval (AllReachableFunc team board pos GetAllBelow)
 
+-- Reachable square type families for all diagonal directions at once: helpful
+-- for Bishops and Queens!
 data AllReachableDiag :: Team -> Board -> Position -> Exp [Position]
 type instance Eval (AllReachableDiag team board pos) = Eval (Concat (Eval (Map (AllReachableFunc team board pos) '[ GetAllDiagNW, GetAllDiagSW, GetAllDiagSE, GetAllDiagNE ])))
+
+-- Reachable square type families for each diagonal direction
+data AllReachableDiagNW :: Team -> Board -> Position -> Exp [Position]
+type instance Eval (AllReachableDiagNW team board pos) = Eval (AllReachableFunc team board pos GetAllDiagNW)
+
+data AllReachableDiagSW :: Team -> Board -> Position -> Exp [Position]
+type instance Eval (AllReachableDiagSW team board pos) = Eval (AllReachableFunc team board pos GetAllDiagSW)
+
+data AllReachableDiagSE :: Team -> Board -> Position -> Exp [Position]
+type instance Eval (AllReachableDiagSE team board pos) = Eval (AllReachableFunc team board pos GetAllDiagSE)
+
+data AllReachableDiagNE :: Team -> Board -> Position -> Exp [Position]
+type instance Eval (AllReachableDiagNE team board pos) = Eval (AllReachableFunc team board pos GetAllDiagNE)
+
+-- TODO: Reachable squares for L-shape (knights!)
+
+-- General function, for taking the first N reachable positions from a particular direction.
+-- NOTE: Does not work with AllReachableDiag, as that will only be in one direction.
+data NReachableFunc :: Team -> Board -> Position -> (Team -> Board -> Position -> Exp [Position]) -> Nat -> Exp [Position]
+type instance Eval (NReachableFunc team board pos f n) = Eval (Take n (Eval (f team board pos)))
+
+data NReachableDiagNW :: Team -> Board -> Position -> Nat -> Exp [Position]
+type instance Eval (NReachableDiagNW team board pos n) = Eval (NReachableFunc team board pos AllReachableDiagNW n)
+
+data NReachableDiagNE :: Team -> Board -> Position -> Nat -> Exp [Position]
+type instance Eval (NReachableDiagNE team board pos n) = Eval (NReachableFunc team board pos AllReachableDiagNE n)
+
+data NReachableDiagSW :: Team -> Board -> Position -> Nat -> Exp [Position]
+type instance Eval (NReachableDiagSW team board pos n) = Eval (NReachableFunc team board pos AllReachableDiagSW n)
+
+data NReachableDiagSE :: Team -> Board -> Position -> Nat -> Exp [Position]
+type instance Eval (NReachableDiagSE team board pos n) = Eval (NReachableFunc team board pos AllReachableDiagSE n)
 
 getReachableLeftTest1 :: Proxy '[ At "c" 2, At "b" 2, At "a" 2]
 getReachableLeftTest1 = Proxy @(Eval (AllReachableLeft Black TestBoard2 (At "d" 2)))
@@ -505,6 +548,7 @@ type instance Eval ((:-) (S (S n)) col) = Eval (Bind ((:-) (S n)) (Eval ((:-) (S
 
 -- TEST TYPES
 -- TODO: Remove these
+-- NOTE: These boards are upside-down - the first row is the last one visually
 type TestPosition = At "a" 1  -- i.e. bottom left
 type TestPiece    = MkPiece Black Pawn (Info Z TestPosition)
 type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
@@ -518,14 +562,17 @@ type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Noth
                     :<> EmptyRow
 
 type TestWhitePawn = MkPiece White Pawn (Info Z (At "a" 2))
+type TestWhitePawn2 = MkPiece White Pawn (Info Z (At "a" 7))
+type TestWhitePawn3 = MkPiece White Pawn (Info Z (At "b" 3))
+type TestBlackPawn = MkPiece Black Pawn (Info Z (At "b" 8))
 type TestBoard2   = EmptyRow
                     :-> (Just TestWhitePawn :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
+                    :-> (Nothing :-> Just TestWhitePawn3 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :-> EmptyRow
                     :-> EmptyRow
                     :-> EmptyRow
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :<> EmptyRow
+                    :-> (Just TestWhitePawn2 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
+                    :<> (Nothing :-> Just TestBlackPawn :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
 
 -- When using Maybes, this returns another maybe!
 -- :kind! Eval (VecAt TestBoard Z) :: Maybe (Vec 8 (Maybe Piece))
@@ -554,12 +601,6 @@ type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eva
 
 data IsPieceAt :: Board -> Position -> Exp Bool
 type instance Eval (IsPieceAt board pos) = Eval (IsJust (Eval (GetPieceAt board pos)))
-
-data IsBlack :: Piece -> Exp Bool
-type instance Eval (IsBlack (MkPiece team _ _)) = Eval (team :==: Black)
-
-data IsWhite :: Piece -> Exp Bool
-type instance Eval (IsWhite (MkPiece team _ _)) = Eval (team :==: White)
 
 data GetFreePositions :: [Position] -> Board -> Exp [Position]
 type instance Eval (GetFreePositions '[] _) = '[]
@@ -594,6 +635,12 @@ data PawnStart :: Piece -> Board -> Exp [Position]
 type instance Eval (PawnStart (MkPiece Black Pawn info) board) = Eval (GetFreePositions (Eval (GetTwoBelow (Eval (GetPosition info)))) board)
 type instance Eval (PawnStart (MkPiece White Pawn info) board) = Eval (GetFreePositions (Eval (GetTwoAbove (Eval (GetPosition info)))) board)
 
+-- Pawns can take diagonally in front of themselves: so this gets those positions if a take is possible!
+-- TODO: Handle "en passant" takes
+data PawnTakePositions :: Piece -> Board -> Exp [Position]
+type instance Eval (PawnTakePositions (MkPiece Black Pawn info) board) = Eval ((Eval (NReachableDiagSE Black board (Eval (GetPosition info)) 1)) ++ (Eval (NReachableDiagSW Black board (Eval (GetPosition info)) 1)))
+type instance Eval (PawnTakePositions (MkPiece White Pawn info) board) = Eval ((Eval (NReachableDiagNE White board (Eval (GetPosition info)) 1)) ++ (Eval (NReachableDiagNW White board (Eval (GetPosition info)) 1)))
+
 -- Type family for actually moving the piece, and handling the side effects.
 -- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
 -- TODO: Handle moves that can move multiple pieces (e.g. castling)
@@ -615,6 +662,13 @@ getPieceAtTest3 = Proxy @(Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S 
 
 pieceCanMoveToWhitePawnTest :: Proxy ( '[ At "a" 3, At "a" 4 ] )
 pieceCanMoveToWhitePawnTest = Proxy @(Eval (PieceCanMoveTo TestWhitePawn TestBoard2))
+
+pawnTakePositionsBlackTest :: Proxy ( '[ At "a" 7, At "c" 7])
+pawnTakePositionsBlackTest = Proxy @(Eval (PawnTakePositions TestBlackPawn TestBoard2))
+
+-- -- FIXME: Again, this checks out in the repl but doesn't compile.
+-- pawnTakePositionsWhiteTest :: Proxy '[]
+-- pawnTakePositionsWhiteTest = Proxy @(Eval (PawnTakePositions TestWhitePawn TestBoard2))
 
 -----------------------------------------------------------------------------------------------
 
