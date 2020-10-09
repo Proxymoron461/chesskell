@@ -96,6 +96,18 @@ type instance Eval (IsTypeEqual a b) = IsTypeEqualNonFCF a b
 data (:==:) :: a -> b -> Exp Bool
 type instance Eval (a :==: b) = Eval (IsTypeEqual a b)
 
+-- Function for checking list equality by elements
+data (:=:=:) :: [a] -> [b] -> Exp Bool
+type instance Eval (xs :=:=: ys) = Eval (Eval (xs :<= ys) :&&: (ys :<= xs))
+
+-- Function for checking if a list is a subset of another list
+data (:<=) :: [a] -> [b] -> Exp Bool
+type instance Eval (xs :<= ys) = Eval (All ((Flip In) ys) xs)
+
+data Reverse :: [a] -> Exp [a]
+type instance Eval (Reverse '[]) = '[]
+type instance Eval (Reverse (x ': xs)) = Eval (Eval (Reverse xs) ++ '[x])
+
 -- TODO: Maybe make y have kind a as well?
 type family IsTypeEqualNonFCF (x :: a) (y :: b) :: Bool where
     IsTypeEqualNonFCF x x = 'True
@@ -141,8 +153,6 @@ data Holds :: [a -> Exp Bool] -> a -> Exp Bool
 type instance Eval (Holds '[] x)       = True
 type instance Eval (Holds (f ': fs) x) = Eval ((Eval (f x)) :&&: (Holds fs x))
 
-
------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
 
 -- FIXME: a -> Vec n -> Vec (n + 1) a causes issues. Why??
@@ -165,6 +175,9 @@ type family Elem (x :: a) (ys :: Vec n a) :: Bool where
     Elem x (y :-> rest) = Eval ((Eval (x :==: y)) :||: (ID (Elem x rest)))
     Elem x VEnd         = 'False
 
+data In :: a -> [a] -> Exp Bool
+type instance Eval (In x ys) = Eval (Any ((:==:) x) ys)
+
 -- :kind! Eval (Or True (TE' (Text "eeeeh")))
 -- A lazy version of Or, which only evaluates its' second param if the first fails.
 data LazyOr :: Bool -> Exp Bool -> Exp Bool
@@ -185,13 +198,21 @@ data Not :: Bool -> Exp Bool
 type instance Eval (Not True)  = False
 type instance Eval (Not False) = True
 
-data Any :: (a -> Exp Bool) -> Vec n a -> Exp Bool
-type instance Eval (Any p VEnd)       = False
-type instance Eval (Any p (x :-> xs)) = Eval (Eval (p x) :||: Any p xs)
+data Any :: (a -> Exp Bool) -> [a] -> Exp Bool
+type instance Eval (Any p '[])       = False
+type instance Eval (Any p (x ': xs)) = Eval (Eval (p x) :||: Any p xs)
 
-data All :: (a -> Exp Bool) -> Vec n a -> Exp Bool
-type instance Eval (All p VEnd)       = True
-type instance Eval (All p (x :-> xs)) = Eval (Eval (p x) :&&: All p xs)
+data AnyVec :: (a -> Exp Bool) -> Vec n a -> Exp Bool
+type instance Eval (AnyVec p VEnd)       = False
+type instance Eval (AnyVec p (x :-> xs)) = Eval (Eval (p x) :||: AnyVec p xs)
+
+data All :: (a -> Exp Bool) -> [a] -> Exp Bool
+type instance Eval (All p '[])       = True
+type instance Eval (All p (x ': xs)) = Eval (Eval (p x) :&&: All p xs)
+
+data AllVec :: (a -> Exp Bool) -> Vec n a -> Exp Bool
+type instance Eval (AllVec p VEnd)       = True
+type instance Eval (AllVec p (x :-> xs)) = Eval (Eval (p x) :&&: AllVec p xs)
 
 data Length :: t a -> Exp Nat
 type instance Eval (Length VEnd)       = 0
@@ -207,6 +228,13 @@ type instance Eval (Tail (x ': xs)) = xs
 data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> [a] -> Exp [b]
 type instance Eval (FilterMap p f (x ': xs)) = Eval (If (Eval (p x)) (ID (Eval (f x) ': Eval (FilterMap p f xs))) (FilterMap p f xs))
 type instance Eval (FilterMap p f '[])       = '[]
+
+data MapFilter :: (a -> Exp b) -> (b -> Exp Bool) -> [a] -> Exp [b]
+type instance Eval (MapFilter f p '[])       = '[]
+type instance Eval (MapFilter f p (x ': xs)) = Eval (MapFilterHelper (Eval (f x)) f p xs)
+
+data MapFilterHelper :: b -> (a -> Exp b) -> (b -> Exp Bool) -> [a] -> Exp [b]
+type instance Eval (MapFilterHelper x f p ys) = Eval (If (Eval (p x)) (ID (x ': (Eval (MapFilter f p ys)))) (MapFilter f p ys))
 
 -- TODO: Kind-polymorphic Filter instances??
 data Filter :: (a -> Exp Bool) -> [a] -> Exp [a]
@@ -299,9 +327,6 @@ data Position where
 type ValidColumns = "a" :-> "b" :-> "c" :-> "d" :-> "e" :-> "f" :-> "g" :<> "h"
 
 type ValidRows = 1 :-> 2 :-> 3 :-> 4 :-> 5 :-> 6 :-> 7 :<> 8
-
--- type family ValidColumn (row :: Symbol) :: Maybe Symbol where
---     ValidColumn x = Eval (If (Elem x ValidColumns) (ID (Just x)) (ID Nothing))
 
 data ValidColumn :: Symbol -> Exp (Maybe Symbol)
 type instance Eval (ValidColumn x) = Eval (If (Elem x ValidColumns) (ID (Just x)) (ID Nothing))
@@ -413,6 +438,24 @@ type instance Eval (GetAllDiagSE (At col row)) = Eval (ZipWith (Eval (CharRangeB
 
 data GetAllDiagNE :: Position -> Exp [Position]
 type instance Eval (GetAllDiagNE (At col row)) = Eval (ZipWith (Eval (CharRangeBetween col "a")) (Eval (RangeBetween row 8)) (CW2 At))
+
+data GetAllKnightPositions :: Position -> Exp [Position]
+type instance Eval (GetAllKnightPositions pos) = Eval (Filter IsValidPosition (Eval (Eval (GetKnightAboveBelow pos) ++ Eval (GetKnightLeftRight pos))))
+
+data GetKnightAboveBelow :: Position -> Exp [Position]
+type instance Eval (GetKnightAboveBelow (At col row)) = Eval (Eval (CW (CW2 At) <$> Eval (GetKnightColumns col 1)) <*> Eval (GetKnightRows row 2))
+
+data GetKnightLeftRight :: Position -> Exp [Position]
+type instance Eval (GetKnightLeftRight (At col row)) = Eval (Eval (CW (CW2 At) <$> Eval (GetKnightColumns col 2)) <*> Eval (GetKnightRows row 1))
+
+data GetKnightColumns :: Symbol -> Nat -> Exp [Symbol]
+type instance Eval (GetKnightColumns col n) = Eval (GetKnightColumnsMyNat col (Eval (NatToMyNat n)))
+
+data GetKnightColumnsMyNat :: Symbol -> MyNat -> Exp [Symbol]
+type instance Eval (GetKnightColumnsMyNat col n) = Eval (FilterMap (IsJust) (FromJust) '[ Eval (n :+ col), Eval (n :- col) ])
+
+data GetKnightRows :: Nat -> Nat -> Exp [Nat]
+type instance Eval (GetKnightRows row n) = Eval (If (n <=? row) (ID '[ row - n, row + n]) (ID '[ row + n ]))
 
 -- :kind! Eval ((Eval ((CW Plus) <$> [2,1,0])) <*> [1,2,3])
 -- NOTE: Uses Tail to remove the current position!
@@ -542,6 +585,7 @@ type family NatToMyNatNonFCF (n :: Nat) :: MyNat where
 
 -- Type families to add an offset to columns!
 -- TODO: Customise the number of columns?? As it is, it's chess-specific.
+-- TODO: Flip the arguments, they're the wrong way round!!
 data (:+) :: MyNat -> Symbol -> Exp (Maybe Symbol)
 data (:-) :: MyNat -> Symbol -> Exp (Maybe Symbol)
 
@@ -588,9 +632,12 @@ type family ElemIndex (vec :: Vec n a) (item :: a) :: Maybe Nat where
 type family ColToIndex (col :: Symbol) :: Maybe Nat where
     ColToIndex col = ElemIndex ValidColumns col
 
--- TODO: Make it cause an error when row = 0
+-- This checks for the validity of the position before it sends one off!
 data GetPieceAt :: Board -> Position -> Exp (Maybe Piece)
-type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CW (!!)) <$> (Eval (board !! (Eval (NatToMyNat (row - 1))))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
+type instance Eval (GetPieceAt board pos) = Eval (If (Eval (IsValidPosition pos)) (GetPieceAtNoChecks board pos) (ID Nothing))
+
+data GetPieceAtNoChecks :: Board -> Position -> Exp (Maybe Piece)
+type instance Eval (GetPieceAtNoChecks board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CW (!!)) <$> (Eval (board !! (Eval (NatToMyNat (row - 1))))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
 
 data IsPieceAt :: Board -> Position -> Exp Bool
 type instance Eval (IsPieceAt board pos) = Eval (IsJust (Eval (GetPieceAt board pos)))
@@ -662,5 +709,3 @@ type family MyNatToSNat (n :: MyNat) :: SNat n where
 data MyNatLength :: [a] -> Exp MyNat
 type instance Eval (MyNatLength '[]) = Z
 type instance Eval (MyNatLength (x ': xs)) = S (Eval (MyNatLength xs))
-
-type TestList = '["a","b","c"]
