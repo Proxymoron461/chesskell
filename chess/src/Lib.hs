@@ -277,7 +277,8 @@ type instance Eval (Concat xs) = Eval (Foldr (++) '[] xs)
 
 -- Type synonym for an 8x8 grid
 type Eight = S (S (S (S (S (S (S (S Z)))))))
-type Grid8x8 = Vec Eight (Vec Eight (Maybe Piece))
+type Row = Vec Eight (Maybe Piece)
+type Grid8x8 = Vec Eight Row
 
 -- TODO: Dimensions of board in kind??
 type Board = Grid8x8
@@ -307,11 +308,18 @@ type instance Eval (GetMoveCount (Info x _)) = x
 data GetPosition :: PieceInfo -> Exp Position
 type instance Eval (GetPosition (Info _ x)) = x
 
+-- TODO: Validity check??
+data SetPosition :: PieceInfo -> Position -> Exp PieceInfo
+type instance Eval (SetPosition (Info n _) pos) = Info n pos
+
 data PieceMoveCount :: Piece -> Exp MyNat
 type instance Eval (PieceMoveCount (MkPiece _ _ info)) = Eval (GetMoveCount info)
 
 data PiecePosition :: Piece -> Exp Position
 type instance Eval (PiecePosition (MkPiece _ _ info)) = Eval (GetPosition info)
+
+data SetPiecePosition :: Piece -> Position -> Exp Piece
+type instance Eval (SetPiecePosition (MkPiece t n info) pos) = MkPiece t n (Eval (SetPosition info pos))
 
 data PieceTeam :: Piece -> Exp Team
 type instance Eval (PieceTeam (MkPiece team _ _)) = team
@@ -617,7 +625,7 @@ type instance Eval ((:-) (S Z)     "h") = Just "g"
 type instance Eval ((:-) (S (S n)) col) = Eval (Bind ((:-) (S n)) (Eval ((:-) (S Z) col)))
 
 -- When using Maybes, this returns another maybe!
--- :kind! Eval (VecAt TestBoard Z) :: Maybe (Vec 8 (Maybe Piece))
+-- :kind! Eval (VecAt TestBoard Z) :: Maybe Row
 -- data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
 data VecAt :: Vec n a -> MyNat -> Exp (Maybe a)
 type instance Eval (VecAt VEnd _)           = Nothing
@@ -633,6 +641,10 @@ type family ElemIndex (vec :: Vec n a) (item :: a) :: Maybe Nat where
     ElemIndex (item :-> xs) item = Just 0
     ElemIndex (x :-> xs)    item = Eval (Map (Add 1) (ElemIndex xs item))
 
+data PutAt :: a -> MyNat -> Vec n a -> Exp (Vec n a)
+type instance Eval (PutAt x Z (y :-> ys))     = x :-> ys
+type instance Eval (PutAt x (S n) (y :-> ys)) = y :-> Eval (PutAt x n ys)
+
 -- TODO: Maybe make this tied less to ValidColumns??
 type family ColToIndex (col :: Symbol) :: Maybe Nat where
     ColToIndex col = ElemIndex ValidColumns col
@@ -642,7 +654,19 @@ data GetPieceAt :: Board -> Position -> Exp (Maybe Piece)
 type instance Eval (GetPieceAt board pos) = Eval (If (Eval (IsValidPosition pos)) (GetPieceAtNoChecks board pos) (ID Nothing))
 
 data GetPieceAtNoChecks :: Board -> Position -> Exp (Maybe Piece)
-type instance Eval (GetPieceAtNoChecks board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CW (!!)) <$> (Eval (board !! (Eval (NatToMyNat (row - 1))))))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
+type instance Eval (GetPieceAtNoChecks board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CW (!!)) <$> (Eval (GetRow board row)))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
+
+data SetPieceAt :: Piece -> Board -> Position -> Exp Board
+type instance Eval (SetPieceAt piece board pos) = Eval (If (Eval (IsValidPosition pos)) (SetPieceAtNoChecks piece board pos) (ID board))
+
+data SetPieceAtNoChecks :: Piece -> Board -> Position -> Exp Board
+type instance Eval (SetPieceAtNoChecks piece board (At col row)) = Eval (SetRow board row (Eval (PutAt (Just (Eval (SetPiecePosition piece (At col row)))) (Eval (NatToMyNat (Eval (FromJust (ColToIndex col))))) (Eval (FromJust (Eval (GetRow board row)))))))
+
+data GetRow :: Board -> Nat -> Exp (Maybe Row)
+type instance Eval (GetRow board n) = Eval (board !! Eval (NatToMyNat (n - 1)))
+
+data SetRow :: Board -> Nat -> Row -> Exp Board
+type instance Eval (SetRow board n row) = Eval (PutAt row (Eval (NatToMyNat n)) board)
 
 data IsPieceAt :: Board -> Position -> Exp Bool
 type instance Eval (IsPieceAt board pos) = Eval (IsJust (Eval (GetPieceAt board pos)))
