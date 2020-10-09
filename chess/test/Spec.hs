@@ -41,6 +41,8 @@ type TestBoard2   = EmptyRow
 
 type TestList = Eval (RangeBetween 0 10)
 
+type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
+
 ----------------------------------------------------------------------------------------------
 -- TEST FUNCTIONS
 
@@ -121,6 +123,20 @@ getAdjacentTest2 = Refl
 getAdjacentTest3 :: 'False :~: Eval (In (At "d" 4) (Eval (GetAdjacent (At "d" 4))))
 getAdjacentTest3 = Refl
 
+setPieceAtTest1 :: At "b" 6 :~: Eval (PiecePosition (Eval (FromJust (Eval (GetPieceAt (Eval (SetPieceAt (MkPiece Black Pawn (Info Z (At "d" 2))) EmptyBoard (At "b" 6))) (At "b" 6))))))
+setPieceAtTest1 = Refl
+
+-- :kind! Flip (SetPieceAt piece) :: Position -> Board -> Exp Board
+-- data Foldr :: (a -> b -> Exp b) -> b -> [a] -> Exp b
+type TestInfo = Info Z (At "a" 1)
+data SetPieceAtSwapped :: (Piece, Position) -> Board -> Exp Board
+type instance Eval (SetPieceAtSwapped '(piece, pos) board) = Eval (SetPieceAt piece board pos)
+setPieceAtTest2 :: 3 :~: Eval (NoOfPieces (Eval (Foldr SetPieceAtSwapped EmptyBoard (Eval (Zip '[MkPiece Black Pawn TestInfo, MkPiece White Pawn TestInfo, MkPiece White King TestInfo] '[At "b" 1, At "b" 2, At "b" 3])))))
+setPieceAtTest2 = Refl
+
+setPieceAtTest3 :: 1 :~: Eval (NoOfPieces (Eval (Foldr SetPieceAtSwapped EmptyBoard (Eval (Zip '[MkPiece Black Pawn TestInfo, MkPiece White Pawn TestInfo, MkPiece White King TestInfo] (Eval (Replicate 3 (At "b" 1))))))))
+setPieceAtTest3 = Refl
+
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
 
@@ -136,10 +152,17 @@ main = hspec $ do
   describe "List Equality Tests" $ do
     it "1: Two empty lists should be equal" $ do
       shouldTypecheck listEqualityTest1
-    it "2: Two non-empty lists with the same elements should be equal" $ do
+    it "2: Two non-empty lists with the same elements should be equal" $
       shouldTypecheck listEqualityTest2
-    it "3: Two non-empty lists with different elements should not be equal" $ do
+    it "3: Two non-empty lists with different elements should not be equal" $ 
       shouldTypecheck listEqualityTest3
+  describe "SetPieceAt Tests" $ do
+    it "1: A piece set to a position should then have that position recorded in the piece's info record" $ 
+      shouldTypecheck setPieceAtTest1
+    it "2: Setting n pieces down should mean that there are n pieces on the board" $ 
+      shouldTypecheck setPieceAtTest2
+    it "3: Setting a piece down on a taken position replaces that piece" $ 
+      shouldTypecheck setPieceAtTest3
   describe "GetReachableLeft Tests" $ do
     it "1" $
       shouldTypecheck getReachableLeftTest1

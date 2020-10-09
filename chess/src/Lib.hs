@@ -27,6 +27,9 @@ infixr 6 .
 data Flip :: (a -> b -> Exp c) -> b -> a -> Exp c
 type instance Eval (Flip f b a) = Eval (f a b)
 
+data Curry :: (a -> b -> Exp c) -> (a, b) -> Exp c
+type instance Eval (Curry f '(a, b)) = Eval (f a b)
+
 -- Wrapping up a function, so that you can curry it at multiple layers!
 data CurryWrap :: (a -> b) -> a -> Exp b
 type instance Eval (CurryWrap f a) = f a
@@ -241,6 +244,12 @@ data Filter :: (a -> Exp Bool) -> [a] -> Exp [a]
 type instance Eval (Filter p '[]) = '[]
 type instance Eval (Filter p (x ': xs)) = Eval (If (Eval (p x)) (ID (x ': Eval (Filter p xs))) (Filter p xs))
 
+data FilterCount :: (a -> Exp Bool) -> [a] -> Exp Nat
+type instance Eval (FilterCount p xs) = Eval (Length (Eval (Filter p xs)))
+
+data VFilterCount :: (a -> Exp Bool) -> Vec n a -> Exp Nat
+type instance Eval (VFilterCount p xs) = Eval (FilterCount p (Eval (VecToList xs)))
+
 data Take :: Nat -> [a] -> Exp [a]
 type instance Eval (Take n xs) = Eval (TakeMyNat (Eval (NatToMyNat n)) xs)
 
@@ -258,15 +267,20 @@ data TakeWhilePlus :: (a -> Exp Bool) -> (a -> Exp Bool) -> [a] -> Exp [a]
 type instance Eval (TakeWhilePlus p q '[]) = '[]
 type instance Eval (TakeWhilePlus p q (x ': xs)) = Eval (If (Eval (p x)) (ID (x ': Eval (TakeWhilePlus p q xs))) (If (Eval (q x)) (ID '[ x ]) (ID '[])))
 
+data Zip :: [a] -> [b] -> Exp [(a, b)]
+type instance Eval (Zip xs ys) = Eval (ZipWith xs ys (CW2 '(,)))
+
 -- :kind! Eval (ZipWith '["a", "b"] '[1, 2] (CW2 At)) = '[ 'At "a" 1, 'At "b" 2]
 data ZipWith :: [a] -> [b] -> (a -> b -> Exp c) -> Exp [c]
 type instance Eval (ZipWith '[] _ _) = '[]
 type instance Eval (ZipWith _ '[] _) = '[]
 type instance Eval (ZipWith (x ': xs) (y ': ys) f) = Eval (f x y) ': Eval (ZipWith xs ys f)
 
-data Foldr :: (a -> b -> Exp b) -> b -> [a] -> Exp b
+data Foldr :: (a -> b -> Exp b) -> b -> f a -> Exp b
 type instance Eval (Foldr f z '[])       = z
 type instance Eval (Foldr f z (x ': xs)) = Eval (f x (Eval (Foldr f z xs)))
+type instance Eval (Foldr f z VEnd)       = z
+type instance Eval (Foldr f z (x :-> xs)) = Eval (f x (Eval (Foldr f z xs)))
 
 data (++) :: [a] -> [a] -> Exp [a]
 type instance Eval ('[] ++ ys) = ys
@@ -274,6 +288,13 @@ type instance Eval ((x ': xs) ++ ys) = x ': (Eval (xs ++ ys))
 
 data Concat :: [[a]] -> Exp [a]
 type instance Eval (Concat xs) = Eval (Foldr (++) '[] xs)
+
+data Replicate :: Nat -> a -> Exp [a]
+type instance Eval (Replicate n x) = Eval (ReplicateMyNat (Eval (NatToMyNat n)) x)
+
+data ReplicateMyNat :: MyNat -> a -> Exp [a]
+type instance Eval (ReplicateMyNat Z x)     = '[]
+type instance Eval (ReplicateMyNat (S n) x) = x ': Eval (ReplicateMyNat n x)
 
 -- Type synonym for an 8x8 grid
 type Eight = S (S (S (S (S (S (S (S Z)))))))
@@ -326,6 +347,9 @@ type instance Eval (PieceTeam (MkPiece team _ _)) = team
 
 data PieceType :: Piece -> Exp PieceName
 type instance Eval (PieceType (MkPiece _ name _)) = name
+
+data NoOfPieces :: Board -> Exp Nat
+type instance Eval (NoOfPieces board) = Eval (Foldr Plus 0 (Eval ((VFilterCount IsJust) <$> board)))
 
 -- TODO: Type level char??
 -- Goes column-row, e.g. At "a" 4 means first column from left, 4 up from the bottom, where Black is at the top
@@ -665,8 +689,9 @@ type instance Eval (SetPieceAtNoChecks piece board (At col row)) = Eval (SetRow 
 data GetRow :: Board -> Nat -> Exp (Maybe Row)
 type instance Eval (GetRow board n) = Eval (board !! Eval (NatToMyNat (n - 1)))
 
+-- Uses 1 for first row, and 8 for last row!
 data SetRow :: Board -> Nat -> Row -> Exp Board
-type instance Eval (SetRow board n row) = Eval (PutAt row (Eval (NatToMyNat n)) board)
+type instance Eval (SetRow board n row) = Eval (PutAt row (Eval (NatToMyNat (n - 1))) board)
 
 data IsPieceAt :: Board -> Position -> Exp Bool
 type instance Eval (IsPieceAt board pos) = Eval (IsJust (Eval (GetPieceAt board pos)))
@@ -736,3 +761,6 @@ type family MyNatToSNat (n :: MyNat) :: SNat n where
 data MyNatLength :: [a] -> Exp MyNat
 type instance Eval (MyNatLength '[]) = Z
 type instance Eval (MyNatLength (x ': xs)) = S (Eval (MyNatLength xs))
+
+-- type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
+-- type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
