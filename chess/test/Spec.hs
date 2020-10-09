@@ -112,6 +112,15 @@ allReachableGivenListTest1 = Refl
 allReachableGivenListTest2 :: '[ At "a" 1, At "a" 2, At "a" 7, At "b" 3 ] :~: Eval (AllReachableGivenList Black TestBoard2 '[ At "a" 1, At "a" 2, At "a" 7, At "b" 3 ])
 allReachableGivenListTest2 = Refl
 
+getAdjacentTest1 :: 'True :~: Eval ('[At "a" 2, At "b" 1, At "b" 2] :=:=: Eval (GetAdjacent (At "a" 1)))
+getAdjacentTest1 = Refl
+
+getAdjacentTest2 :: 'True :~: Eval ('[At "e" 4, At "e" 5, At "e" 6, At "g" 4, At "g" 5, At "g" 6,At "f" 4, At "f" 6] :=:=: Eval (GetAdjacent (At "f" 5)))
+getAdjacentTest2 = Refl
+
+getAdjacentTest3 :: 'False :~: Eval (In (At "d" 4) (Eval (GetAdjacent (At "d" 4))))
+getAdjacentTest3 = Refl
+
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
 
@@ -171,6 +180,13 @@ main = hspec $ do
       shouldTypecheck knightPositionsTest1
     it "2: A Knight should not be able to leap off the board" $
       shouldTypecheck knightPositionsTest2
+  describe "GetAdjacent Tests" $ do
+    it "1: GetAdjacent places should not go off the edge of the board" $
+      shouldTypecheck getAdjacentTest1
+    it "2: GetAdjacent places should form a tight ring around the given position" $
+      shouldTypecheck getAdjacentTest2
+    it "3: GetAdjacent spots should not contain the given position" $
+      shouldTypecheck getAdjacentTest3
   describe "AllReachableGivenList Tests" $ do
     it "1: Spaces taken up by pieces of the same team should not be reachable" $
       shouldTypecheck allReachableGivenListTest1
