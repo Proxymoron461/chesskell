@@ -460,7 +460,7 @@ type instance Eval (GetKnightRows row n) = Eval (If (n <=? row) (ID '[ row - n, 
 -- :kind! Eval ((Eval ((CW Plus) <$> [2,1,0])) <*> [1,2,3])
 -- NOTE: Uses Tail to remove the current position!
 data GetAdjacent :: Position -> Exp [Position]
-type instance Eval (GetAdjacent (At col row)) = Eval (Tail (Eval ((Eval (CW (CW2 At) <$> (Eval (GetAdjacentColumns col)))) <*> '[row, row + 1, Eval (SafeMinus row 1)])))
+type instance Eval (GetAdjacent (At col row)) = Eval (Filter IsValidPosition (Eval (Tail (Eval ((Eval (CW (CW2 At) <$> (Eval (GetAdjacentColumns col)))) <*> '[row, row + 1, Eval (SafeMinus row 1)])))))
 
 data GetAdjacentColumns :: Symbol -> Exp [Symbol]
 type instance Eval (GetAdjacentColumns col) = col ': Eval (Map FromJust (Eval (Filter IsJust '[Eval ((S Z) :+ col), Eval ((S Z) :- col)])))
@@ -651,28 +651,25 @@ data GetFreePositions :: [Position] -> Board -> Exp [Position]
 type instance Eval (GetFreePositions '[] _) = '[]
 type instance Eval (GetFreePositions (p ': ps) board) = Eval (If (Eval ((Eval (IsPieceAt board p)) :||: ((Not . IsValidPosition) p))) (GetFreePositions ps board) (ID (p ': (Eval (GetFreePositions ps board)))))
 
--- TODO: Figure out how to handle the side effects of moves (e.g. taking a piece, castling, replacing a piece with another)
+-- This function just checks the spots a piece can move to; it does not handle moving itself.
+-- That is in the other function, named Move.
 -- TODO: Maybe represent the boards that the piece can move to? A new function, MovePiece, which handles any side effects??
 -- Returns an empty list if the board is empty at that position!
+-- NOTE: This allows pieces to state that they can move to the King's position; but this is just for check purposes. They can't actually take the king.
 data CalculateValidMoves :: Position -> Board -> Exp [Position]
 type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe '[] ((Flip PieceCanMoveTo) board) (Eval (GetPieceAt board pos)))
 
--- TODO: Finish instances for each team x piece, e.g. White Pawn, Black Knight, ...
 -- TODO: Check that the piece's reported position is its' actual position
 -- TODO: Test all this!!! Near-urgently!
+-- TODO: Allow for kinds to do castling
+-- TODO: Allow for en passant takes
 data PieceCanMoveTo :: Piece -> Board -> Exp [Position]
-type instance Eval (PieceCanMoveTo (MkPiece Black Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece Black Pawn info) board) (PawnPostStart (MkPiece Black Pawn info) board))
-type instance Eval (PieceCanMoveTo (MkPiece White Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece White Pawn info) board) (PawnPostStart (MkPiece White Pawn info) board))
-type instance Eval (PieceCanMoveTo (MkPiece Black Bishop info) board) = Eval (AllReachableDiag Black board (Eval (GetPosition info)))
-type instance Eval (PieceCanMoveTo (MkPiece White Bishop info) board) = Eval (AllReachableDiag White board (Eval (GetPosition info)))
-type instance Eval (PieceCanMoveTo (MkPiece Black Knight info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
-type instance Eval (PieceCanMoveTo (MkPiece White Knight info) board) = TypeError (Text "Not written PieceCanMoveTo yet!")
-type instance Eval (PieceCanMoveTo (MkPiece Black Rook info) board)   = Eval (AllReachableStraightLine Black board (Eval (GetPosition info)))
-type instance Eval (PieceCanMoveTo (MkPiece White Rook info) board)   = Eval (AllReachableStraightLine White board (Eval (GetPosition info)))
-type instance Eval (PieceCanMoveTo (MkPiece Black Queen info) board)  = Eval (AllReachableLineAndDiag Black board (Eval (GetPosition info)))
-type instance Eval (PieceCanMoveTo (MkPiece White Queen info) board)  = Eval (AllReachableLineAndDiag White board (Eval (GetPosition info)))
-type instance Eval (PieceCanMoveTo (MkPiece Black King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
-type instance Eval (PieceCanMoveTo (MkPiece White King info) board)   = TypeError (Text "Not written PieceCanMoveTo yet!")
+type instance Eval (PieceCanMoveTo (MkPiece team Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece team Pawn info) board) (PawnPostStart (MkPiece team Pawn info) board))
+type instance Eval (PieceCanMoveTo (MkPiece team Bishop info) board) = Eval (AllReachableDiag team board (Eval (GetPosition info)))
+type instance Eval (PieceCanMoveTo (MkPiece team Knight info) board) = Eval (AllReachableGivenList team board (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
+type instance Eval (PieceCanMoveTo (MkPiece team Rook info) board)   = Eval (AllReachableStraightLine team board (Eval (GetPosition info)))
+type instance Eval (PieceCanMoveTo (MkPiece team Queen info) board)  = Eval (AllReachableLineAndDiag team board (Eval (GetPosition info)))
+type instance Eval (PieceCanMoveTo (MkPiece team King info) board)   = Eval (AllReachableGivenList team board (Eval (GetAdjacent (Eval (GetPosition info)))))
 
 -- Type family for where a pawn can move when it is in its' starting position
 data PawnStartMove :: Piece -> Board -> Exp [Position]
@@ -697,6 +694,7 @@ type instance Eval (PawnPostStart pawn board) = Eval ((Eval (PawnMove pawn board
 -- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
 -- TODO: Handle moves that can move multiple pieces (e.g. castling)
 -- TODO: Handle takes (i.e. moves that remove pieces from play)
+-- TODO: Ensure that pieces don't move to where the King is!
 -- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
 data Move :: Position -> Board -> Exp (Maybe Board)
 type instance Eval (Move pos board) = TypeError (Text "Not implemented!")
