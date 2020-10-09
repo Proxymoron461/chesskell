@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3a7bb2081fba1a00979325080f227362755aec0bc81311d1eabeebf426fed23b
+-- hash: cbdb47561052e8bd1dc8cf3362abd5c532a5029034eb8f9c9461e9c86779a1f9
 
 name:           chess
 version:        0.1.0.0
@@ -27,7 +27,9 @@ source-repository head
 
 library
   exposed-modules:
+      FirstClassFunctions
       Lib
+      Vec
   other-modules:
       Paths_chess
   hs-source-dirs:

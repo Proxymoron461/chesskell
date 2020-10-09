@@ -9,6 +9,8 @@ import Data.Type.Equality ((:~:)(..))
 import GHC.TypeLits (Nat)
 
 import Lib
+import Vec
+import FirstClassFunctions
 
 ----------------------------------------------------------------------------------------------
 -- TEST TYPES
