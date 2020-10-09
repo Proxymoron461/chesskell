@@ -520,6 +520,11 @@ type instance Eval (AllReachableDiagSE team board pos) = Eval (AllReachableFunc 
 data AllReachableDiagNE :: Team -> Board -> Position -> Exp [Position]
 type instance Eval (AllReachableDiagNE team board pos) = Eval (AllReachableFunc team board pos GetAllDiagNE)
 
+-- Prunes a list for all spaces taken up by a piece of the same team
+-- (Perfect for kinds and knights!)
+data AllReachableGivenList :: Team -> Board -> [Position] -> Exp [Position]
+type instance Eval (AllReachableGivenList team board list) = Eval (Filter (FromMaybe True (Not . HasTeam team) . GetPieceAt board) list)
+
 -- TODO: Reachable squares for L-shape (knights!)
 
 -- General function, for taking the first N reachable positions from a particular direction.

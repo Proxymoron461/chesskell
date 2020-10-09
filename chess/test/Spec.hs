@@ -106,6 +106,12 @@ knightPositionsTest1 = Refl
 knightPositionsTest2 :: 'True :~: Eval (('[At "b" 3, At "c" 2 ]) :=:=: Eval (GetAllKnightPositions (At "a" 1)))
 knightPositionsTest2 = Refl
 
+allReachableGivenListTest1 :: ('[] :: [Position]) :~: Eval (AllReachableGivenList White TestBoard2 '[ At "a" 2, At "a" 7, At "b" 3 ])
+allReachableGivenListTest1 = Refl
+
+allReachableGivenListTest2 :: '[ At "a" 1, At "a" 2, At "a" 7, At "b" 3 ] :~: Eval (AllReachableGivenList Black TestBoard2 '[ At "a" 1, At "a" 2, At "a" 7, At "b" 3 ])
+allReachableGivenListTest2 = Refl
+
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
 
@@ -165,4 +171,9 @@ main = hspec $ do
       shouldTypecheck knightPositionsTest1
     it "2: A Knight should not be able to leap off the board" $
       shouldTypecheck knightPositionsTest2
+  describe "AllReachableGivenList Tests" $ do
+    it "1: Spaces taken up by pieces of the same team should not be reachable" $
+      shouldTypecheck allReachableGivenListTest1
+    it "2: Spaces taken up by pieces of the opposite team, and empty spaces, should be reachable" $
+      shouldTypecheck allReachableGivenListTest2
     
