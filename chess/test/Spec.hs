@@ -100,6 +100,12 @@ listEqualityTest2 = Refl
 listEqualityTest3 :: 'False :~: Eval (TestList :=:=: (90 ': TestList))
 listEqualityTest3 = Refl
 
+knightPositionsTest1 :: 'True :~: Eval (('[At "e" 6, At "e" 2, At "c" 6, At "c" 2, At "b" 5, At "b" 3, At "f" 5, At "f" 3]) :=:=: Eval (GetAllKnightPositions (At "d" 4)))
+knightPositionsTest1 = Refl
+
+knightPositionsTest2 :: 'True :~: Eval (('[At "b" 3, At "c" 2 ]) :=:=: Eval (GetAllKnightPositions (At "a" 1)))
+knightPositionsTest2 = Refl
+
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
 
@@ -154,4 +160,9 @@ main = hspec $ do
       shouldTypecheck pawnTakePositionsBlackTest
     it "4: A White Pawn should not be able to take off the board, or take a space occupied by another White piece" $
       shouldTypecheck pawnTakePositionsWhiteTest
+  describe "Knight Movement Tests" $ do
+    it "1: A Knight should have 8 squares around it, in L-shapes, that it can jump to" $
+      shouldTypecheck knightPositionsTest1
+    it "2: A Knight should not be able to leap off the board" $
+      shouldTypecheck knightPositionsTest2
     
