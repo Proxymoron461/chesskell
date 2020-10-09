@@ -6,6 +6,7 @@ import Test.ShouldNotTypecheck (shouldNotTypecheck)
 import Control.DeepSeq (force, NFData)
 import Control.Exception (evaluate, try, TypeError(..))
 import Data.Type.Equality ((:~:)(..))
+import GHC.TypeLits (Nat)
 
 import Lib
 
@@ -37,6 +38,8 @@ type TestBoard2   = EmptyRow
                     :-> EmptyRow
                     :-> (Just TestWhitePawn2 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :<> (Nothing :-> Just TestBlackPawn :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
+
+type TestList = Eval (RangeBetween 0 10)
 
 ----------------------------------------------------------------------------------------------
 -- TEST FUNCTIONS
@@ -88,6 +91,15 @@ pawnTakePositionsBlackTest = Refl
 pawnTakePositionsWhiteTest :: ('[] :: [Position]) :~: Eval (PawnTakePositions TestWhitePawn TestBoard2)
 pawnTakePositionsWhiteTest = Refl
 
+listEqualityTest1 :: 'True :~: Eval (('[] :: [Nat]) :=:=: ('[] :: [Nat]))
+listEqualityTest1 = Refl
+
+listEqualityTest2 :: 'True :~: Eval (TestList :=:=: Eval (Reverse TestList))
+listEqualityTest2 = Refl
+
+listEqualityTest3 :: 'False :~: Eval (TestList :=:=: (90 ': TestList))
+listEqualityTest3 = Refl
+
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
 
@@ -100,6 +112,13 @@ shouldTypecheck a = do
 
 main :: IO ()
 main = hspec $ do
+  describe "List Equality Tests" $ do
+    it "1: Two empty lists should be equal" $ do
+      shouldTypecheck listEqualityTest1
+    it "2: Two non-empty lists with the same elements should be equal" $ do
+      shouldTypecheck listEqualityTest2
+    it "3: Two non-empty lists with different elements should not be equal" $ do
+      shouldTypecheck listEqualityTest3
   describe "GetReachableLeft Tests" $ do
     it "1" $
       shouldTypecheck getReachableLeftTest1
