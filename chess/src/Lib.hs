@@ -414,8 +414,13 @@ type instance Eval (PieceMoveList (MkPiece team Rook info) board)   = Eval (AllR
 type instance Eval (PieceMoveList (MkPiece team Queen info) board)  = Eval (AllReachableLineAndDiag team board (Eval (GetPosition info)))
 type instance Eval (PieceMoveList (MkPiece team King info) board)   = Eval (AllReachableGivenList team board (Eval (GetAdjacent (Eval (GetPosition info)))))
 
-data CanMoveTo :: Piece -> Position -> Board -> Exp Bool
-type instance Eval (CanMoveTo piece pos board) = Eval (pos `In` Eval (PieceMoveList piece board))
+data PieceCanMoveTo :: Piece -> Position -> Board -> Exp Bool
+type instance Eval (PieceCanMoveTo piece pos board) = Eval (pos `In` Eval (PieceMoveList piece board))
+data PieceCanMoveToSwap :: Position -> Board -> Piece -> Exp Bool
+type instance Eval (PieceCanMoveToSwap pos board piece) = Eval (PieceCanMoveTo piece pos board)
+
+data CanMoveTo :: Position -> Position -> Board -> Exp Bool
+type instance Eval (CanMoveTo fromPos toPos board) = Eval (FromMaybe False (PieceCanMoveToSwap toPos board) (Eval (GetPieceAt board fromPos)))
 
 -- Type family for where a pawn can move when it is in its' starting position
 -- TODO: Throw a type error if the Pawn has already moved??
@@ -443,7 +448,10 @@ type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) +
 -- TODO: Ensure that pieces don't move to where the King is!
 -- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
 data Move :: Position -> Position -> Board -> Exp (Maybe Board)
-type instance Eval (Move fromPos toPos board) = Eval (If (Eval (IsPieceAt board fromPos)) (TE' (Text "Have not implemented Move yet!")) (TE' (Text ("There is no piece at: " ++ TypeShow fromPos))))
+type instance Eval (Move fromPos toPos board) = Eval (If (Eval (CanMoveTo fromPos toPos board)) (MoveNoChecks fromPos toPos board) (TE' (Text ("There is no piece at: " ++ TypeShow fromPos))))
+
+data MoveNoChecks :: Position -> Position -> Board -> Exp (Maybe Board)
+type instance Eval (MoveNoChecks fromPos toPos board) = TypeError (Text "Have not implemented Move yet!")
 
 -----------------------------------------------------------------------------------------------
 

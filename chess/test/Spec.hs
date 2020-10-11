@@ -86,6 +86,18 @@ getPieceAtTest2 = Refl
 getPieceAtTest3 :: Just Z :~: Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z)))
 getPieceAtTest3 = Refl
 
+canMoveToTest1 :: True :~: Eval (CanMoveTo (At "a" 7) (At "a" 6) (Eval (SetPieceAt (MkPiece Black Pawn (Info (S Z) TestPosition)) EmptyBoard (At "a" 7))))
+canMoveToTest1 = Refl
+
+canMoveToTest2 :: True :~: Eval (CanMoveTo (At "a" 7) (At "a" 5) (Eval (SetPieceAt (MkPiece Black Pawn (Info Z TestPosition)) EmptyBoard (At "a" 7))))
+canMoveToTest2 = Refl
+
+canMoveToTest3 :: False :~: Eval (CanMoveTo (At "a" 7) (At "a" 5) (Eval (SetPieceAt (MkPiece Black Pawn (Info (S Z) TestPosition)) EmptyBoard (At "a" 7))))
+canMoveToTest3 = Refl
+
+canMoveToTest4 :: False :~: Eval (CanMoveTo (At "a" 7) (At "a" 5) (Eval (SetPieceAt (MkPiece White Pawn TestInfo) (Eval (SetPieceAt (MkPiece Black Pawn TestInfo) EmptyBoard (At "a" 7))) (At "a" 6))))
+canMoveToTest4 = Refl
+
 pieceMoveListWhitePawnTest :: '[ At "a" 3, At "a" 4 ] :~: Eval (PieceMoveList TestWhitePawn TestBoard2)
 pieceMoveListWhitePawnTest = Refl
 
@@ -191,6 +203,15 @@ main = hspec $ do
       shouldTypecheck getPieceAtTest2
     it "3" $
       shouldTypecheck getPieceAtTest3
+  describe "CanMoveTo Tests" $ do
+    it "1: A black pawn should be able to move to the space directly below it (if it is empty)." $
+      shouldTypecheck canMoveToTest1
+    it "2: A black pawn that has not moved should be able to move 2 spaces below itself (if both are empty)." $
+      shouldTypecheck canMoveToTest2
+    it "3: A black pawn that has already moved should not be able to move 2 spaces below itself." $
+      shouldTypecheck canMoveToTest3
+    it "4: A black pawn that has not moved should not be able to move 2 spaces below itself if the space below it is empty." $
+      shouldTypecheck canMoveToTest4
   describe "Pawn Tests" $ do
     it "1: A Black Pawn that hasn't moved yet should be able to move down 2 spaces" $
       shouldTypecheck pawnTest1
