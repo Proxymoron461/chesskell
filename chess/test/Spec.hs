@@ -86,8 +86,8 @@ getPieceAtTest2 = Refl
 getPieceAtTest3 :: Just Z :~: Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z)))
 getPieceAtTest3 = Refl
 
-pieceCanMoveToWhitePawnTest :: '[ At "a" 3, At "a" 4 ] :~: Eval (PieceCanMoveTo TestWhitePawn TestBoard2)
-pieceCanMoveToWhitePawnTest = Refl
+pieceMoveListWhitePawnTest :: '[ At "a" 3, At "a" 4 ] :~: Eval (PieceMoveList TestWhitePawn TestBoard2)
+pieceMoveListWhitePawnTest = Refl
 
 pawnTakePositionsBlackTest :: '[ At "a" 7, At "c" 7] :~: Eval (PawnTakePositions TestBlackPawn TestBoard2)
 pawnTakePositionsBlackTest = Refl
@@ -195,7 +195,7 @@ main = hspec $ do
     it "1: A Black Pawn that hasn't moved yet should be able to move down 2 spaces" $
       shouldTypecheck pawnTest1
     it "2: A White Pawn with 0 moves should be able to move up 2 spaces" $
-      shouldTypecheck pieceCanMoveToWhitePawnTest
+      shouldTypecheck pieceMoveListWhitePawnTest
     it "3: A Black Pawn should be able to take in the two diagonal spaces below it, including when one is occupied by a White piece" $
       shouldTypecheck pawnTakePositionsBlackTest
     it "4: A White Pawn should not be able to take off the board, or take a space occupied by another White piece" $

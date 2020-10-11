@@ -400,19 +400,22 @@ type instance Eval (GetFreePositions (p ': ps) board) = Eval (If (Eval ((Eval (I
 -- Returns an empty list if the board is empty at that position!
 -- NOTE: This allows pieces to state that they can move to the King's position; but this is just for check purposes. They can't actually take the king.
 data CalculateValidMoves :: Position -> Board -> Exp [Position]
-type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe '[] ((Flip PieceCanMoveTo) board) (Eval (GetPieceAt board pos)))
+type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe '[] ((Flip PieceMoveList) board) (Eval (GetPieceAt board pos)))
 
 -- TODO: Check that the piece's reported position is its' actual position
 -- TODO: Test all this!!! Near-urgently!
 -- TODO: Allow for kinds to do castling
 -- TODO: Allow for en passant takes
-data PieceCanMoveTo :: Piece -> Board -> Exp [Position]
-type instance Eval (PieceCanMoveTo (MkPiece team Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece team Pawn info) board) (PawnPostStart (MkPiece team Pawn info) board))
-type instance Eval (PieceCanMoveTo (MkPiece team Bishop info) board) = Eval (AllReachableDiag team board (Eval (GetPosition info)))
-type instance Eval (PieceCanMoveTo (MkPiece team Knight info) board) = Eval (AllReachableGivenList team board (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
-type instance Eval (PieceCanMoveTo (MkPiece team Rook info) board)   = Eval (AllReachableStraightLine team board (Eval (GetPosition info)))
-type instance Eval (PieceCanMoveTo (MkPiece team Queen info) board)  = Eval (AllReachableLineAndDiag team board (Eval (GetPosition info)))
-type instance Eval (PieceCanMoveTo (MkPiece team King info) board)   = Eval (AllReachableGivenList team board (Eval (GetAdjacent (Eval (GetPosition info)))))
+data PieceMoveList :: Piece -> Board -> Exp [Position]
+type instance Eval (PieceMoveList (MkPiece team Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece team Pawn info) board) (PawnPostStart (MkPiece team Pawn info) board))
+type instance Eval (PieceMoveList (MkPiece team Bishop info) board) = Eval (AllReachableDiag team board (Eval (GetPosition info)))
+type instance Eval (PieceMoveList (MkPiece team Knight info) board) = Eval (AllReachableGivenList team board (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
+type instance Eval (PieceMoveList (MkPiece team Rook info) board)   = Eval (AllReachableStraightLine team board (Eval (GetPosition info)))
+type instance Eval (PieceMoveList (MkPiece team Queen info) board)  = Eval (AllReachableLineAndDiag team board (Eval (GetPosition info)))
+type instance Eval (PieceMoveList (MkPiece team King info) board)   = Eval (AllReachableGivenList team board (Eval (GetAdjacent (Eval (GetPosition info)))))
+
+data CanMoveTo :: Piece -> Position -> Board -> Exp Bool
+type instance Eval (CanMoveTo piece pos board) = Eval (pos `In` Eval (PieceMoveList piece board))
 
 -- Type family for where a pawn can move when it is in its' starting position
 -- TODO: Throw a type error if the Pawn has already moved??
