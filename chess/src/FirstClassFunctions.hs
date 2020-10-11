@@ -11,10 +11,18 @@ type Type = *
 type Exp a = a -> Type
 type family Eval (e :: Exp a) :: a
 
+-- Open type family for Show instances for types!
+type family TypeShow (x :: a) :: Symbol
+
 -- Custom Nat class, to allow pattern matching on Nat > 2
 data MyNat where
     Z :: MyNat
     S :: MyNat -> MyNat
+
+type instance TypeShow (Z) = "Z"
+type instance TypeShow (S n) = "S " ++ TypeShow n
+-- TODO: Improved TypeShow instance for Nat??
+type instance TypeShow (n :: Nat) = TypeShow (Eval (NatToMyNat n))
 
 data IsZero :: MyNat -> Exp Bool
 type instance Eval (IsZero Z)     = True
@@ -132,9 +140,6 @@ type instance Eval (Reverse (x ': xs)) = Eval (Reverse xs) ++ '[x]
 type family IsTypeEqualNonFCF (x :: a) (y :: b) :: Bool where
     IsTypeEqualNonFCF x x = 'True
     IsTypeEqualNonFCF x y = 'False
-
--- A type-level show function!
-data TypeShow :: a -> Exp Symbol
 
 -- :kind! Eval (If (Eval (IsJust (Eval (GetPieceAt TestBoard (At "a" 1))))) (ID "yes") (ID "no")) = "yes"
 -- :kind! Eval (If (Eval (IsJust (Eval (GetPieceAt TestBoard (At "a" 2))))) (ID "yes") (ID "no")) = "no"

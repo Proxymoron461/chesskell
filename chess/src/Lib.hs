@@ -71,7 +71,7 @@ data Position where
     At :: Symbol -> Nat -> Position
 
 -- TODO: Implement TypeShow for type level naturals??
-type instance Eval (TypeShow (At col row)) = "At " `AppendSymbol` col `AppendSymbol` " " `AppendSymbol` Eval (TypeShow row)
+type instance TypeShow (At col row) = "At " ++ col ++ " (" ++ TypeShow row ++ ")"
 
 type ValidColumns = "a" :-> "b" :-> "c" :-> "d" :-> "e" :-> "f" :-> "g" :<> "h"
 
@@ -440,7 +440,7 @@ type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) +
 -- TODO: Ensure that pieces don't move to where the King is!
 -- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
 data Move :: Position -> Position -> Board -> Exp (Maybe Board)
-type instance Eval (Move fromPos toPos board) = Eval (If (Eval (IsPieceAt board fromPos)) (TE' (Text "Have not implemented Move yet!")) (TE' (Text ("There is no piece at: " `AppendSymbol` Eval (TypeShow fromPos)))))
+type instance Eval (Move fromPos toPos board) = Eval (If (Eval (IsPieceAt board fromPos)) (TE' (Text "Have not implemented Move yet!")) (TE' (Text ("There is no piece at: " ++ TypeShow fromPos))))
 
 -----------------------------------------------------------------------------------------------
 
