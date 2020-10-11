@@ -189,7 +189,7 @@ data GetAllDiagNE :: Position -> Exp [Position]
 type instance Eval (GetAllDiagNE (At col row)) = Eval (ZipWith (Eval (CharRangeBetween col "a")) (Eval (RangeBetween row 8)) (CW2 At))
 
 data GetAllKnightPositions :: Position -> Exp [Position]
-type instance Eval (GetAllKnightPositions pos) = Eval (Filter IsValidPosition (Eval (Eval (GetKnightAboveBelow pos) ++ Eval (GetKnightLeftRight pos))))
+type instance Eval (GetAllKnightPositions pos) = Eval (Filter IsValidPosition (Eval (GetKnightAboveBelow pos) ++ Eval (GetKnightLeftRight pos)))
 
 data GetKnightAboveBelow :: Position -> Exp [Position]
 type instance Eval (GetKnightAboveBelow (At col row)) = Eval (Eval (CW (CW2 At) <$> Eval (GetKnightColumns col 1)) <*> Eval (GetKnightRows row 2))
@@ -249,7 +249,7 @@ data AllReachableStraightLine :: Team -> Board -> Position -> Exp [Position]
 type instance Eval (AllReachableStraightLine team board pos) = Eval (Concat (Eval (Map (AllReachableFunc team board pos) '[ GetAllLeft, GetAllRight, GetAllAbove, GetAllBelow ])))
 
 data AllReachableLineAndDiag :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableLineAndDiag team board pos) = Eval ((Eval (AllReachableStraightLine team board pos)) ++ (Eval (AllReachableDiag team board pos)))
+type instance Eval (AllReachableLineAndDiag team board pos) = (Eval (AllReachableStraightLine team board pos)) ++ (Eval (AllReachableDiag team board pos))
 
 -- Reachable square type families for all diagonal directions at once: helpful
 -- for Bishops and Queens!
@@ -417,7 +417,7 @@ type instance Eval (PieceCanMoveTo (MkPiece team King info) board)   = Eval (All
 -- Type family for where a pawn can move when it is in its' starting position
 -- TODO: Throw a type error if the Pawn has already moved??
 data PawnStartMove :: Piece -> Board -> Exp [Position]
-type instance Eval (PawnStartMove pawn board) = Eval ((Eval (PawnMove pawn board 2)) ++ (Eval (PawnTakePositions pawn board)))
+type instance Eval (PawnStartMove pawn board) = (Eval (PawnMove pawn board 2)) ++ (Eval (PawnTakePositions pawn board))
 
 -- Type family for getting the initial pawn two-forward move!
 data PawnMove :: Piece -> Board -> Nat -> Exp [Position]
@@ -427,11 +427,11 @@ type instance Eval (PawnMove (MkPiece White Pawn info) board n) = Eval (PawnReac
 -- Pawns can take diagonally in front of themselves: so this gets those positions if a take is possible!
 -- TODO: Handle "en passant" takes
 data PawnTakePositions :: Piece -> Board -> Exp [Position]
-type instance Eval (PawnTakePositions (MkPiece Black Pawn info) board) = Eval ((Eval (NReachableDiagSE Black board (Eval (GetPosition info)) 1)) ++ (Eval (NReachableDiagSW Black board (Eval (GetPosition info)) 1)))
-type instance Eval (PawnTakePositions (MkPiece White Pawn info) board) = Eval ((Eval (NReachableDiagNE White board (Eval (GetPosition info)) 1)) ++ (Eval (NReachableDiagNW White board (Eval (GetPosition info)) 1)))
+type instance Eval (PawnTakePositions (MkPiece Black Pawn info) board) = Eval (NReachableDiagSE Black board (Eval (GetPosition info)) 1) ++ (Eval (NReachableDiagSW Black board (Eval (GetPosition info)) 1))
+type instance Eval (PawnTakePositions (MkPiece White Pawn info) board) = Eval (NReachableDiagNE White board (Eval (GetPosition info)) 1) ++ (Eval (NReachableDiagNW White board (Eval (GetPosition info)) 1))
 
 data PawnPostStart :: Piece -> Board -> Exp [Position]
-type instance Eval (PawnPostStart pawn board) = Eval ((Eval (PawnMove pawn board 1)) ++ (Eval (PawnTakePositions pawn board)))
+type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) ++ (Eval (PawnTakePositions pawn board))
 
 -- Type family for actually moving the piece, and handling the side effects.
 -- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)

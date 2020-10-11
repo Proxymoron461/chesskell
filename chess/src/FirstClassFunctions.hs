@@ -84,7 +84,7 @@ data Apply :: f (a -> Exp b) -> f a -> Exp (f b)
 type instance Eval (Apply _ Nothing)         = Nothing
 type instance Eval (Apply (Just f) (Just x)) = Just (Eval (f x))
 type instance Eval (Apply '[] _) = '[]
-type instance Eval (Apply (f ': fs) xs) = Eval (Eval (f <$> xs) ++ Eval (Apply fs xs))
+type instance Eval (Apply (f ': fs) xs) = Eval (f <$> xs) ++ Eval (Apply fs xs)
 
 data (<*>) :: f (a -> Exp b) -> f a -> Exp (f b)
 type instance Eval (f <*> x) = Eval (Apply f x)
@@ -126,7 +126,7 @@ type instance Eval (xs :<= ys) = Eval (All ((Flip In) ys) xs)
 
 data Reverse :: [a] -> Exp [a]
 type instance Eval (Reverse '[]) = '[]
-type instance Eval (Reverse (x ': xs)) = Eval (Eval (Reverse xs) ++ '[x])
+type instance Eval (Reverse (x ': xs)) = Eval (Reverse xs) ++ '[x]
 
 -- TODO: Maybe make y have kind a as well?
 type family IsTypeEqualNonFCF (x :: a) (y :: b) :: Bool where
@@ -265,14 +265,17 @@ data Foldr :: (a -> b -> Exp b) -> b -> f a -> Exp b
 type instance Eval (Foldr f z '[])       = z
 type instance Eval (Foldr f z (x ': xs)) = Eval (f x (Eval (Foldr f z xs)))
 
--- TODO: Make more type safe?? Currently 1 ++ 2 would compile without issues
-data (++) :: a -> a -> Exp a
-type instance Eval ('[] ++ ys) = ys
-type instance Eval ((x ': xs) ++ ys) = x ': (Eval (xs ++ ys))
-type instance Eval ((xs :: Symbol) ++ (ys :: Symbol)) = xs `AppendSymbol` ys
+-- TODO: Make more type safe?? Currently 1 ++ 2 would compile without issues (maybe)
+type family (++) (x :: a) (y :: a) :: a
+type instance ('[] ++ ys) = ys
+type instance ((x ': xs) ++ ys) = x ': (xs ++ ys)
+type instance ((xs :: Symbol) ++ (ys :: Symbol)) = xs `AppendSymbol` ys
+
+data Append :: a -> a -> Exp a
+type instance Eval (Append x y) = x ++ y
 
 data Concat :: [[a]] -> Exp [a]
-type instance Eval (Concat xs) = Eval (Foldr (++) '[] xs)
+type instance Eval (Concat xs) = Eval (Foldr Append '[] xs)
 
 data Replicate :: Nat -> a -> Exp [a]
 type instance Eval (Replicate n x) = Eval (ReplicateMyNat (Eval (NatToMyNat n)) x)
