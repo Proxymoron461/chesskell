@@ -55,10 +55,13 @@ infixr 6 .
 data Flip :: (a -> b -> Exp c) -> b -> a -> Exp c
 type instance Eval (Flip f b a) = Eval (f a b)
 
-data Curry :: (a -> b -> Exp c) -> (a, b) -> Exp c
-type instance Eval (Curry f '(a, b)) = Eval (f a b)
+data Uncurry :: (a -> b -> Exp c) -> (a, b) -> Exp c
+type instance Eval (Uncurry f '(a, b)) = Eval (f a b)
 
--- Wrapping up a function, so that you can curry it at multiple layers!
+data Uncurry2 :: (a -> b -> c -> Exp d) -> (a, b) -> c -> Exp d
+type instance Eval (Uncurry2 f '(a, b) c) = Eval (f a b c)
+
+-- Wrapping up a function, so that you can Uncurryit at multiple layers!
 data CurryWrap :: (a -> b) -> a -> Exp b
 type instance Eval (CurryWrap f a) = f a
 data CW :: (a -> b) -> a -> Exp b

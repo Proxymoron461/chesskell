@@ -376,9 +376,14 @@ type instance Eval (GetPieceAtNoChecks board (At col row)) = Eval (Join (Eval (J
 
 data SetPieceAt :: Piece -> Board -> Position -> Exp Board
 type instance Eval (SetPieceAt piece board pos) = Eval (If (Eval (IsValidPosition pos)) (SetPieceAtNoChecks piece board pos) (ID board))
+data SetPieceAtSwapped :: Piece -> Position -> Board -> Exp Board
+type instance Eval (SetPieceAtSwapped piece pos board) = Eval (SetPieceAt piece board pos)
 
 data SetPieceAtNoChecks :: Piece -> Board -> Position -> Exp Board
 type instance Eval (SetPieceAtNoChecks piece board (At col row)) = Eval (SetRow board row (Eval (PutAt (Just (Eval (SetPiecePosition piece (At col row)))) (Eval (NatToMyNat (Eval (FromJust (ColToIndex col))))) (Eval (FromJust (Eval (GetRow board row)))))))
+
+data SetPiecesAt :: [(Piece, Position)] -> Board -> Exp Board
+type instance Eval (SetPiecesAt pps board) = Eval (Foldr (Uncurry2 SetPieceAtSwapped) board pps)
 
 data GetRow :: Board -> Nat -> Exp (Maybe Row)
 type instance Eval (GetRow board n) = Eval (board !! Eval (NatToMyNat (n - 1)))

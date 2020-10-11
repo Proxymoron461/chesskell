@@ -143,13 +143,19 @@ setPieceAtTest1 = Refl
 -- :kind! Flip (SetPieceAt piece) :: Position -> Board -> Exp Board
 -- data Foldr :: (a -> b -> Exp b) -> b -> [a] -> Exp b
 type TestInfo = Info Z (At "a" 1)
-data SetPieceAtSwapped :: (Piece, Position) -> Board -> Exp Board
-type instance Eval (SetPieceAtSwapped '(piece, pos) board) = Eval (SetPieceAt piece board pos)
-setPieceAtTest2 :: 3 :~: Eval (NoOfPieces (Eval (Foldr SetPieceAtSwapped EmptyBoard (Eval (Zip '[MkPiece Black Pawn TestInfo, MkPiece White Pawn TestInfo, MkPiece White King TestInfo] '[At "b" 1, At "b" 2, At "b" 3])))))
+type TestPieceList = '[MkPiece Black Pawn TestInfo, MkPiece White Pawn TestInfo, MkPiece White King TestInfo]
+setPieceAtTest2 :: 3 :~: Eval (NoOfPieces (Eval (Foldr (Uncurry2 SetPieceAtSwapped) EmptyBoard (Eval (Zip TestPieceList '[At "b" 1, At "b" 2, At "b" 3])))))
 setPieceAtTest2 = Refl
 
-setPieceAtTest3 :: 1 :~: Eval (NoOfPieces (Eval (Foldr SetPieceAtSwapped EmptyBoard (Eval (Zip '[MkPiece Black Pawn TestInfo, MkPiece White Pawn TestInfo, MkPiece White King TestInfo] (Eval (Replicate 3 (At "b" 1))))))))
+setPieceAtTest3 :: 1 :~: Eval (NoOfPieces (Eval (Foldr (Uncurry2 SetPieceAtSwapped) EmptyBoard (Eval (Zip TestPieceList (Eval (Replicate 3 (At "b" 1))))))))
 setPieceAtTest3 = Refl
+
+setPiecesAtTest1 :: 3 :~: Eval (NoOfPieces (Eval (SetPiecesAt (Eval (Zip TestPieceList '[At "b" 1, At "b" 2, At "b" 3])) EmptyBoard)))
+setPiecesAtTest1 = Refl
+
+setPiecesAtTest2 :: (Eval (Foldr (Uncurry2 SetPieceAtSwapped) EmptyBoard (Eval (Zip TestPieceList '[At "b" 1, At "b" 2, At "b" 3]))))
+                    :~: (Eval (SetPiecesAt (Eval (Zip TestPieceList '[At "b" 1, At "b" 2, At "b" 3])) EmptyBoard))
+setPiecesAtTest2 = Refl
 
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
@@ -175,8 +181,11 @@ main = hspec $ do
       shouldTypecheck setPieceAtTest1
     it "2: Setting n pieces down should mean that there are n pieces on the board" $ 
       shouldTypecheck setPieceAtTest2
-    it "3: Setting a piece down on a taken position replaces that piece" $ 
-      shouldTypecheck setPieceAtTest3
+  describe "SetPiecesAt (plural) Tests" $ do
+    it "1: Setting n pieces down should mean that there are n pieces on the board" $ 
+      shouldTypecheck setPiecesAtTest1
+    it "2: The result of SetPiecesAt should be identical to repeated applications of SetPieceAt" $ 
+      shouldTypecheck setPiecesAtTest2
   describe "GetReachableLeft Tests" $ do
     it "1" $
       shouldTypecheck getReachableLeftTest1
