@@ -70,6 +70,9 @@ type instance Eval (NoOfPieces board) = Eval (Foldr Plus 0 (Eval ((VFilterCount 
 data Position where
     At :: Symbol -> Nat -> Position
 
+-- TODO: Implement TypeShow for type level naturals??
+type instance Eval (TypeShow (At col row)) = "At " `AppendSymbol` col `AppendSymbol` " " `AppendSymbol` Eval (TypeShow row)
+
 type ValidColumns = "a" :-> "b" :-> "c" :-> "d" :-> "e" :-> "f" :-> "g" :<> "h"
 
 type ValidRows = 1 :-> 2 :-> 3 :-> 4 :-> 5 :-> 6 :-> 7 :<> 8
@@ -412,11 +415,11 @@ type instance Eval (PieceCanMoveTo (MkPiece team Queen info) board)  = Eval (All
 type instance Eval (PieceCanMoveTo (MkPiece team King info) board)   = Eval (AllReachableGivenList team board (Eval (GetAdjacent (Eval (GetPosition info)))))
 
 -- Type family for where a pawn can move when it is in its' starting position
+-- TODO: Throw a type error if the Pawn has already moved??
 data PawnStartMove :: Piece -> Board -> Exp [Position]
 type instance Eval (PawnStartMove pawn board) = Eval ((Eval (PawnMove pawn board 2)) ++ (Eval (PawnTakePositions pawn board)))
 
 -- Type family for getting the initial pawn two-forward move!
--- TODO: Throw a type error if the Pawn has already moved??
 data PawnMove :: Piece -> Board -> Nat -> Exp [Position]
 type instance Eval (PawnMove (MkPiece Black Pawn info) board n) = Eval (PawnReachableBelow board (Eval (GetPosition info)) n)
 type instance Eval (PawnMove (MkPiece White Pawn info) board n) = Eval (PawnReachableAbove board (Eval (GetPosition info)) n)
@@ -436,8 +439,8 @@ type instance Eval (PawnPostStart pawn board) = Eval ((Eval (PawnMove pawn board
 -- TODO: Handle takes (i.e. moves that remove pieces from play)
 -- TODO: Ensure that pieces don't move to where the King is!
 -- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
-data Move :: Position -> Board -> Exp (Maybe Board)
-type instance Eval (Move pos board) = TypeError (Text "Not implemented!")
+data Move :: Position -> Position -> Board -> Exp (Maybe Board)
+type instance Eval (Move fromPos toPos board) = Eval (If (Eval (IsPieceAt board fromPos)) (TE' (Text "Have not implemented Move yet!")) (TE' (Text ("There is no piece at: " `AppendSymbol` Eval (TypeShow fromPos)))))
 
 -----------------------------------------------------------------------------------------------
 

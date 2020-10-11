@@ -133,6 +133,9 @@ type family IsTypeEqualNonFCF (x :: a) (y :: b) :: Bool where
     IsTypeEqualNonFCF x x = 'True
     IsTypeEqualNonFCF x y = 'False
 
+-- A type-level show function!
+data TypeShow :: a -> Exp Symbol
+
 -- :kind! Eval (If (Eval (IsJust (Eval (GetPieceAt TestBoard (At "a" 1))))) (ID "yes") (ID "no")) = "yes"
 -- :kind! Eval (If (Eval (IsJust (Eval (GetPieceAt TestBoard (At "a" 2))))) (ID "yes") (ID "no")) = "no"
 data If :: Bool -> Exp b -> Exp b -> Exp b
@@ -262,9 +265,11 @@ data Foldr :: (a -> b -> Exp b) -> b -> f a -> Exp b
 type instance Eval (Foldr f z '[])       = z
 type instance Eval (Foldr f z (x ': xs)) = Eval (f x (Eval (Foldr f z xs)))
 
-data (++) :: [a] -> [a] -> Exp [a]
+-- TODO: Make more type safe?? Currently 1 ++ 2 would compile without issues
+data (++) :: a -> a -> Exp a
 type instance Eval ('[] ++ ys) = ys
 type instance Eval ((x ': xs) ++ ys) = x ': (Eval (xs ++ ys))
+type instance Eval ((xs :: Symbol) ++ (ys :: Symbol)) = xs `AppendSymbol` ys
 
 data Concat :: [[a]] -> Exp [a]
 type instance Eval (Concat xs) = Eval (Foldr (++) '[] xs)
