@@ -422,6 +422,9 @@ type instance Eval (IsPieceAt board pos) = Eval (IsJust (Eval (GetPieceAt board 
 data IsKingAt :: Board -> Position -> Exp Bool
 type instance Eval (IsKingAt board pos) = Eval (FromMaybe False IsKing (Eval (GetPieceAt board pos)))
 
+data IsQueenAt :: Board -> Position -> Exp Bool
+type instance Eval (IsQueenAt board pos) = Eval (FromMaybe False IsQueen (Eval (GetPieceAt board pos)))
+
 data GetFreePositions :: [Position] -> Board -> Exp [Position]
 type instance Eval (GetFreePositions '[] _) = '[]
 type instance Eval (GetFreePositions (p ': ps) board) = Eval (If (Eval ((Eval (IsPieceAt board p)) :||: ((Not . IsValidPosition) p))) (GetFreePositions ps board) (ID (p ': (Eval (GetFreePositions ps board)))))
@@ -513,10 +516,10 @@ type instance Eval (MovePieceTo piece toPos board) = Eval (SetPieceAt (Eval (Inc
 data MoveKing :: Piece -> Position -> Board -> Exp Board
 type instance Eval (MoveKing king pos board) = TypeError (Text "MoveKing has not been implemented yet!")
 
--- TODO: Handle en passant
--- TODO: Handle turning into a Queen
+-- TODO: Handle en passant in "else" branch
 data MovePawn :: Piece -> Position -> Board -> Exp Board
-type instance Eval (MovePawn pawn pos board) = TypeError (Text "MovePawn has not been implemented yet!")
+type instance Eval (MovePawn (MkPiece Black Pawn info) (At col row) board) = Eval (If (Eval (row :==: 1)) (MovePieceTo (MkPiece Black Queen info) (At col row) board) (MovePieceTo (MkPiece Black Pawn info) (At col row) board))
+type instance Eval (MovePawn (MkPiece White Pawn info) (At col row) board) = Eval (If (Eval (row :==: 8)) (MovePieceTo (MkPiece White Queen info) (At col row) board) (MovePieceTo (MkPiece White Pawn info) (At col row) board))
 
 -----------------------------------------------------------------------------------------------
 
