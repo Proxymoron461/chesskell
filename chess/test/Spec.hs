@@ -98,6 +98,13 @@ canMoveToTest3 = Refl
 canMoveToTest4 :: False :~: Eval (CanMoveTo (At "a" 7) (At "a" 5) (Eval (SetPieceAt (MkPiece White Pawn TestInfo) (Eval (SetPieceAt (MkPiece Black Pawn TestInfo) EmptyBoard (At "a" 7))) (At "a" 6))))
 canMoveToTest4 = Refl
 
+type CanReachBoard = Eval (SetPiecesAt '[ '(MkPiece White Rook TestInfo, At "d" 5), '(MkPiece Black King TestInfo, At "d" 4)] EmptyBoard )
+canMoveToTest5 :: False :~: Eval (CanMoveTo (At "d" 5) (At "d" 4) CanReachBoard)
+canMoveToTest5 = Refl
+
+canReachTest1 :: True :~: Eval (Eval (Eval (CanMoveTo (At "d" 5) (At "d" 4) CanReachBoard) :==: False) :&&: (Eval (CanReach (At "d" 5) (At "d" 4) CanReachBoard) :==: True))
+canReachTest1 = Refl
+
 pieceMoveListWhitePawnTest :: '[ At "a" 3, At "a" 4 ] :~: Eval (PieceMoveList TestWhitePawn TestBoard2)
 pieceMoveListWhitePawnTest = Refl
 
@@ -157,6 +164,12 @@ setPiecesAtTest2 :: (Eval (Foldr (Uncurry2 SetPieceAtSwapped) EmptyBoard (Eval (
                     :~: (Eval (SetPiecesAt (Eval (Zip TestPieceList '[At "b" 1, At "b" 2, At "b" 3])) EmptyBoard))
 setPiecesAtTest2 = Refl
 
+isKingTest1 :: True :~: Eval (Eval (IsKing (MkPiece White King TestInfo)) :&&: (IsKing (MkPiece White King TestInfo)))
+isKingTest1 = Refl
+
+isKingTest2 :: False :~: Eval (Eval (IsKing (MkPiece Black Pawn TestInfo)) :||: (IsKing (MkPiece White Queen TestInfo)))
+isKingTest2 = Refl
+
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
 
@@ -212,15 +225,21 @@ main = hspec $ do
       shouldTypecheck getPieceAtTest2
     it "3" $
       shouldTypecheck getPieceAtTest3
-  describe "CanMoveTo Tests" $ do
-    it "1: A black pawn should be able to move to the space directly below it (if it is empty)." $
-      shouldTypecheck canMoveToTest1
-    it "2: A black pawn that has not moved should be able to move 2 spaces below itself (if both are empty)." $
-      shouldTypecheck canMoveToTest2
-    it "3: A black pawn that has already moved should not be able to move 2 spaces below itself." $
-      shouldTypecheck canMoveToTest3
-    it "4: A black pawn that has not moved should not be able to move 2 spaces below itself if the space below it is empty." $
-      shouldTypecheck canMoveToTest4
+  describe "CanMoveTo and CanReach Tests" $ do
+    describe "CanMoveTo Tests" $ do
+      it "1: A black pawn should be able to move to the space directly below it (if it is empty)." $
+        shouldTypecheck canMoveToTest1
+      it "2: A black pawn that has not moved should be able to move 2 spaces below itself (if both are empty)." $
+        shouldTypecheck canMoveToTest2
+      it "3: A black pawn that has already moved should not be able to move 2 spaces below itself." $
+        shouldTypecheck canMoveToTest3
+      it "4: A black pawn that has not moved should not be able to move 2 spaces below itself if the space below it is empty." $
+        shouldTypecheck canMoveToTest4
+      it "5: A piece should not be able to move to the King's current position, even if it is reachable." $
+        shouldTypecheck canMoveToTest5
+    describe "CanReach Tests" $ do
+      it "1: A piece should be able to reach the King's current position, if they can, but not move to it" $
+        shouldTypecheck canReachTest1
   describe "Pawn Tests" $ do
     it "1: A Black Pawn that hasn't moved yet should be able to move down 2 spaces" $
       shouldTypecheck pawnTest1
@@ -247,4 +266,9 @@ main = hspec $ do
       shouldTypecheck allReachableGivenListTest1
     it "2: Spaces taken up by pieces of the opposite team, and empty spaces, should be reachable" $
       shouldTypecheck allReachableGivenListTest2
+  describe "IsKing Tests" $ do
+    it "1: King pieces should return true" $
+      shouldTypecheck isKingTest1
+    it "2: Non-King pieces should return false" $
+      shouldTypecheck isKingTest2
     

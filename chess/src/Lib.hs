@@ -65,6 +65,9 @@ type instance Eval (PieceType (MkPiece _ name _)) = name
 data NoOfPieces :: Board -> Exp Nat
 type instance Eval (NoOfPieces board) = Eval (Foldr Plus 0 (Eval ((VFilterCount IsJust) <$> board)))
 
+data IsKing :: Piece -> Exp Bool
+type instance Eval (IsKing (MkPiece _ name _)) = Eval (name :==: King)
+
 -- TODO: Type level char??
 -- Goes column-row, e.g. At "a" 4 means first column from left, 4 up from the bottom, where Black is at the top
 data Position where
@@ -395,6 +398,9 @@ type instance Eval (SetRow board n row) = Eval (PutAt row (Eval (NatToMyNat (n -
 data IsPieceAt :: Board -> Position -> Exp Bool
 type instance Eval (IsPieceAt board pos) = Eval (IsJust (Eval (GetPieceAt board pos)))
 
+data IsKingAt :: Board -> Position -> Exp Bool
+type instance Eval (IsKingAt board pos) = Eval (FromMaybe False IsKing (Eval (GetPieceAt board pos)))
+
 data GetFreePositions :: [Position] -> Board -> Exp [Position]
 type instance Eval (GetFreePositions '[] _) = '[]
 type instance Eval (GetFreePositions (p ': ps) board) = Eval (If (Eval ((Eval (IsPieceAt board p)) :||: ((Not . IsValidPosition) p))) (GetFreePositions ps board) (ID (p ': (Eval (GetFreePositions ps board)))))
@@ -419,13 +425,27 @@ type instance Eval (PieceMoveList (MkPiece team Rook info) board)   = Eval (AllR
 type instance Eval (PieceMoveList (MkPiece team Queen info) board)  = Eval (AllReachableLineAndDiag team board (Eval (GetPosition info)))
 type instance Eval (PieceMoveList (MkPiece team King info) board)   = Eval (AllReachableGivenList team board (Eval (GetAdjacent (Eval (GetPosition info)))))
 
+-- First boolean argument determines the reach - the King check occurs if it is true,
+-- and it does not if it is False.
+data PieceCanReachKingCheck :: Bool -> Piece -> Position -> Board -> Exp Bool
+type instance Eval (PieceCanReachKingCheck True piece pos board) = Eval (Eval (pos `In` Eval (PieceMoveList piece board)) :&&: ((Not . IsKingAt board) pos))
+type instance Eval (PieceCanReachKingCheck False piece pos board) = Eval (pos `In` Eval (PieceMoveList piece board))
+
 data PieceCanMoveTo :: Piece -> Position -> Board -> Exp Bool
-type instance Eval (PieceCanMoveTo piece pos board) = Eval (pos `In` Eval (PieceMoveList piece board))
+type instance Eval (PieceCanMoveTo piece pos board) = Eval (PieceCanReachKingCheck True piece pos board)
 data PieceCanMoveToSwap :: Position -> Board -> Piece -> Exp Bool
 type instance Eval (PieceCanMoveToSwap pos board piece) = Eval (PieceCanMoveTo piece pos board)
 
 data CanMoveTo :: Position -> Position -> Board -> Exp Bool
 type instance Eval (CanMoveTo fromPos toPos board) = Eval (FromMaybe False (PieceCanMoveToSwap toPos board) (Eval (GetPieceAt board fromPos)))
+
+data PieceCanReach :: Piece -> Position -> Board -> Exp Bool
+type instance Eval (PieceCanReach piece pos board) = Eval (PieceCanReachKingCheck False piece pos board)
+data PieceCanReachSwap :: Position -> Board -> Piece -> Exp Bool
+type instance Eval (PieceCanReachSwap pos board piece) = Eval (PieceCanReach piece pos board)
+
+data CanReach :: Position -> Position -> Board -> Exp Bool
+type instance Eval (CanReach fromPos toPos board) = Eval (FromMaybe False (PieceCanReachSwap toPos board) (Eval (GetPieceAt board fromPos)))
 
 -- Type family for where a pawn can move when it is in its' starting position
 -- TODO: Throw a type error if the Pawn has already moved??
@@ -457,6 +477,11 @@ type instance Eval (Move fromPos toPos board) = Eval (If (Eval (CanMoveTo fromPo
 
 data MoveNoChecks :: Position -> Position -> Board -> Exp (Maybe Board)
 type instance Eval (MoveNoChecks fromPos toPos board) = TypeError (Text "Have not implemented Move yet!")
+
+-- Does not check that it's valid the piece can move to the position, just moves them
+-- TODO: Check that the to position does not contain a King
+data MovePiece :: Piece -> Position -> Board -> Exp (Maybe Board)
+
 
 -----------------------------------------------------------------------------------------------
 
