@@ -51,6 +51,12 @@ type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :
 pawnTest1 :: '[ At "d" 3, At "d" 2] :~: Eval (PawnReachableBelow TestBoard2 (At "d" 4) 2)
 pawnTest1 = Refl
 
+whitePawnToQueenTest :: Just (MkPiece White Queen (Info (S Z) (At "d" 8))) :~: Eval ((Eval (Move (At "d" 7) (At "d" 8) (Eval (SetPieceAt (MkPiece White Pawn TestInfo) EmptyBoard (At "d" 7))))) >>= (Flip GetPieceAt) (At "d" 8))
+whitePawnToQueenTest = Refl
+
+blackPawnToQueenTest :: Just (MkPiece Black Queen (Info (S Z) (At "d" 1))) :~: Eval ((Eval (Move (At "d" 2) (At "d" 1) (Eval (SetPieceAt (MkPiece Black Pawn TestInfo) EmptyBoard (At "d" 2))))) >>= (Flip GetPieceAt) (At "d" 1))
+blackPawnToQueenTest = Refl
+
 getReachableLeftTest1 :: '[ At "c" 2, At "b" 2, At "a" 2] :~: Eval (AllReachableLeft Black TestBoard2 (At "d" 2))
 getReachableLeftTest1 = Refl
 
@@ -247,8 +253,12 @@ main = hspec $ do
       shouldTypecheck pieceMoveListWhitePawnTest
     it "3: A Black Pawn should be able to take in the two diagonal spaces below it, including when one is occupied by a White piece" $
       shouldTypecheck pawnTakePositionsBlackTest
-    it "4: A White Pawn should not be able to take off the board, or take a space occupied by another White piece" $
+    it "4: A White Pawn should not be able to take off the board, or take a space occupied by another White piece." $
       shouldTypecheck pawnTakePositionsWhiteTest
+    it "5: A White Pawn that reaches the bottom of the board should transform into a White Queen, having moved an additional time." $
+      shouldTypecheck whitePawnToQueenTest
+    it "6: A Black Pawn that reaches the bottom of the board should transform into a Black Queen, having moved an additional time." $
+      shouldTypecheck blackPawnToQueenTest
   describe "Knight Movement Tests" $ do
     it "1: A Knight should have 8 squares around it, in L-shapes, that it can jump to" $
       shouldTypecheck knightPositionsTest1
