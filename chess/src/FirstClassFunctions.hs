@@ -55,6 +55,9 @@ infixr 6 .
 data Flip :: (a -> b -> Exp c) -> b -> a -> Exp c
 type instance Eval (Flip f b a) = Eval (f a b)
 
+data FlipToLast :: (a -> b -> c -> Exp d) -> b -> c -> a -> Exp d
+type instance Eval (FlipToLast f b c a) = Eval (f a b c)
+
 data Uncurry :: (a -> b -> Exp c) -> (a, b) -> Exp c
 type instance Eval (Uncurry f '(a, b)) = Eval (f a b)
 

@@ -433,19 +433,15 @@ type instance Eval (PieceCanReachKingCheck False piece pos board) = Eval (pos `I
 
 data PieceCanMoveTo :: Piece -> Position -> Board -> Exp Bool
 type instance Eval (PieceCanMoveTo piece pos board) = Eval (PieceCanReachKingCheck True piece pos board)
-data PieceCanMoveToSwap :: Position -> Board -> Piece -> Exp Bool
-type instance Eval (PieceCanMoveToSwap pos board piece) = Eval (PieceCanMoveTo piece pos board)
 
 data CanMoveTo :: Position -> Position -> Board -> Exp Bool
-type instance Eval (CanMoveTo fromPos toPos board) = Eval (FromMaybe False (PieceCanMoveToSwap toPos board) (Eval (GetPieceAt board fromPos)))
+type instance Eval (CanMoveTo fromPos toPos board) = Eval (FromMaybe False ((FlipToLast PieceCanMoveTo) toPos board) (Eval (GetPieceAt board fromPos)))
 
 data PieceCanReach :: Piece -> Position -> Board -> Exp Bool
 type instance Eval (PieceCanReach piece pos board) = Eval (PieceCanReachKingCheck False piece pos board)
-data PieceCanReachSwap :: Position -> Board -> Piece -> Exp Bool
-type instance Eval (PieceCanReachSwap pos board piece) = Eval (PieceCanReach piece pos board)
 
 data CanReach :: Position -> Position -> Board -> Exp Bool
-type instance Eval (CanReach fromPos toPos board) = Eval (FromMaybe False (PieceCanReachSwap toPos board) (Eval (GetPieceAt board fromPos)))
+type instance Eval (CanReach fromPos toPos board) = Eval (FromMaybe False ((FlipToLast PieceCanReach) toPos board) (Eval (GetPieceAt board fromPos)))
 
 -- Type family for where a pawn can move when it is in its' starting position
 -- TODO: Throw a type error if the Pawn has already moved??
@@ -476,7 +472,7 @@ data Move :: Position -> Position -> Board -> Exp (Maybe Board)
 type instance Eval (Move fromPos toPos board) = Eval (If (Eval (CanMoveTo fromPos toPos board)) (MoveNoChecks fromPos toPos board) (TE' (Text ("There is no piece at: " ++ TypeShow fromPos))))
 
 data MoveNoChecks :: Position -> Position -> Board -> Exp (Maybe Board)
-type instance Eval (MoveNoChecks fromPos toPos board) = TypeError (Text "Have not implemented Move yet!")
+type instance Eval (MoveNoChecks fromPos toPos board) = Eval (Eval (GetPieceAt board fromPos) >>= (FlipToLast MovePiece) toPos board)
 
 -- Does not check that it's valid the piece can move to the position, just moves them
 -- TODO: Check that the to position does not contain a King
