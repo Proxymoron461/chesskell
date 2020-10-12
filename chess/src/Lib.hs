@@ -516,6 +516,7 @@ type instance Eval (MovePieceTo piece toPos board) = Eval (SetPieceAt (Eval (Inc
 data MoveKing :: Piece -> Position -> Board -> Exp Board
 type instance Eval (MoveKing king pos board) = TypeError (Text "MoveKing has not been implemented yet!")
 
+-- TODO: Allow players to choose what to promote their pawn to!
 -- TODO: Handle en passant in "else" branch
 data MovePawn :: Piece -> Position -> Board -> Exp Board
 type instance Eval (MovePawn (MkPiece Black Pawn info) (At col row) board) = Eval (If (Eval (row :==: 1)) (MovePieceTo (MkPiece Black Queen info) (At col row) board) (MovePieceTo (MkPiece Black Pawn info) (At col row) board))
