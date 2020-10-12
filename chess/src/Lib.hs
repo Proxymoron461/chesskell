@@ -47,6 +47,12 @@ type instance Eval (GetPosition (Info _ x)) = x
 data SetPosition :: PieceInfo -> Position -> Exp PieceInfo
 type instance Eval (SetPosition (Info n _) pos) = Info n pos
 
+data InfoIncrementMoves :: PieceInfo -> Exp PieceInfo
+type instance Eval (InfoIncrementMoves (Info n pos)) = Info (S n) pos
+
+data IncrementMoves :: Piece -> Exp Piece
+type instance Eval (IncrementMoves (MkPiece team name info)) = MkPiece team name (Eval (InfoIncrementMoves info))
+
 data PieceMoveCount :: Piece -> Exp MyNat
 type instance Eval (PieceMoveCount (MkPiece _ _ info)) = Eval (GetMoveCount info)
 
@@ -65,8 +71,23 @@ type instance Eval (PieceType (MkPiece _ name _)) = name
 data NoOfPieces :: Board -> Exp Nat
 type instance Eval (NoOfPieces board) = Eval (Foldr Plus 0 (Eval ((VFilterCount IsJust) <$> board)))
 
+data IsPawn :: Piece -> Exp Bool
+type instance Eval (IsPawn (MkPiece _ name _)) = Eval (name :==: Pawn)
+
+data IsBishop :: Piece -> Exp Bool
+type instance Eval (IsBishop (MkPiece _ name _)) = Eval (name :==: Bishop)
+
+data IsKnight :: Piece -> Exp Bool
+type instance Eval (IsKnight (MkPiece _ name _)) = Eval (name :==: Knight)
+
+data IsRook :: Piece -> Exp Bool
+type instance Eval (IsRook (MkPiece _ name _)) = Eval (name :==: Rook)
+
 data IsKing :: Piece -> Exp Bool
 type instance Eval (IsKing (MkPiece _ name _)) = Eval (name :==: King)
+
+data IsQueen :: Piece -> Exp Bool
+type instance Eval (IsQueen (MkPiece _ name _)) = Eval (name :==: Queen)
 
 -- TODO: Type level char??
 -- Goes column-row, e.g. At "a" 4 means first column from left, 4 up from the bottom, where Black is at the top
@@ -407,7 +428,6 @@ type instance Eval (GetFreePositions (p ': ps) board) = Eval (If (Eval ((Eval (I
 
 -- This function just checks the spots a piece can move to; it does not handle moving itself.
 -- That is in the other function, named Move.
--- TODO: Maybe represent the boards that the piece can move to? A new function, MovePiece, which handles any side effects??
 -- Returns an empty list if the board is empty at that position!
 -- NOTE: This allows pieces to state that they can move to the King's position; but this is just for check purposes. They can't actually take the king.
 data CalculateValidMoves :: Position -> Board -> Exp [Position]
@@ -415,8 +435,6 @@ type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe '[] ((Flip 
 
 -- TODO: Check that the piece's reported position is its' actual position
 -- TODO: Test all this!!! Near-urgently!
--- TODO: Allow for kinds to do castling
--- TODO: Allow for en passant takes
 data PieceMoveList :: Piece -> Board -> Exp [Position]
 type instance Eval (PieceMoveList (MkPiece team Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece team Pawn info) board) (PawnPostStart (MkPiece team Pawn info) board))
 type instance Eval (PieceMoveList (MkPiece team Bishop info) board) = Eval (AllReachableDiag team board (Eval (GetPosition info)))
@@ -464,9 +482,7 @@ type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) +
 
 -- Type family for actually moving the piece, and handling the side effects.
 -- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
--- TODO: Handle moves that can move multiple pieces (e.g. castling)
 -- TODO: Handle takes (i.e. moves that remove pieces from play)
--- TODO: Ensure that pieces don't move to where the King is!
 -- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
 data Move :: Position -> Position -> Board -> Exp (Maybe Board)
 type instance Eval (Move fromPos toPos board) = Eval (If (Eval (CanMoveTo fromPos toPos board)) (MoveNoChecks fromPos toPos board) (TE' (Text ("There is no piece at: " ++ TypeShow fromPos))))
@@ -474,10 +490,33 @@ type instance Eval (Move fromPos toPos board) = Eval (If (Eval (CanMoveTo fromPo
 data MoveNoChecks :: Position -> Position -> Board -> Exp (Maybe Board)
 type instance Eval (MoveNoChecks fromPos toPos board) = Eval (Eval (GetPieceAt board fromPos) >>= (FlipToLast MovePiece) toPos board)
 
--- Does not check that it's valid the piece can move to the position, just moves them
--- TODO: Check that the to position does not contain a King
+-- Does not check that it's valid the piece can move to the position, just moves them!
+-- For all pieces apart from the King and the Pawn, moving them is easy: they move
+-- a single piece, and have no side effects.
+-- But the King can castle, and the Pawn can do en passant and turn into a Queen!
+-- Very complicated stuff.
 data MovePiece :: Piece -> Position -> Board -> Exp (Maybe Board)
+type instance Eval (MovePiece piece toPos board) = Just $ Eval (Switch '[
+    '(Eval (IsQueen piece), MovePieceTo piece toPos board),
+    '(Eval (IsRook piece), MovePieceTo piece toPos board),
+    '(Eval (IsBishop piece), MovePieceTo piece toPos board),
+    '(Eval (IsKnight piece), MovePieceTo piece toPos board),
+    '(Eval (IsKing piece), MoveKing piece toPos board),
+    '(Eval (IsPawn piece), MovePawn piece toPos board) ] )
 
+-- A variant of SetPieceAt, which increments the number of moves a piece has done.
+data MovePieceTo :: Piece -> Position -> Board -> Exp Board
+type instance Eval (MovePieceTo piece toPos board) = Eval (SetPieceAt (Eval (IncrementMoves piece)) board toPos)
+
+-- TODO: Handle castling (which should not increment the rook's move counter)
+-- TODO: Ensure you're not moving into check
+data MoveKing :: Piece -> Position -> Board -> Exp Board
+type instance Eval (MoveKing king pos board) = TypeError (Text "MoveKing has not been implemented yet!")
+
+-- TODO: Handle en passant
+-- TODO: Handle turning into a Queen
+data MovePawn :: Piece -> Position -> Board -> Exp Board
+type instance Eval (MovePawn pawn pos board) = TypeError (Text "MovePawn has not been implemented yet!")
 
 -----------------------------------------------------------------------------------------------
 
@@ -491,7 +530,7 @@ type family MyNatToSNat (n :: MyNat) :: SNat n where
 
 data MyNatLength :: [a] -> Exp MyNat
 type instance Eval (MyNatLength '[]) = Z
-type instance Eval (MyNatLength (x ': xs)) = S (Eval (MyNatLength xs))
+type instance Eval (MyNatLength (x ': xs)) = S $ Eval (MyNatLength xs)
 
 -- type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 -- type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
