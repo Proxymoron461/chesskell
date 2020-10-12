@@ -7,6 +7,9 @@ import GHC.TypeLits
 -- A helpful kind synonym!
 type Type = *
 
+type family ($) (f :: a -> b) (x :: a) :: b where
+    f $ x = f x
+
 -- Defunctionalisation helpers! (thanks to https://github.com/Lysxia/first-class-families)
 type Exp a = a -> Type
 type family Eval (e :: Exp a) :: a
@@ -45,6 +48,11 @@ type family NatToMyNatNonFCF (n :: Nat) :: MyNat where
 -- ID function, for wrapping data in Exp
 data ID :: a -> Exp a
 type instance Eval (ID x) = x
+
+-- Switch, for emulating switch-case statements!
+data Switch :: [(Bool, Exp a)] -> Exp a
+type instance Eval (Switch ('(True, x) ': xs)) = Eval x
+type instance Eval (Switch ('(False, _) ': xs)) = Eval (Switch xs)
 
 -- :kind! Eval ((Not . IsZero) (S Z)) = True
 -- :kind! Eval ((Not . IsZero) Z) = False
