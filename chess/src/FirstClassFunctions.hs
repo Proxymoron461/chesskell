@@ -184,6 +184,10 @@ data FromMaybe :: b -> (a -> Exp b) -> Maybe a -> Exp b
 type instance Eval (FromMaybe b f Nothing)  = b
 type instance Eval (FromMaybe b f (Just x)) = Eval (f x)
 
+data FromMaybeLazy :: Exp b -> (a -> Exp b) -> Maybe a -> Exp b
+type instance Eval (FromMaybeLazy b f Nothing)  = Eval b
+type instance Eval (FromMaybeLazy b f (Just x)) = Eval (f x)
+
 data Const :: a -> b -> Exp a
 type instance Eval (Const a _) = a
 
@@ -213,6 +217,9 @@ type instance Eval (LazyAnd True x)  = Eval x
 
 data (:&&:) :: Bool -> Exp Bool -> Exp Bool
 type instance Eval (x :&&: y) = Eval (LazyAnd x y)
+
+data (.&.) :: (a -> Exp Bool) -> (a -> Exp Bool) -> a -> Exp Bool
+type instance Eval ((.&.) f g x) = Eval ((Eval (f x)) :&&: g x)
 
 data Not :: Bool -> Exp Bool
 type instance Eval (Not True)  = False
@@ -283,6 +290,10 @@ type instance Eval (ZipWith (x ': xs) (y ': ys) f) = Eval (f x y) ': Eval (ZipWi
 data Foldr :: (a -> b -> Exp b) -> b -> f a -> Exp b
 type instance Eval (Foldr f z '[])       = z
 type instance Eval (Foldr f z (x ': xs)) = Eval (f x (Eval (Foldr f z xs)))
+
+data Find :: (a -> Exp Bool) -> f a -> Exp (Maybe a)
+type instance Eval (Find f '[])       = Nothing
+type instance Eval (Find f (x ': xs)) = Eval (If (Eval (f x)) (ID (Just x)) (Find f xs))
 
 -- TODO: Make more type safe?? Currently 1 ++ 2 would compile without issues (maybe)
 type family (++) (x :: a) (y :: a) :: a

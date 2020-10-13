@@ -45,3 +45,6 @@ type instance Eval (Length (x :-> xs)) = 1 + Eval (Length xs)
 -- Vector instance for Foldr
 type instance Eval (Foldr f z VEnd)       = z
 type instance Eval (Foldr f z (x :-> xs)) = Eval (f x (Eval (Foldr f z xs)))
+
+type instance Eval (Find f VEnd)       = Nothing
+type instance Eval (Find f (x :-> xs)) = Eval (If (Eval (f x)) (ID (Just x)) (Find f xs))
