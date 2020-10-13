@@ -302,8 +302,6 @@ type instance Eval (AllReachableDiagNE team board pos) = Eval (AllReachableFunc 
 data AllReachableGivenList :: Team -> Board -> [Position] -> Exp [Position]
 type instance Eval (AllReachableGivenList team board list) = Eval (Filter (FromMaybe True (Not . HasTeam team) . GetPieceAt board) list)
 
--- TODO: Reachable squares for L-shape (knights!)
-
 -- General function, for taking the first N reachable positions from a particular direction.
 -- NOTE: Relies on each directional function giving them in order of distance from the player
 -- NOTE: Does not work with AllReachableDiag, as that will only be in one direction.
@@ -529,6 +527,7 @@ type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) +
 -- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
 -- TODO: Handle takes (i.e. moves that remove pieces from play)
 -- TODO: Ensure no moves place that piece's King into check
+-- TODO: Ensure that if the King is in check, the next move takes him out of it
 -- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
 data Move :: Position -> Position -> Board -> Exp (Maybe Board)
 type instance Eval (Move fromPos toPos board) = Eval (If (Eval (CanMoveTo fromPos toPos board)) (MoveNoChecks fromPos toPos board) (TE' (Text ("There is no piece at: " ++ TypeShow fromPos))))
@@ -541,8 +540,15 @@ type instance Eval (MoveNoChecks fromPos toPos board) = Eval (Eval (GetPieceAt b
 -- a single piece, and have no side effects.
 -- But the King can castle, and the Pawn can do en passant and turn into a Queen!
 -- Very complicated stuff.
+-- TODO: Check King is not in check after move (takes care of both problems - can't move into check and can't leave King in check either)
 data MovePiece :: Piece -> Position -> Board -> Exp (Maybe Board)
-type instance Eval (MovePiece piece toPos board) = Just $ Eval (Switch '[
+type instance Eval (MovePiece piece toPos board) = Eval (Eval (MovePieceSwitch piece toPos board) >>= CheckNoCheck (Eval (PieceTeam piece)))
+
+data CheckNoCheck :: Team -> Board -> Exp (Maybe Board)
+type instance Eval (CheckNoCheck team board) = Eval (If (Eval (IsKingInCheck team board)) (ID Nothing) (ID $ Just board))
+
+data MovePieceSwitch :: Piece -> Position -> Board -> Exp (Maybe Board)
+type instance Eval (MovePieceSwitch piece toPos board) = Just $ Eval (Switch '[
     '(Eval (IsQueen piece), MovePieceTo piece toPos board),
     '(Eval (IsRook piece), MovePieceTo piece toPos board),
     '(Eval (IsBishop piece), MovePieceTo piece toPos board),
