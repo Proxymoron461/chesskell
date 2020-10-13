@@ -151,6 +151,12 @@ getAdjacentTest2 = Refl
 getAdjacentTest3 :: 'False :~: Eval (In (At "d" 4) (Eval (GetAdjacent (At "d" 4))))
 getAdjacentTest3 = Refl
 
+oppositeTeamTest1 :: White :~: Eval (OppositeTeam Black)
+oppositeTeamTest1 = Refl
+
+oppositeTeamTest2 :: Black :~: Eval (OppositeTeam White)
+oppositeTeamTest2 = Refl
+
 setPieceAtTest1 :: At "b" 6 :~: Eval (PiecePosition (Eval (FromJust (Eval (GetPieceAt (Eval (SetPieceAt (MkPiece Black Pawn (Info Z (At "d" 2))) EmptyBoard (At "b" 6))) (At "b" 6))))))
 setPieceAtTest1 = Refl
 
@@ -202,6 +208,10 @@ kingCheckTest4 = Refl
 kingCheckTest5 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Pawn TestInfo, At "f" 6) ] EmptyBoard)))
 kingCheckTest5 = Refl
 
+type CheckTest6Board = Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Pawn TestInfo, At "e" 6) ] EmptyBoard)
+kingCheckTest6 :: Eval (IsKingInCheck White CheckTest6Board) :~: Eval (Eval (FindKingPosition White CheckTest6Board) `In` Eval (GetUnderAttackPositions (Eval (OppositeTeam White)) CheckTest6Board))
+kingCheckTest6 = Refl
+
 -- These first two tests should not type check - the program should throw a type error if
 -- either side has a missing King
 findKingTest1 :: Proxy (a :: Piece)
@@ -232,6 +242,9 @@ shouldTypecheck a = do
         Right _ -> return ()  -- Test passes
         Left (TypeError msg) -> assertFailure ("Term didn’t compile.")
 
+shouldTypeCheck :: NFData a => a -> Assertion
+shouldTypeCheck = shouldTypecheck
+
 main :: IO ()
 main = hspec $ do
   describe "List Equality Tests" $ do
@@ -251,6 +264,11 @@ main = hspec $ do
       shouldTypecheck setPiecesAtTest1
     it "2: The result of SetPiecesAt should be identical to repeated applications of SetPieceAt" $ 
       shouldTypecheck setPiecesAtTest2
+  describe "OppositeTeam Tests" $ do
+    it "1: OppositeTeam White = Black" $
+      shouldTypecheck oppositeTeamTest1
+    it "2: OppositeTeam White = Black" $
+      shouldTypecheck oppositeTeamTest2
   describe "GetReachableLeft Tests" $ do
     it "1" $
       shouldTypecheck getReachableLeftTest1
@@ -342,18 +360,19 @@ main = hspec $ do
         shouldTypecheck findKingPositionTest1
       it "2: FindKingPosition should return the correct position of the Black King" $
         shouldTypecheck findKingPositionTest2
-    -- -- FIXME: These tests suck and won't behave, with disgusting type errors.
-    -- describe "IsKingInCheck Tests" $ do
-    --   it "1" $
-    --     shouldTypeCheck kingCheckTest1
-    --   it "2" $
-    --     shouldTypeCheck kingCheckTest2
-    --   it "3" $
-    --     shouldTypeCheck kingCheckTest3
-    --   it "4" $
-    --     shouldTypeCheck kingCheckTest4
-    --   it "5: A Pawn cannot put a King into check by simply being able to move to the King's position." $
-    --     shouldTypeCheck kingCheckTest5
+    describe "IsKingInCheck Tests" $ do
+      it "1" $
+        shouldTypecheck kingCheckTest1
+      it "2" $
+        shouldTypecheck kingCheckTest2
+      it "3" $
+        shouldTypecheck kingCheckTest3
+      it "4" $
+        shouldTypecheck kingCheckTest4
+      it "5: A Pawn cannot put a King into check by simply being able to move to the King's position." $
+        shouldTypecheck kingCheckTest5
+      it "6: The result of IsKingInCheck should be identical to the result of manually checking if the King is in an attack position" $
+        shouldTypecheck kingCheckTest6
   describe "GetUnderAttackPositions Tests" $ do
     it "1: A board with a single King should have all under attack positions be all positions adjacent to the king" $
       shouldTypecheck getUnderAttackPositions1
