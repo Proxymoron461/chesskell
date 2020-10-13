@@ -6,6 +6,7 @@ import Test.ShouldNotTypecheck (shouldNotTypecheck)
 import Control.DeepSeq (force, NFData)
 import Control.Exception (evaluate, try, TypeError(..))
 import Data.Type.Equality ((:~:)(..))
+import Data.Proxy(Proxy(..))
 import GHC.TypeLits (Nat)
 
 import Lib
@@ -176,6 +177,20 @@ isKingTest1 = Refl
 isKingTest2 :: False :~: Eval (Eval (IsKing (MkPiece Black Pawn TestInfo)) :||: (IsKing (MkPiece White Queen TestInfo)))
 isKingTest2 = Refl
 
+getUnderAttackPositions1 :: True :~: Eval (Eval (GetAdjacent (At "f" 5)) :=:=: Eval (GetUnderAttackPositions White (Eval (SetPieceAt (MkPiece White King TestInfo) EmptyBoard (At "f" 5)))))
+getUnderAttackPositions1 = Refl
+
+getUnderAttackPositions2 :: False :~: Eval ((At "f" 3) `In` (Eval (GetUnderAttackPositions White (Eval (SetPiecesAt '[ '(MkPiece White Rook TestInfo, At "f" 5), '(MkPiece Black Pawn TestInfo, At "f" 4) ] EmptyBoard)))))
+getUnderAttackPositions2 = Refl
+
+-- These first two tests should not type check - the program should throw a type error if
+-- either side has a missing King
+findKingTest1 :: Proxy (a :: Piece)
+findKingTest1 = Proxy @(Eval (FindKing White EmptyBoard))
+
+findKingTest2 :: Proxy (a :: Piece)
+findKingTest2 = Proxy @(Eval (FindKing Black EmptyBoard))
+
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
 
@@ -276,9 +291,20 @@ main = hspec $ do
       shouldTypecheck allReachableGivenListTest1
     it "2: Spaces taken up by pieces of the opposite team, and empty spaces, should be reachable" $
       shouldTypecheck allReachableGivenListTest2
-  describe "IsKing Tests" $ do
-    it "1: King pieces should return true" $
-      shouldTypecheck isKingTest1
-    it "2: Non-King pieces should return false" $
-      shouldTypecheck isKingTest2
+  describe "King Tests" $ do
+    describe "IsKing Tests" $ do
+      it "1: King pieces should return true" $
+        shouldTypecheck isKingTest1
+      it "2: Non-King pieces should return false" $
+        shouldTypecheck isKingTest2
+    describe "FindKing Tests" $ do
+      it "1: If there is no White King on the board, FindKing should throw an error" $
+        shouldNotTypecheck findKingTest1
+      it "2: If there is no Black King on the board, FindKing should throw an error" $
+        shouldNotTypecheck findKingTest2
+  describe "GetUnderAttackPositions Tests" $ do
+    it "1: A board with a single King should have all under attack positions be all positions adjacent to the king" $
+      shouldTypecheck getUnderAttackPositions1
+    it "2: A White rook should not be able to attack a position behind a Black piece" $
+      shouldTypecheck getUnderAttackPositions2
     
