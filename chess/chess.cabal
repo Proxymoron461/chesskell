@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cbdb47561052e8bd1dc8cf3362abd5c532a5029034eb8f9c9461e9c86779a1f9
+-- hash: cb3b2b47145f2bc8e0f2af53e8f4315a3f9df6a1019adeacc5584954395fcc99
 
 name:           chess
 version:        0.1.0.0
@@ -34,7 +34,7 @@ library
       Paths_chess
   hs-source-dirs:
       src
-  default-extensions: DataKinds PolyKinds TypeFamilies GADTs TypeOperators ConstraintKinds UndecidableInstances TypeApplications FlexibleInstances
+  default-extensions: DataKinds PolyKinds TypeFamilies GADTs TypeOperators ConstraintKinds UndecidableInstances TypeApplications FlexibleInstances AllowAmbiguousTypes
   build-depends:
       base >=4.7 && <5
   default-language: Haskell2010
@@ -45,7 +45,7 @@ executable chess-exe
       Paths_chess
   hs-source-dirs:
       app
-  default-extensions: DataKinds PolyKinds TypeFamilies GADTs TypeOperators ConstraintKinds UndecidableInstances TypeApplications FlexibleInstances
+  default-extensions: DataKinds PolyKinds TypeFamilies GADTs TypeOperators ConstraintKinds UndecidableInstances TypeApplications FlexibleInstances AllowAmbiguousTypes
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
@@ -59,7 +59,7 @@ test-suite chess-test
       Paths_chess
   hs-source-dirs:
       test
-  default-extensions: DataKinds PolyKinds TypeFamilies GADTs TypeOperators ConstraintKinds UndecidableInstances TypeApplications FlexibleInstances
+  default-extensions: DataKinds PolyKinds TypeFamilies GADTs TypeOperators ConstraintKinds UndecidableInstances TypeApplications FlexibleInstances AllowAmbiguousTypes
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit

@@ -183,6 +183,25 @@ getUnderAttackPositions1 = Refl
 getUnderAttackPositions2 :: False :~: Eval ((At "f" 3) `In` (Eval (GetUnderAttackPositions White (Eval (SetPiecesAt '[ '(MkPiece White Rook TestInfo, At "f" 5), '(MkPiece Black Pawn TestInfo, At "f" 4) ] EmptyBoard)))))
 getUnderAttackPositions2 = Refl
 
+getUnderAttackPositions3 :: ('[] :: [Position]) :~: Eval (GetUnderAttackPositions Black (Eval (SetPieceAt (MkPiece White King TestInfo) EmptyBoard (At "f" 5))))
+getUnderAttackPositions3 = Refl
+
+-- FIXME: These are broken for some reason??
+kingCheckTest1 :: True :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Pawn TestInfo, At "e" 6) ] EmptyBoard)))
+kingCheckTest1 = Refl
+
+kingCheckTest2 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Rook TestInfo, At "f" 8), '(MkPiece White Queen TestInfo, At "f" 6) ] EmptyBoard)))
+kingCheckTest2 = Refl
+
+kingCheckTest3 :: True :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Rook TestInfo, At "f" 8), '(MkPiece Black Queen TestInfo, At "f" 6) ] EmptyBoard)))
+kingCheckTest3 = Refl
+
+kingCheckTest4 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Rook TestInfo, At "f" 8), '(MkPiece Black Pawn TestInfo, At "f" 6) ] EmptyBoard)))
+kingCheckTest4 = Refl
+
+kingCheckTest5 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Pawn TestInfo, At "f" 6) ] EmptyBoard)))
+kingCheckTest5 = Refl
+
 -- These first two tests should not type check - the program should throw a type error if
 -- either side has a missing King
 findKingTest1 :: Proxy (a :: Piece)
@@ -190,6 +209,18 @@ findKingTest1 = Proxy @(Eval (FindKing White EmptyBoard))
 
 findKingTest2 :: Proxy (a :: Piece)
 findKingTest2 = Proxy @(Eval (FindKing Black EmptyBoard))
+
+findKingTest3 :: MkPiece White King (Info Z (At "d" 4)) :~: Eval (FindKing White (Eval (SetPieceAt (MkPiece White King (Info Z (At "a" 1))) EmptyBoard (At "d" 4))))
+findKingTest3 = Refl
+
+findKingTest4 :: MkPiece Black King (Info Z (At "d" 4)) :~: Eval (FindKing Black (Eval (SetPieceAt (MkPiece Black King (Info Z (At "a" 1))) EmptyBoard (At "d" 4))))
+findKingTest4 = Refl
+
+findKingPositionTest1 :: At "d" 4 :~: Eval (FindKingPosition White (Eval (SetPieceAt (MkPiece White King TestInfo) EmptyBoard (At "d" 4))))
+findKingPositionTest1 = Refl
+
+findKingPositionTest2 :: At "d" 4 :~: Eval (FindKingPosition Black (Eval (SetPieceAt (MkPiece Black King TestInfo) EmptyBoard (At "d" 4))))
+findKingPositionTest2 = Refl
 
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
@@ -302,9 +333,32 @@ main = hspec $ do
         shouldNotTypecheck findKingTest1
       it "2: If there is no Black King on the board, FindKing should throw an error" $
         shouldNotTypecheck findKingTest2
+      it "3: If there is a White King on the board, FindKing should return it" $
+        shouldTypecheck findKingTest3
+      it "4: If there is a Black King on the board, FindKing should return it" $
+        shouldTypecheck findKingTest4
+    describe "FindKingPosition Tests" $ do
+      it "1: FindKingPosition should return the correct position of the White King" $
+        shouldTypecheck findKingPositionTest1
+      it "2: FindKingPosition should return the correct position of the Black King" $
+        shouldTypecheck findKingPositionTest2
+    -- -- FIXME: These tests suck and won't behave, with disgusting type errors.
+    -- describe "IsKingInCheck Tests" $ do
+    --   it "1" $
+    --     shouldTypeCheck kingCheckTest1
+    --   it "2" $
+    --     shouldTypeCheck kingCheckTest2
+    --   it "3" $
+    --     shouldTypeCheck kingCheckTest3
+    --   it "4" $
+    --     shouldTypeCheck kingCheckTest4
+    --   it "5: A Pawn cannot put a King into check by simply being able to move to the King's position." $
+    --     shouldTypeCheck kingCheckTest5
   describe "GetUnderAttackPositions Tests" $ do
     it "1: A board with a single King should have all under attack positions be all positions adjacent to the king" $
       shouldTypecheck getUnderAttackPositions1
     it "2: A White rook should not be able to attack a position behind a Black piece" $
       shouldTypecheck getUnderAttackPositions2
+    it "3: A board with only White pieces should not have no positions under attack by the Black team" $
+      shouldTypecheck getUnderAttackPositions3
     

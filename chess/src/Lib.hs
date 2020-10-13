@@ -446,17 +446,13 @@ data GetRowUnderAttackPositions :: Team -> Board -> Row -> Exp [Position]
 type instance Eval (GetRowUnderAttackPositions team board row) = Eval (Foldr (AddMovesToList team board) '[] row)
 
 data AddMovesToList :: Team -> Board -> Maybe Piece -> [Position] -> Exp [Position]
-type instance Eval (AddMovesToList team board maybePiece list) = Eval (FromMaybe '[] ((Flip PieceMoveList) board) (Eval (If (Eval (MaybeIf (HasTeam team) maybePiece)) (ID maybePiece) (ID Nothing)))) ++ list
+type instance Eval (AddMovesToList team board maybePiece list) = Eval (FromMaybe '[] ((Flip PieceAttackList) board) (Eval (If (Eval (MaybeIf (HasTeam team) maybePiece)) (ID maybePiece) (ID Nothing)))) ++ list
 
 type family NoKingError (team :: Team) where
     NoKingError team = TypeError (Text ("There is no " ++ TypeShow team ++ " King on the board!"))
 
 data FindKing :: Team -> Board -> Exp Piece
-type instance Eval (FindKing team board) = Eval (FindKing' team board)
-
-data FindKing' :: Team -> Vec n Row -> Exp Piece
-type instance Eval (FindKing' team VEnd)           = NoKingError team
-type instance Eval (FindKing' team (row :-> rows)) = Eval (FromMaybeLazy (FindKing' team rows) (ID) (Eval (FindKingInRow team row)))
+type instance Eval (FindKing team board) = Eval (FromMaybe (NoKingError team) FromJust (Eval (Find IsJust (Eval (FindKingInRow team <$> board)))))
 
 data FindKingInRow :: Team -> Row -> Exp (Maybe Piece)
 type instance Eval (FindKingInRow team row) = Eval (Join (Eval (Find (MaybeIf (IsKing .&. HasTeam team)) row)))
@@ -483,6 +479,14 @@ type instance Eval (PieceMoveList (MkPiece team Knight info) board) = Eval (AllR
 type instance Eval (PieceMoveList (MkPiece team Rook info) board)   = Eval (AllReachableStraightLine team board (Eval (GetPosition info)))
 type instance Eval (PieceMoveList (MkPiece team Queen info) board)  = Eval (AllReachableLineAndDiag team board (Eval (GetPosition info)))
 type instance Eval (PieceMoveList (MkPiece team King info) board)   = Eval (AllReachableGivenList team board (Eval (GetAdjacent (Eval (GetPosition info)))))
+
+data PieceAttackList :: Piece -> Board -> Exp [Position]
+type instance Eval (PieceAttackList (MkPiece team Pawn info) board)   = Eval (PawnTakePositions (MkPiece team Pawn info) board)
+type instance Eval (PieceAttackList (MkPiece team Bishop info) board) = Eval (AllReachableDiag team board (Eval (GetPosition info)))
+type instance Eval (PieceAttackList (MkPiece team Knight info) board) = Eval (AllReachableGivenList team board (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
+type instance Eval (PieceAttackList (MkPiece team Rook info) board)   = Eval (AllReachableStraightLine team board (Eval (GetPosition info)))
+type instance Eval (PieceAttackList (MkPiece team Queen info) board)  = Eval (AllReachableLineAndDiag team board (Eval (GetPosition info)))
+type instance Eval (PieceAttackList (MkPiece team King info) board)   = Eval (AllReachableGivenList team board (Eval (GetAdjacent (Eval (GetPosition info)))))
 
 -- First boolean argument determines the reach - the King check occurs if it is true,
 -- and it does not if it is False.
@@ -577,3 +581,5 @@ type instance Eval (MyNatLength (x ': xs)) = S $ Eval (MyNatLength xs)
 
 -- type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 -- type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
+
+-- Eval (LazyAnd (Eval ('[] :<= '[])) ('[] :<= '[]))  -- Fails because of ambiguous types??
