@@ -7,9 +7,6 @@ import Vec
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
--- A datatype for Proxy types!
-data Proxy a = Proxy
-
 -- Type synonym for an 8x8 grid
 type Eight = S (S (S (S (S (S (S (S Z)))))))
 type Row = Vec Eight (Maybe Piece)
@@ -22,6 +19,9 @@ data Piece where
     MkPiece :: Team -> PieceName -> PieceInfo -> Piece
 
 data Team = Black | White
+
+type instance TypeShow Black = "Black"
+type instance TypeShow White = "White"
 
 -- Make singleton types for each piece??
 data PieceName = Pawn
@@ -244,6 +244,10 @@ type instance Eval (IsOpposingTeam (MkPiece Black _ _) (MkPiece Black _ _)) = Fa
 type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece Black _ _)) = True
 type instance Eval (IsOpposingTeam (MkPiece Black _ _) (MkPiece White _ _)) = True
 
+data OppositeTeam :: Team -> Exp Team
+type instance Eval (OppositeTeam White) = Black
+type instance Eval (OppositeTeam Black) = White
+
 data IsSameTeam :: Piece -> Piece -> Exp Bool
 type instance Eval (IsSameTeam p1 p2) = Eval ((Not . (IsOpposingTeam p1)) p2)
 
@@ -406,6 +410,7 @@ type instance Eval (SetPieceAtSwapped piece pos board) = Eval (SetPieceAt piece 
 data SetPieceAtNoChecks :: Piece -> Board -> Position -> Exp Board
 type instance Eval (SetPieceAtNoChecks piece board (At col row)) = Eval (SetRow board row (Eval (PutAt (Just (Eval (SetPiecePosition piece (At col row)))) (Eval (NatToMyNat (Eval (FromJust (ColToIndex col))))) (Eval (FromJust (Eval (GetRow board row)))))))
 
+-- TODO: Optimise to work in one fell swoop, rather than one by one?
 data SetPiecesAt :: [(Piece, Position)] -> Board -> Exp Board
 type instance Eval (SetPiecesAt pps board) = Eval (Foldr (Uncurry2 SetPieceAtSwapped) board pps)
 
@@ -428,6 +433,39 @@ type instance Eval (IsQueenAt board pos) = Eval (FromMaybe False IsQueen (Eval (
 data GetFreePositions :: [Position] -> Board -> Exp [Position]
 type instance Eval (GetFreePositions '[] _) = '[]
 type instance Eval (GetFreePositions (p ': ps) board) = Eval (If (Eval ((Eval (IsPieceAt board p)) :||: ((Not . IsValidPosition) p))) (GetFreePositions ps board) (ID (p ': (Eval (GetFreePositions ps board)))))
+
+-- :k Foldr :: (Row -> [Pos] -> Exp [Pos]) -> [Pos] -> [Row] -> Exp [Pos]
+data GetUnderAttackPositions :: Team -> Board -> Exp [Position]
+type instance Eval (GetUnderAttackPositions team board) = Eval (Foldr (AddRowMovesToList team board) '[] board)
+
+data AddRowMovesToList :: Team -> Board -> Row -> [Position] -> Exp [Position]
+type instance Eval (AddRowMovesToList team board row list) = Eval (GetRowUnderAttackPositions team board row) ++ list
+
+-- :k Foldr :: (Maybe Piece -> [Pos] -> Exp [Pos]) -> [Pos] -> [Maybe Piece] -> Exp [Pos]
+data GetRowUnderAttackPositions :: Team -> Board -> Row -> Exp [Position]
+type instance Eval (GetRowUnderAttackPositions team board row) = Eval (Foldr (AddMovesToList team board) '[] row)
+
+data AddMovesToList :: Team -> Board -> Maybe Piece -> [Position] -> Exp [Position]
+type instance Eval (AddMovesToList team board maybePiece list) = Eval (FromMaybe '[] ((Flip PieceMoveList) board) (Eval (If (Eval (MaybeIf (HasTeam team) maybePiece)) (ID maybePiece) (ID Nothing)))) ++ list
+
+type family NoKingError (team :: Team) where
+    NoKingError team = TypeError (Text ("There is no " ++ TypeShow team ++ " King on the board!"))
+
+data FindKing :: Team -> Board -> Exp Piece
+type instance Eval (FindKing team board) = Eval (FindKing' team board)
+
+data FindKing' :: Team -> Vec n Row -> Exp Piece
+type instance Eval (FindKing' team VEnd)           = NoKingError team
+type instance Eval (FindKing' team (row :-> rows)) = Eval (FromMaybeLazy (FindKing' team rows) (ID) (Eval (FindKingInRow team row)))
+
+data FindKingInRow :: Team -> Row -> Exp (Maybe Piece)
+type instance Eval (FindKingInRow team row) = Eval (Join (Eval (Find (MaybeIf (IsKing .&. HasTeam team)) row)))
+
+data FindKingPosition :: Team -> Board -> Exp Position
+type instance Eval (FindKingPosition team board) = Eval (PiecePosition (Eval (FindKing team board)))
+
+data IsKingInCheck :: Team -> Board -> Exp Bool
+type instance Eval (IsKingInCheck team board) = Eval (Eval (FindKingPosition team board) `In` Eval (GetUnderAttackPositions (Eval (OppositeTeam team)) board))
 
 -- This function just checks the spots a piece can move to; it does not handle moving itself.
 -- That is in the other function, named Move.
@@ -486,6 +524,7 @@ type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) +
 -- Type family for actually moving the piece, and handling the side effects.
 -- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
 -- TODO: Handle takes (i.e. moves that remove pieces from play)
+-- TODO: Ensure no moves place that piece's King into check
 -- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
 data Move :: Position -> Position -> Board -> Exp (Maybe Board)
 type instance Eval (Move fromPos toPos board) = Eval (If (Eval (CanMoveTo fromPos toPos board)) (MoveNoChecks fromPos toPos board) (TE' (Text ("There is no piece at: " ++ TypeShow fromPos))))
