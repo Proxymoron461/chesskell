@@ -192,7 +192,6 @@ getUnderAttackPositions2 = Refl
 getUnderAttackPositions3 :: ('[] :: [Position]) :~: Eval (GetUnderAttackPositions Black (Eval (SetPieceAt (MkPiece White King TestInfo) EmptyBoard (At "f" 5))))
 getUnderAttackPositions3 = Refl
 
--- FIXME: These are broken for some reason??
 kingCheckTest1 :: True :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Pawn TestInfo, At "e" 6) ] EmptyBoard)))
 kingCheckTest1 = Refl
 
