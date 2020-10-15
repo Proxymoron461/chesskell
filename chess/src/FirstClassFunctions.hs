@@ -34,6 +34,12 @@ type instance Eval (IsZero (S n)) = False
 data Plus :: Nat -> Nat -> Exp Nat
 type instance Eval (Plus x y) = x + y
 
+data Equal :: MyNat -> MyNat -> Exp Bool
+type instance Eval (Equal (S m) (S n)) = Eval (Equal m n)
+type instance Eval (Equal Z (S n)) = False
+type instance Eval (Equal (S m) Z) = False
+type instance Eval (Equal Z Z) = True
+
 data MyNatToNat :: MyNat -> Exp Nat
 type instance Eval (MyNatToNat Z)     = 0
 type instance Eval (MyNatToNat (S n)) = 1 + (Eval (MyNatToNat n))
@@ -166,6 +172,10 @@ type instance Eval (If 'False  thenDo elseDo) = Eval elseDo
 data MaybeIf :: (a -> Exp Bool) -> Maybe a -> Exp Bool
 type instance Eval (MaybeIf p Nothing)  = False
 type instance Eval (MaybeIf p (Just x)) = Eval (p x)
+
+data MaybeWhich :: (a -> Exp Bool) -> Maybe a -> Exp (Maybe a)
+type instance Eval (MaybeWhich p Nothing)  = Nothing
+type instance Eval (MaybeWhich p (Just x)) = Eval (If (Eval (p x)) (ID (Just x)) (ID Nothing))
 
 data IsJust :: Maybe a -> Exp Bool
 type instance Eval (IsJust (Just _)) = True
