@@ -35,20 +35,23 @@ data PieceName = Pawn
 -- While their position is implicit from where they are in the board, it's
 -- helpful!
 data PieceInfo where
-    Info :: MyNat -> Position -> PieceInfo
+    Info :: MyNat -> Position -> Bool -> PieceInfo
 
 data GetMoveCount :: PieceInfo -> Exp MyNat
-type instance Eval (GetMoveCount (Info x _)) = x
+type instance Eval (GetMoveCount (Info x _ _)) = x
 
 data GetPosition :: PieceInfo -> Exp Position
-type instance Eval (GetPosition (Info _ x)) = x
+type instance Eval (GetPosition (Info _ x _)) = x
+
+data LastPieceToMoveInfo :: PieceInfo -> Exp Bool
+type instance Eval (LastPieceToMoveInfo (Info _ _ x)) = x
 
 -- TODO: Validity check??
 data SetPosition :: PieceInfo -> Position -> Exp PieceInfo
-type instance Eval (SetPosition (Info n _) pos) = Info n pos
+type instance Eval (SetPosition (Info n _ x) pos) = Info n pos x
 
 data InfoIncrementMoves :: PieceInfo -> Exp PieceInfo
-type instance Eval (InfoIncrementMoves (Info n pos)) = Info (S n) pos
+type instance Eval (InfoIncrementMoves (Info n pos x)) = Info (S n) pos x
 
 data IncrementMoves :: Piece -> Exp Piece
 type instance Eval (IncrementMoves (MkPiece team name info)) = MkPiece team name (Eval (InfoIncrementMoves info))
@@ -58,6 +61,12 @@ type instance Eval (PieceMoveCount (MkPiece _ _ info)) = Eval (GetMoveCount info
 
 data PiecePosition :: Piece -> Exp Position
 type instance Eval (PiecePosition (MkPiece _ _ info)) = Eval (GetPosition info)
+
+data LastPieceToMove :: Piece -> Exp Bool
+type instance Eval (LastPieceToMove (MkPiece _ _ info)) = Eval (LastPieceToMoveInfo info)
+
+data SetLastPieceToMove :: Piece -> Exp Piece
+type instance Eval (SetLastPieceToMove (MkPiece team name (Info x y _))) = (MkPiece team name (Info x y True))
 
 data SetPiecePosition :: Piece -> Position -> Exp Piece
 type instance Eval (SetPiecePosition (MkPiece t n info) pos) = MkPiece t n (Eval (SetPosition info pos))
@@ -257,6 +266,9 @@ type instance Eval (HasTeam Black (MkPiece Black _ _)) = True
 type instance Eval (HasTeam White (MkPiece Black _ _)) = False
 type instance Eval (HasTeam Black (MkPiece White _ _)) = False
 
+data HasRow :: Nat -> Position -> Exp Bool
+type instance Eval (HasRow x (At _ y)) = Eval ((x <=? y) :&&: ID (y <=? x))
+
 -- Type families for getting all available squares in a straight line, with nothing in the way
 data AllReachableFunc :: Team -> Board -> Position -> (Position -> Exp [Position]) -> Exp [Position]
 type instance Eval (AllReachableFunc team board pos f) = Eval (TakeWhilePlus (Not . (IsPieceAt board)) ((MaybeIf (Not . (HasTeam team))) . (GetPieceAt board)) (Eval (f pos)))
@@ -400,6 +412,9 @@ type instance Eval (GetPieceAt board pos) = Eval (If (Eval (IsValidPosition pos)
 data GetPieceAtNoChecks :: Board -> Position -> Exp (Maybe Piece)
 type instance Eval (GetPieceAtNoChecks board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CW (!!)) <$> (Eval (GetRow board row)))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
 
+data GetPieceAtWhich :: Board -> Position -> (a -> Exp Bool) -> Exp (Maybe Piece)
+type instance Eval (GetPieceAtWhich board pos f) = Eval (MaybeWhich f (Eval (GetPieceAt board pos)))
+
 data SetPieceAt :: Piece -> Board -> Position -> Exp Board
 type instance Eval (SetPieceAt piece board pos) = Eval (If (Eval (IsValidPosition pos)) (SetPieceAtNoChecks piece board pos) (ID board))
 data SetPieceAtSwapped :: Piece -> Position -> Board -> Exp Board
@@ -520,6 +535,15 @@ data PawnTakePositions :: Piece -> Board -> Exp [Position]
 type instance Eval (PawnTakePositions (MkPiece Black Pawn info) board) = Eval (NReachableDiagSE Black board (Eval (GetPosition info)) 1) ++ (Eval (NReachableDiagSW Black board (Eval (GetPosition info)) 1))
 type instance Eval (PawnTakePositions (MkPiece White Pawn info) board) = Eval (NReachableDiagNE White board (Eval (GetPosition info)) 1) ++ (Eval (NReachableDiagNW White board (Eval (GetPosition info)) 1))
 
+-- TODO: Ensure that this is only valid on the move immediately after that pawn moves
+data IsSpaceVulnerableToEnPassant :: Team -> Board -> Position -> Exp Bool
+type instance Eval (IsSpaceVulnerableToEnPassant team board pos) = Eval (FromMaybe False PawnMovedTwoLast (Eval (GetPieceAtWhich board pos (IsPawn .&. HasTeam team))))
+
+data PawnMovedTwoLast :: Piece -> Exp Bool
+type instance Eval (PawnMovedTwoLast piece) = Eval (If (Eval (HasTeam White piece)) 
+    (Eval (LastPieceToMove piece) :&&: (((HasRow 4 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) piece))
+    (Eval (LastPieceToMove piece) :&&: (((HasRow 5 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) piece)))
+
 data PawnPostStart :: Piece -> Board -> Exp [Position]
 type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) ++ (Eval (PawnTakePositions pawn board))
 
@@ -558,12 +582,12 @@ type instance Eval (MovePieceSwitch piece toPos board) = Just $ Eval (Switch '[
 
 -- A variant of SetPieceAt, which increments the number of moves a piece has done.
 data MovePieceTo :: Piece -> Position -> Board -> Exp Board
-type instance Eval (MovePieceTo piece toPos board) = Eval (SetPieceAt (Eval (IncrementMoves piece)) board toPos)
+type instance Eval (MovePieceTo piece toPos board) = Eval (SetPieceAt (Eval ((SetLastPieceToMove . IncrementMoves) piece)) board toPos)
 
 -- TODO: Handle castling (which should not increment the rook's move counter)
--- TODO: Ensure you're not moving into check
+-- Ensuring you don't move into check is handled by MovePiece
 data MoveKing :: Piece -> Position -> Board -> Exp Board
-type instance Eval (MoveKing king pos board) = TypeError (Text "MoveKing has not been implemented yet!")
+type instance Eval (MoveKing king toPos board) = Eval (MovePieceTo king toPos board)
 
 -- TODO: Allow players to choose what to promote their pawn to!
 -- TODO: Handle en passant in "else" branch
