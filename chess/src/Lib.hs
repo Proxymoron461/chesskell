@@ -77,6 +77,9 @@ type instance Eval (ResetLastPieceMoved board) = Eval ((Map (Map ResetLastMoved)
 data SetLastPieceMoved :: Position -> Board -> Exp Board
 type instance Eval (SetLastPieceMoved pos board) = Eval (ApplyFuncAt SetLastPieceToMove board pos)
 
+data IsLastPieceMovedAt :: Position -> Board -> Exp Bool
+type instance Eval (IsLastPieceMovedAt pos board) = Eval (FromMaybe False (LastPieceToMove) (Eval (GetPieceAt board pos)))
+
 data SetPiecePosition :: Piece -> Position -> Exp Piece
 type instance Eval (SetPiecePosition (MkPiece t n info) pos) = MkPiece t n (Eval (SetPosition info pos))
 
