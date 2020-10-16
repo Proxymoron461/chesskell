@@ -24,8 +24,20 @@ data MyNat where
 
 type instance TypeShow (Z) = "Z"
 type instance TypeShow (S n) = "S " ++ TypeShow n
--- TODO: Improved TypeShow instance for Nat??
-type instance TypeShow (n :: Nat) = TypeShow (Eval (NatToMyNat n))
+
+type instance TypeShow (n :: Nat) = TypeShowNat n
+
+type family TypeShowNat (n :: Nat) :: Symbol where
+    TypeShowNat 0 = "0"
+    TypeShowNat 1 = "1"
+    TypeShowNat 2 = "2"
+    TypeShowNat 3 = "3"
+    TypeShowNat 4 = "4"
+    TypeShowNat 5 = "5"
+    TypeShowNat 6 = "6"
+    TypeShowNat 7 = "7"
+    TypeShowNat 8 = "8"
+    TypeShowNat n = TypeShow (Eval (NatToMyNat n))
 
 data IsZero :: MyNat -> Exp Bool
 type instance Eval (IsZero Z)     = True
