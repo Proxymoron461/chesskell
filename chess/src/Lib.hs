@@ -410,6 +410,16 @@ type instance Eval (VecAt (x :-> xs) (S n)) = Eval (VecAt xs n)
 data (!!) :: Vec n a -> MyNat -> Exp (Maybe a)
 type instance Eval (vec !! nat) = Eval (VecAt vec nat)
 
+type family VAUgly (vec :: Vec Eight a) (n :: Nat) :: a where
+    VAUgly (a :-> xs) 0 = a
+    VAUgly (a :-> b :-> xs) 1 = b
+    VAUgly (a :-> b :-> c :-> xs) 2 = c
+    VAUgly (a :-> b :-> c :-> d :-> e) 3 = d
+    VAUgly (a :-> b :-> c :-> d :-> e :-> f) 4 = e
+    VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> g) 5 = f
+    VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> xs) 6 = g
+    VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> xs) 7 = h
+
 type family ElemIndex (vec :: Vec n a) (item :: a) :: Maybe Nat where
     ElemIndex VEnd item          = Nothing
     ElemIndex (item :-> xs) item = Just 0
@@ -421,14 +431,36 @@ type instance Eval (PutAt x (S n) (y :-> ys)) = y :-> Eval (PutAt x n ys)
 
 -- TODO: Maybe make this tied less to ValidColumns??
 type family ColToIndex (col :: Symbol) :: Maybe Nat where
-    ColToIndex col = ElemIndex ValidColumns col
+    -- ColToIndex col = ElemIndex ValidColumns col
+    ColToIndex "a" = Just 0
+    ColToIndex "b" = Just 1
+    ColToIndex "c" = Just 2
+    ColToIndex "d" = Just 3
+    ColToIndex "e" = Just 4
+    ColToIndex "f" = Just 5
+    ColToIndex "g" = Just 6
+    ColToIndex "h" = Just 7
+    ColToIndex _ = Nothing
+
+type family FromJust' (x :: Maybe a) :: a where
+    FromJust' (Just x) = x
 
 -- This checks for the validity of the position before it sends one off!
 data GetPieceAt :: Board -> Position -> Exp (Maybe Piece)
-type instance Eval (GetPieceAt board pos) = Eval (If (Eval (IsValidPosition pos)) (GetPieceAtNoChecks board pos) (ID Nothing))
+type instance Eval (GetPieceAt board pos) = Eval (If (Eval (IsValidPosition pos)) (GPANCUgly board pos) (ID Nothing))
 
 data GetPieceAtNoChecks :: Board -> Position -> Exp (Maybe Piece)
 type instance Eval (GetPieceAtNoChecks board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CW (!!)) <$> (Eval (GetRow board row)))) <*> (Eval (NatToMyNat <$> (ColToIndex col))))))))
+
+data GPANCUgly :: Board -> Position -> Exp (Maybe Piece)
+type instance Eval (GPANCUgly (a :-> xs) (At col 1)) = VAUgly a (FromJust' (ColToIndex col))
+type instance Eval (GPANCUgly (a :-> b :-> c) (At col 2)) = VAUgly b (FromJust' (ColToIndex col))
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d) (At col 3)) = VAUgly c (FromJust' (ColToIndex col))
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e) (At col 4)) = VAUgly d (FromJust' (ColToIndex col))
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f) (At col 5)) = VAUgly e (FromJust' (ColToIndex col))
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g) (At col 6)) = VAUgly f (FromJust' (ColToIndex col))
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h) (At col 7)) = VAUgly g (FromJust' (ColToIndex col))
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> xs) (At col 8)) = VAUgly h (FromJust' (ColToIndex col))
 
 data GetPieceAtWhich :: Board -> Position -> (a -> Exp Bool) -> Exp (Maybe Piece)
 type instance Eval (GetPieceAtWhich board pos f) = Eval (MaybeWhich f (Eval (GetPieceAt board pos)))
@@ -452,7 +484,7 @@ data SetPiecesAt :: [(Piece, Position)] -> Board -> Exp Board
 type instance Eval (SetPiecesAt pps board) = Eval (Foldr (Uncurry2 SetPieceAtSwapped) board pps)
 
 data GetRow :: Board -> Nat -> Exp (Maybe Row)
-type instance Eval (GetRow board n) = Eval (board !! Eval (NatToMyNat (n - 1)))
+type instance Eval (GetRow board n) = Just $ VAUgly board (n - 1)
 
 -- Uses 1 for first row, and 8 for last row!
 data SetRow :: Board -> Nat -> Row -> Exp Board
@@ -461,8 +493,8 @@ type instance Eval (SetRow board n row) = Eval (PutAt row (Eval (NatToMyNat (n -
 data IsPieceAt :: Board -> Position -> Exp Bool
 type instance Eval (IsPieceAt board pos) = Eval (IsJust (Eval (GetPieceAt board pos)))
 
-data IsKingAt :: Board -> Position -> Exp Bool
-type instance Eval (IsKingAt board pos) = Eval (FromMaybe False IsKing (Eval (GetPieceAt board pos)))
+data IsKingAt :: Team -> Board -> Position -> Exp Bool
+type instance Eval (IsKingAt team board pos) = Eval (FromMaybe False (HasTeam team .&. IsKing) (Eval (GetPieceAt board pos)))
 
 data IsQueenAt :: Board -> Position -> Exp Bool
 type instance Eval (IsQueenAt board pos) = Eval (FromMaybe False IsQueen (Eval (GetPieceAt board pos)))
@@ -498,7 +530,9 @@ data FindKingPosition :: Team -> Board -> Exp Position
 type instance Eval (FindKingPosition team board) = Eval (PiecePosition (Eval (FindKing team board)))
 
 data IsKingInCheck :: Team -> Board -> Exp Bool
-type instance Eval (IsKingInCheck team board) = Eval (Eval (FindKingPosition team board) `In` Eval (GetUnderAttackPositions (Eval (OppositeTeam team)) board))
+-- type instance Eval (IsKingInCheck team board) = Eval (Eval (FindKingPosition team board) `In` Eval (GetUnderAttackPositions (Eval (OppositeTeam team)) board))
+type instance Eval (IsKingInCheck team board) = Eval (Any (IsKingAt team board) (Eval (GetUnderAttackPositions (Eval (OppositeTeam team)) board)))
+-- type instance Eval (IsKingInCheck team board) = False  -- Proves that this function is a major bottleneck
 
 -- This function just checks the spots a piece can move to; it does not handle moving itself.
 -- That is in the other function, named Move.
@@ -528,7 +562,7 @@ type instance Eval (PieceAttackList (MkPiece team King info) board)   = Eval (Al
 -- First boolean argument determines the reach - the King check occurs if it is true,
 -- and it does not if it is False.
 data PieceCanReachKingCheck :: Bool -> Piece -> Position -> Board -> Exp Bool
-type instance Eval (PieceCanReachKingCheck True piece pos board) = Eval (Eval (pos `In` Eval (PieceMoveList piece board)) :&&: ((Not . IsKingAt board) pos))
+type instance Eval (PieceCanReachKingCheck True piece pos board) = Eval (Eval (pos `In` Eval (PieceMoveList piece board)) :&&: ((Not . IsKingAt (Eval (OppositeTeam (Eval (PieceTeam piece)))) board) pos))
 type instance Eval (PieceCanReachKingCheck False piece pos board) = Eval (pos `In` Eval (PieceMoveList piece board))
 
 data PieceCanMoveTo :: Piece -> Position -> Board -> Exp Bool
@@ -614,7 +648,8 @@ type instance Eval (MovePieceSwitch piece toPos board) = Just $ Eval (Switch '[
     '(Eval (IsKing piece), MoveKing piece toPos board),
     '(Eval (IsPawn piece), MovePawn piece toPos board) ] )
 
--- A variant of SetPieceAt, which increments the number of moves a piece has done.
+-- A variant of SetPieceAt, which increments the number of moves a piece has done,
+-- and sets that piece as the last piece having moved.
 data MovePieceTo :: Piece -> Position -> Board -> Exp Board
 type instance Eval (MovePieceTo piece toPos board) = Eval (SetLastPieceMoved toPos (Eval (SetPieceAt (Eval (IncrementMoves piece)) board toPos)))
 
@@ -643,11 +678,11 @@ data MyNatLength :: [a] -> Exp MyNat
 type instance Eval (MyNatLength '[]) = Z
 type instance Eval (MyNatLength (x ': xs)) = S $ Eval (MyNatLength xs)
 
--- type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
--- type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
+type LEmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
+type LEmptyBoard = LEmptyRow :-> LEmptyRow :-> LEmptyRow :-> LEmptyRow :-> LEmptyRow :-> LEmptyRow :-> LEmptyRow :<> LEmptyRow
 
 
--- type MyTestInfo = Info Z (At "a" 1) False
--- type MyTestBoard = Eval (SetPiecesAt '[ '(MkPiece Black King MyTestInfo, At "a" 1), '(MkPiece White King MyTestInfo, At "h" 8), '(MkPiece Black Queen MyTestInfo, At "d" 3), '(MkPiece White Queen MyTestInfo, At "e" 3)] EmptyBoard)
+type MyTestInfo = Info Z (At "a" 1) False
+type MyTestBoard = Eval (SetPiecesAt '[ '(MkPiece Black King MyTestInfo, At "a" 1), '(MkPiece White King MyTestInfo, At "h" 8), '(MkPiece Black Queen MyTestInfo, At "d" 3), '(MkPiece White Queen MyTestInfo, At "e" 3)] LEmptyBoard)
 
 -- Eval (LazyAnd (Eval ('[] :<= '[])) ('[] :<= '[]))  -- Fails because of ambiguous types??
