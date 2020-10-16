@@ -299,7 +299,7 @@ main = hspec $ do
   --     shouldTypecheck getUnderAttackPositions2
   --   it "3: A board with only White pieces should not have no positions under attack by the Black team" $
   --     shouldTypecheck getUnderAttackPositions3
-  -- describe "Movement Tests" $ do
+  describe "Movement Tests" $ do
   --   describe "Last Moved Piece Tests" $ do
   --     it "1: If a piece moves, it should be recorded as the last piece moved on the board" $
   --       shouldTypeCheck lastMovedTest1
@@ -307,13 +307,13 @@ main = hspec $ do
   --       shouldTypeCheck lastMovedTest2
   --     it "3: A piece that moved 2 moves ago should not be recorded as the last piece moved" $
   --      shouldTypeCheck lastMovedTest3
-  --   describe "Move function Tests" $ do
-  --     it "1: Moving a piece which does not result in a take, should not change the number of pieces on the board" $
-  --       shouldTypeCheck moveTest1
-  --     it "2: Moving a piece should not move another piece on the board" $
-  --       shouldTypeCheck moveTest2
-  --     it "3: Moving a piece to a position should put the piece at that position" $
-  --       shouldTypeCheck moveTest3
+    describe "Move function Tests" $ do
+      it "1: Moving a piece which does not result in a take, should not change the number of pieces on the board" $
+        shouldTypeCheck moveTest1
+      it "2: Moving a piece should not move another piece on the board" $
+        shouldTypeCheck moveTest2
+      it "3: Moving a piece to a position should put the piece at that position" $
+        shouldTypeCheck moveTest3
   --   describe "ClearPieceAt Tests" $ do
   --     it "1: If a piece moves from A to B, then position A should be empty" $
   --       shouldTypeCheck clearPieceTest1

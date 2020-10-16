@@ -10,7 +10,8 @@ import FirstClassFunctions
 
 import TestTypes
 
--- FIXME: These aren't behaving. Why??
+-- FIXME: Each compiles individually - it's compiling them all that kills it.
+-- WHAT THE FLIP
 
 -- isKingTest1 :: True :~: Eval (Eval (IsKing (MkPiece White King TestInfo)) :&&: (IsKing (MkPiece White King TestInfo)))
 -- isKingTest1 = Refl
@@ -18,30 +19,39 @@ import TestTypes
 -- isKingTest2 :: False :~: Eval (Eval (IsKing (MkPiece Black Pawn TestInfo)) :||: (IsKing (MkPiece White Queen TestInfo)))
 -- isKingTest2 = Refl
 
+-- -- TODO: Slow, but doesn't crash compiler
 -- getUnderAttackPositions1 :: True :~: Eval (Eval (GetAdjacent (At "f" 5)) :=:=: Eval (GetUnderAttackPositions White (Eval (SetPieceAt (MkPiece White King TestInfo) EmptyBoard (At "f" 5)))))
 -- getUnderAttackPositions1 = Refl
 
+-- -- TODO: Slow, but doesn't crash compiler
 -- getUnderAttackPositions2 :: False :~: Eval ((At "f" 3) `In` (Eval (GetUnderAttackPositions White (Eval (SetPiecesAt '[ '(MkPiece White Rook TestInfo, At "f" 5), '(MkPiece Black Pawn TestInfo, At "f" 4) ] EmptyBoard)))))
 -- getUnderAttackPositions2 = Refl
 
+-- -- TODO: Slow, but doesn't crash compiler
 -- getUnderAttackPositions3 :: ('[] :: [Position]) :~: Eval (GetUnderAttackPositions Black (Eval (SetPieceAt (MkPiece White King TestInfo) EmptyBoard (At "f" 5))))
 -- getUnderAttackPositions3 = Refl
 
+-- -- TODO: Slow, but doesn't crash compiler
 -- kingCheckTest1 :: True :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Pawn TestInfo, At "e" 6) ] EmptyBoard)))
 -- kingCheckTest1 = Refl
 
+-- -- TODO: Slow, but doesn't crash compiler
 -- kingCheckTest2 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Rook TestInfo, At "f" 8), '(MkPiece White Queen TestInfo, At "f" 6) ] EmptyBoard)))
 -- kingCheckTest2 = Refl
 
+-- -- TODO: Slow, but doesn't crash compiler
 -- kingCheckTest3 :: True :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Rook TestInfo, At "f" 8), '(MkPiece Black Queen TestInfo, At "f" 6) ] EmptyBoard)))
 -- kingCheckTest3 = Refl
 
+-- -- TODO: Slow, but doesn't crash compiler
 -- kingCheckTest4 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Rook TestInfo, At "f" 8), '(MkPiece Black Pawn TestInfo, At "f" 6) ] EmptyBoard)))
 -- kingCheckTest4 = Refl
 
+-- -- TODO: Slow, but doesn't crash compiler
 -- kingCheckTest5 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Pawn TestInfo, At "f" 6) ] EmptyBoard)))
 -- kingCheckTest5 = Refl
 
+-- -- TODO: Slow, but doesn't crash compiler
 -- type CheckTest6Board = Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At "f" 5), '(MkPiece Black Pawn TestInfo, At "e" 6) ] EmptyBoard)
 -- kingCheckTest6 :: Eval (IsKingInCheck White CheckTest6Board) :~: Eval (Eval (FindKingPosition White CheckTest6Board) `In` Eval (GetUnderAttackPositions (Eval (OppositeTeam White)) CheckTest6Board))
 -- kingCheckTest6 = Refl

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 672df3dd5958162bcef61d4f404fa55e6fea4273a49fa6084fcdcb3a5617e295
+-- hash: ad789c7a91dbf0669b31cb7b056c7a2e09dabec5fcc96f072a4ad97968da5e82
 
 name:           chess
 version:        0.1.0.0
@@ -63,7 +63,7 @@ test-suite chess-test
   hs-source-dirs:
       test
   default-extensions: DataKinds PolyKinds TypeFamilies GADTs TypeOperators ConstraintKinds UndecidableInstances TypeApplications FlexibleInstances AllowAmbiguousTypes
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -fdefer-type-errors
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -fdefer-type-errors -fno-cse -fno-full-laziness
   build-depends:
       HUnit
     , base >=4.7 && <5

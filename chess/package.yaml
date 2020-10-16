@@ -57,6 +57,8 @@ tests:
       - -rtsopts
       - -with-rtsopts=-N
       - -fdefer-type-errors
+      - -fno-cse
+      - -fno-full-laziness
     dependencies:
       - chess
       - hspec
@@ -64,3 +66,11 @@ tests:
       - deepseq
       - HUnit
       - singletons
+# When all commented out:
+# 20 seconds, 1.5GB with flags
+# 19 seconds 1.2GB without
+# With moveTest3:
+# 34 seconds, 2.1GB with flags
+# 40 seconds, 2.9GB without
+# With moveTests 1-3:
+
