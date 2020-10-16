@@ -588,7 +588,7 @@ type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) +
 -- TODO: Ensure that if the King is in check, the next move takes him out of it
 -- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
 data Move :: Position -> Position -> Board -> Exp (Maybe Board)
-type instance Eval (Move fromPos toPos board) = Eval (If (Eval (CanMoveTo fromPos toPos board)) (MoveNoChecks fromPos toPos board) (TE' (Text ("There is no piece at: " ++ TypeShow fromPos))))
+type instance Eval (Move fromPos toPos board) = Eval (If (Eval (CanMoveTo fromPos toPos board)) (MoveNoChecks fromPos toPos board) (TE' (Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
 
 data MoveNoChecks :: Position -> Position -> Board -> Exp (Maybe Board)
 type instance Eval (MoveNoChecks fromPos toPos board) = Eval (ClearPieceAt fromPos <$> (Eval (Eval (GetPieceAt board fromPos) >>= (FlipToLast MovePiece) toPos board)))
