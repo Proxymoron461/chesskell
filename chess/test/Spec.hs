@@ -18,7 +18,7 @@ import FirstClassFunctions
 -- TODO: Remove these and replace with EDSL stuff
 -- NOTE: These boards are upside-down - the first row is the last one visually
 type TestPosition = At "a" 1  -- i.e. bottom left
-type TestPiece    = MkPiece Black Pawn (Info Z TestPosition)
+type TestPiece    = MkPiece Black Pawn (Info Z TestPosition False)
 type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :-> EmptyRow
@@ -29,10 +29,10 @@ type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Noth
                     :-> EmptyRow
                     :<> EmptyRow
 
-type TestWhitePawn = MkPiece White Pawn (Info Z (At "a" 2))
-type TestWhitePawn2 = MkPiece White Pawn (Info Z (At "a" 7))
-type TestWhitePawn3 = MkPiece White Pawn (Info Z (At "b" 3))
-type TestBlackPawn = MkPiece Black Pawn (Info Z (At "b" 8))
+type TestWhitePawn = MkPiece White Pawn (Info Z (At "a" 2) False)
+type TestWhitePawn2 = MkPiece White Pawn (Info Z (At "a" 7) False)
+type TestWhitePawn3 = MkPiece White Pawn (Info Z (At "b" 3) False)
+type TestBlackPawn = MkPiece Black Pawn (Info Z (At "b" 8) False)
 type TestBoard2   = EmptyRow
                     :-> (Just TestWhitePawn :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :-> (Nothing :-> Just TestWhitePawn3 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
@@ -52,10 +52,10 @@ type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :
 pawnTest1 :: '[ At "d" 3, At "d" 2] :~: Eval (PawnReachableBelow TestBoard2 (At "d" 4) 2)
 pawnTest1 = Refl
 
-whitePawnToQueenTest :: Just (MkPiece White Queen (Info (S Z) (At "d" 8))) :~: Eval ((Eval (Move (At "d" 7) (At "d" 8) (Eval (SetPieceAt (MkPiece White Pawn TestInfo) EmptyBoard (At "d" 7))))) >>= (Flip GetPieceAt) (At "d" 8))
+whitePawnToQueenTest :: Just (MkPiece White Queen (Info (S Z) (At "d" 8) True)) :~: Eval ((Eval (Move (At "d" 7) (At "d" 8) (Eval (SetPieceAt (MkPiece White Pawn TestInfo) EmptyBoard (At "d" 7))))) >>= (Flip GetPieceAt) (At "d" 8))
 whitePawnToQueenTest = Refl
 
-blackPawnToQueenTest :: Just (MkPiece Black Queen (Info (S Z) (At "d" 1))) :~: Eval ((Eval (Move (At "d" 2) (At "d" 1) (Eval (SetPieceAt (MkPiece Black Pawn TestInfo) EmptyBoard (At "d" 2))))) >>= (Flip GetPieceAt) (At "d" 1))
+blackPawnToQueenTest :: Just (MkPiece Black Queen (Info (S Z) (At "d" 1) True)) :~: Eval ((Eval (Move (At "d" 2) (At "d" 1) (Eval (SetPieceAt (MkPiece Black Pawn TestInfo) EmptyBoard (At "d" 2))))) >>= (Flip GetPieceAt) (At "d" 1))
 blackPawnToQueenTest = Refl
 
 getReachableLeftTest1 :: '[ At "c" 2, At "b" 2, At "a" 2] :~: Eval (AllReachableLeft Black TestBoard2 (At "d" 2))
@@ -93,13 +93,13 @@ getPieceAtTest2 = Refl
 getPieceAtTest3 :: Just Z :~: Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z)))
 getPieceAtTest3 = Refl
 
-canMoveToTest1 :: True :~: Eval (CanMoveTo (At "a" 7) (At "a" 6) (Eval (SetPieceAt (MkPiece Black Pawn (Info (S Z) TestPosition)) EmptyBoard (At "a" 7))))
+canMoveToTest1 :: True :~: Eval (CanMoveTo (At "a" 7) (At "a" 6) (Eval (SetPieceAt (MkPiece Black Pawn (Info (S Z) TestPosition False)) EmptyBoard (At "a" 7))))
 canMoveToTest1 = Refl
 
-canMoveToTest2 :: True :~: Eval (CanMoveTo (At "a" 7) (At "a" 5) (Eval (SetPieceAt (MkPiece Black Pawn (Info Z TestPosition)) EmptyBoard (At "a" 7))))
+canMoveToTest2 :: True :~: Eval (CanMoveTo (At "a" 7) (At "a" 5) (Eval (SetPieceAt (MkPiece Black Pawn (Info Z TestPosition False)) EmptyBoard (At "a" 7))))
 canMoveToTest2 = Refl
 
-canMoveToTest3 :: False :~: Eval (CanMoveTo (At "a" 7) (At "a" 5) (Eval (SetPieceAt (MkPiece Black Pawn (Info (S Z) TestPosition)) EmptyBoard (At "a" 7))))
+canMoveToTest3 :: False :~: Eval (CanMoveTo (At "a" 7) (At "a" 5) (Eval (SetPieceAt (MkPiece Black Pawn (Info (S Z) TestPosition False)) EmptyBoard (At "a" 7))))
 canMoveToTest3 = Refl
 
 canMoveToTest4 :: False :~: Eval (CanMoveTo (At "a" 7) (At "a" 5) (Eval (SetPieceAt (MkPiece White Pawn TestInfo) (Eval (SetPieceAt (MkPiece Black Pawn TestInfo) EmptyBoard (At "a" 7))) (At "a" 6))))
@@ -157,12 +157,12 @@ oppositeTeamTest1 = Refl
 oppositeTeamTest2 :: Black :~: Eval (OppositeTeam White)
 oppositeTeamTest2 = Refl
 
-setPieceAtTest1 :: At "b" 6 :~: Eval (PiecePosition (Eval (FromJust (Eval (GetPieceAt (Eval (SetPieceAt (MkPiece Black Pawn (Info Z (At "d" 2))) EmptyBoard (At "b" 6))) (At "b" 6))))))
+setPieceAtTest1 :: At "b" 6 :~: Eval (PiecePosition (Eval (FromJust (Eval (GetPieceAt (Eval (SetPieceAt (MkPiece Black Pawn (Info Z (At "d" 2) False)) EmptyBoard (At "b" 6))) (At "b" 6))))))
 setPieceAtTest1 = Refl
 
 -- :kind! Flip (SetPieceAt piece) :: Position -> Board -> Exp Board
 -- data Foldr :: (a -> b -> Exp b) -> b -> [a] -> Exp b
-type TestInfo = Info Z (At "a" 1)
+type TestInfo = Info Z (At "a" 1) False
 type TestPieceList = '[MkPiece Black Pawn TestInfo, MkPiece White Pawn TestInfo, MkPiece White King TestInfo]
 setPieceAtTest2 :: 3 :~: Eval (NoOfPieces (Eval (Foldr (Uncurry2 SetPieceAtSwapped) EmptyBoard (Eval (Zip TestPieceList '[At "b" 1, At "b" 2, At "b" 3])))))
 setPieceAtTest2 = Refl
@@ -219,10 +219,10 @@ findKingTest1 = Proxy @(Eval (FindKing White EmptyBoard))
 findKingTest2 :: Proxy (a :: Piece)
 findKingTest2 = Proxy @(Eval (FindKing Black EmptyBoard))
 
-findKingTest3 :: MkPiece White King (Info Z (At "d" 4)) :~: Eval (FindKing White (Eval (SetPieceAt (MkPiece White King (Info Z (At "a" 1))) EmptyBoard (At "d" 4))))
+findKingTest3 :: MkPiece White King (Info Z (At "d" 4) False) :~: Eval (FindKing White (Eval (SetPieceAt (MkPiece White King (Info Z (At "a" 1) False)) EmptyBoard (At "d" 4))))
 findKingTest3 = Refl
 
-findKingTest4 :: MkPiece Black King (Info Z (At "d" 4)) :~: Eval (FindKing Black (Eval (SetPieceAt (MkPiece Black King (Info Z (At "a" 1))) EmptyBoard (At "d" 4))))
+findKingTest4 :: MkPiece Black King (Info Z (At "d" 4) False) :~: Eval (FindKing Black (Eval (SetPieceAt (MkPiece Black King (Info Z (At "a" 1) False)) EmptyBoard (At "d" 4))))
 findKingTest4 = Refl
 
 findKingPositionTest1 :: At "d" 4 :~: Eval (FindKingPosition White (Eval (SetPieceAt (MkPiece White King TestInfo) EmptyBoard (At "d" 4))))
@@ -230,6 +230,31 @@ findKingPositionTest1 = Refl
 
 findKingPositionTest2 :: At "d" 4 :~: Eval (FindKingPosition Black (Eval (SetPieceAt (MkPiece Black King TestInfo) EmptyBoard (At "d" 4))))
 findKingPositionTest2 = Refl
+
+moveTest1 :: Eval (NoOfPieces LastMoveTestBoard) :~: Eval (FromMaybe 0 NoOfPieces (Eval (Move (At "a" 2) (At "a" 3) LastMoveTestBoard)))
+moveTest1 = Refl
+
+moveTest2 :: Just True :~: Eval ((Flip IsPieceAt) (At "e" 7) <$> LastMoveBoardPostMove)
+moveTest2 = Refl
+
+-- moveTest3 :: Just True :~: Eval ((Flip IsPieceAt) (At "e" 6) <$> (Eval (LastMoveBoardPostMove >>= Move (At "e" 7) (At "e" 8))))
+-- moveTest3 = Refl
+
+type LastMoveTestBoard = Eval (SetPiecesAt '[ '(MkPiece White Queen TestInfo, At "a" 2), '(MkPiece Black Queen TestInfo, At "e" 7),
+                                              '(MkPiece White King TestInfo, At "a" 1), '(MkPiece Black King TestInfo, At "e" 8) ] EmptyBoard)
+type LastMoveBoardPostMove = Eval (Move (At "a" 2) (At "a" 7) LastMoveTestBoard)
+lastMovedTest1 :: True :~: Eval (FromMaybe False (IsLastPieceMovedAt (At "a" 7)) (LastMoveBoardPostMove))
+lastMovedTest1 = Refl
+
+lastMovedTest2 :: False :~: Eval (FromMaybe True (IsLastPieceMovedAt (At "e" 7)) (LastMoveBoardPostMove))
+lastMovedTest2 = Refl
+
+lastMovedTest3 :: False :~: Eval (FromMaybe True (IsLastPieceMovedAt (At "a" 7)) (Eval (LastMoveBoardPostMove >>= Move (At "e" 7) (At "e" 2))))
+lastMovedTest3 = Refl
+
+-- -- TODO: Make en passant tests
+-- enPassantTest1 :: True :~: False
+-- enPassantTest1 = Refl
 
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
@@ -379,4 +404,20 @@ main = hspec $ do
       shouldTypecheck getUnderAttackPositions2
     it "3: A board with only White pieces should not have no positions under attack by the Black team" $
       shouldTypecheck getUnderAttackPositions3
+  describe "Movement Tests" $ do
+    describe "Last Moved Piece Tests" $ do
+      it "1: If a piece moves, it should be recorded as the last piece moved on the board" $
+        shouldTypeCheck lastMovedTest1
+      it "2: A piece that did not move should not be recorded as the last piece moved" $
+        shouldTypeCheck lastMovedTest2
+      -- it "3: A piece that moved 2 moves ago should not be recorded as the last piece moved" $
+      --  shouldTypeCheck lastMovedTest3
+    describe "Move function Tests" $ do
+      it "1: Moving a piece which does not result in a take, should not change the number of pieces on the board" $
+        shouldTypeCheck moveTest1
+      it "2: Moving a piece should not move another piece on the board" $
+        shouldTypeCheck moveTest2
+--       it "3: Moving a piece to a position should put the piece at that position" $
+   --      shouldTypeCheck moveTest3
+
     
