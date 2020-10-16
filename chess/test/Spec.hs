@@ -278,19 +278,19 @@ main = hspec $ do
         shouldTypecheck findKingPositionTest1
       it "2: FindKingPosition should return the correct position of the Black King" $
         shouldTypecheck findKingPositionTest2
-    describe "IsKingInCheck Tests" $ do
-      it "1" $
-        shouldTypecheck kingCheckTest1
-      it "2" $
-        shouldTypecheck kingCheckTest2
-      it "3" $
-        shouldTypecheck kingCheckTest3
-      it "4" $
-        shouldTypecheck kingCheckTest4
-      it "5: A Pawn cannot put a King into check by simply being able to move to the King's position." $
-        shouldTypecheck kingCheckTest5
-      it "6: The result of IsKingInCheck should be identical to the result of manually checking if the King is in an attack position" $
-        shouldTypecheck kingCheckTest6
+    -- describe "IsKingInCheck Tests" $ do
+    --   it "1" $
+    --     shouldTypecheck kingCheckTest1
+    --   it "2" $
+    --     shouldTypecheck kingCheckTest2
+    --   it "3" $
+    --     shouldTypecheck kingCheckTest3
+    --   it "4" $
+    --     shouldTypecheck kingCheckTest4
+    --   it "5: A Pawn cannot put a King into check by simply being able to move to the King's position." $
+    --     shouldTypecheck kingCheckTest5
+    --   it "6: The result of IsKingInCheck should be identical to the result of manually checking if the King is in an attack position" $
+    --     shouldTypecheck kingCheckTest6
   describe "GetUnderAttackPositions Tests" $ do
     it "1: A board with a single King should have all under attack positions be all positions adjacent to the king" $
       shouldTypecheck getUnderAttackPositions1
@@ -299,11 +299,11 @@ main = hspec $ do
     it "3: A board with only White pieces should not have no positions under attack by the Black team" $
       shouldTypecheck getUnderAttackPositions3
   describe "Movement Tests" $ do
-    -- describe "Last Moved Piece Tests" $ do
-    --   it "1: If a piece moves, it should be recorded as the last piece moved on the board" $
-    --     shouldTypeCheck lastMovedTest1
-    --   it "2: A piece that did not move should not be recorded as the last piece moved" $
-    --     shouldTypeCheck lastMovedTest2
+    describe "Last Moved Piece Tests" $ do
+      it "1: If a piece moves, it should be recorded as the last piece moved on the board" $
+        shouldTypeCheck lastMovedTest1
+      it "2: A piece that did not move should not be recorded as the last piece moved" $
+        shouldTypeCheck lastMovedTest2
     --   it "3: A piece that moved 2 moves ago should not be recorded as the last piece moved" $
     --    shouldTypeCheck lastMovedTest3
     -- describe "Move function Tests" $ do
