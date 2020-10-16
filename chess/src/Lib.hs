@@ -75,7 +75,7 @@ data ResetLastPieceMoved :: Board -> Exp Board
 type instance Eval (ResetLastPieceMoved board) = Eval ((Map (Map ResetLastMoved)) <$> board)
 
 data SetLastPieceMoved :: Position -> Board -> Exp Board
-type instance Eval (SetLastPieceMoved pos board) = Eval (ApplyFuncAt SetLastPieceToMove board pos)
+type instance Eval (SetLastPieceMoved pos board) = Eval (ApplyFuncAt SetLastPieceToMove (Eval (ResetLastPieceMoved board)) pos)
 
 data IsLastPieceMovedAt :: Position -> Board -> Exp Bool
 type instance Eval (IsLastPieceMovedAt pos board) = Eval (FromMaybe False (LastPieceToMove) (Eval (GetPieceAt board pos)))
@@ -441,6 +441,9 @@ type instance Eval (SetPieceAt piece board pos) = Eval (If (Eval (IsValidPositio
 data SetPieceAtSwapped :: Piece -> Position -> Board -> Exp Board
 type instance Eval (SetPieceAtSwapped piece pos board) = Eval (SetPieceAt piece board pos)
 
+data ClearPieceAt :: Position -> Board -> Exp Board
+type instance Eval (ClearPieceAt (At col row) board) = Eval (SetRow board row (Eval (PutAt Nothing (Eval (NatToMyNat (Eval (FromJust (ColToIndex col))))) (Eval (FromJust (Eval (GetRow board row)))))))
+
 data SetPieceAtNoChecks :: Piece -> Board -> Position -> Exp Board
 type instance Eval (SetPieceAtNoChecks piece board (At col row)) = Eval (SetRow board row (Eval (PutAt (Just (Eval (SetPiecePosition piece (At col row)))) (Eval (NatToMyNat (Eval (FromJust (ColToIndex col))))) (Eval (FromJust (Eval (GetRow board row)))))))
 
@@ -588,7 +591,7 @@ data Move :: Position -> Position -> Board -> Exp (Maybe Board)
 type instance Eval (Move fromPos toPos board) = Eval (If (Eval (CanMoveTo fromPos toPos board)) (MoveNoChecks fromPos toPos board) (TE' (Text ("There is no piece at: " ++ TypeShow fromPos))))
 
 data MoveNoChecks :: Position -> Position -> Board -> Exp (Maybe Board)
-type instance Eval (MoveNoChecks fromPos toPos board) = Eval (Eval (GetPieceAt board fromPos) >>= (FlipToLast MovePiece) toPos board)
+type instance Eval (MoveNoChecks fromPos toPos board) = Eval (ClearPieceAt fromPos <$> (Eval (Eval (GetPieceAt board fromPos) >>= (FlipToLast MovePiece) toPos board)))
 
 -- Does not check that it's valid the piece can move to the position, just moves them!
 -- For all pieces apart from the King and the Pawn, moving them is easy: they move
@@ -642,5 +645,9 @@ type instance Eval (MyNatLength (x ': xs)) = S $ Eval (MyNatLength xs)
 
 -- type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 -- type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
+
+
+-- type MyTestInfo = Info Z (At "a" 1) False
+-- type MyTestBoard = Eval (SetPiecesAt '[ '(MkPiece Black King MyTestInfo, At "a" 1), '(MkPiece White King MyTestInfo, At "h" 8), '(MkPiece Black Queen MyTestInfo, At "d" 3), '(MkPiece White Queen MyTestInfo, At "e" 3)] EmptyBoard)
 
 -- Eval (LazyAnd (Eval ('[] :<= '[])) ('[] :<= '[]))  -- Fails because of ambiguous types??
