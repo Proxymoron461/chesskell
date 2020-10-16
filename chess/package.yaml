@@ -32,7 +32,8 @@ default-extensions:
   - UndecidableInstances
   - TypeApplications
   - FlexibleInstances
-  - AllowAmbiguousTypes
+  # - AllowAmbiguousTypes
+  - RankNTypes
 
 library:
   source-dirs: src
