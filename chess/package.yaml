@@ -30,6 +30,7 @@ default-extensions:
   - TypeOperators
   - ConstraintKinds
   - UndecidableInstances
+  - ScopedTypeVariables
   - TypeApplications
   - FlexibleInstances
   # - AllowAmbiguousTypes

@@ -63,6 +63,8 @@ type family NatToMyNatNonFCF (n :: Nat) :: MyNat where
     NatToMyNatNonFCF 0 = Z
     NatToMyNatNonFCF n = S (NatToMyNatNonFCF (n - 1))
 
+type Eight = S (S (S (S (S (S (S (S Z)))))))
+
 -- ID function, for wrapping data in Exp
 data ID :: a -> Exp a
 type instance Eval (ID x) = x
