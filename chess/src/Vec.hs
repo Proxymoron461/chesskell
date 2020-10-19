@@ -1,10 +1,11 @@
 module Vec where
 
-import GHC.TypeLits
+import qualified GHC.TypeLits as TL
 import FirstClassFunctions
+import Data.Type.Nat hiding (SNat(..))
 
--- FIXME: a -> Vec n -> Vec (n + 1) a causes issues. Why??
-data Vec (n :: MyNat) (a :: Type) where
+-- FIXME: a -> Vec n -> Vec (n TL.+ 1) a causes issues. Why??
+data Vec (n :: Nat) (a :: Type) where
     VEnd   :: Vec Z a
     (:->)  :: a -> Vec n a -> Vec (S n) a
 infixr 4 :->
@@ -31,7 +32,7 @@ data AnyVec :: (a -> Exp Bool) -> Vec n a -> Exp Bool
 type instance Eval (AnyVec p VEnd)       = False
 type instance Eval (AnyVec p (x :-> xs)) = Eval (Eval (p x) :||: AnyVec p xs)
 
-data VFilterCount :: (a -> Exp Bool) -> Vec n a -> Exp Nat
+data VFilterCount :: (a -> Exp Bool) -> Vec n a -> Exp TL.Nat
 type instance Eval (VFilterCount p xs) = Eval (FilterCount p (Eval (VecToList xs)))
 
 -- Vector instance for Map
@@ -40,7 +41,7 @@ type instance Eval (Map f (x :-> xs)) = Eval (f x) :-> Eval (Map f xs)
 
 -- Vector instance for Length
 type instance Eval (Length VEnd)       = 0
-type instance Eval (Length (x :-> xs)) = 1 + Eval (Length xs)
+type instance Eval (Length (x :-> xs)) = 1 TL.+ Eval (Length xs)
 
 -- Vector instance for Foldr
 type instance Eval (Foldr f z VEnd)       = z
@@ -52,16 +53,16 @@ type instance Eval (Find f (x :-> xs)) = Eval (If (Eval (f x)) (ID (Just x)) (Fi
 -- When using Maybes, this returns another maybe!
 -- :kind! Eval (VecAt TestBoard Z) :: Maybe Row
 -- data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
-data VecAt :: Vec n a -> MyNat -> Exp (Maybe a)
+data VecAt :: Vec n a -> Nat -> Exp (Maybe a)
 type instance Eval (VecAt VEnd _)           = Nothing
 type instance Eval (VecAt (x :-> xs) Z)     = Just x
 type instance Eval (VecAt (x :-> xs) (S n)) = Eval (VecAt xs n)
 
 -- :kind! Eval ((A :-> B :<> C) !! (S (S Z))) = 'Just C
-data (!!) :: Vec n a -> MyNat -> Exp (Maybe a)
+data (!!) :: Vec n a -> Nat -> Exp (Maybe a)
 type instance Eval (vec !! nat) = Eval (VecAt vec nat)
 
-type family VAUgly (vec :: Vec Eight a) (n :: Nat) :: a where
+type family VAUgly (vec :: Vec Eight a) (n :: TL.Nat) :: a where
     VAUgly (a :-> xs) 0 = a
     VAUgly (a :-> b :-> xs) 1 = b
     VAUgly (a :-> b :-> c :-> xs) 2 = c
@@ -71,6 +72,6 @@ type family VAUgly (vec :: Vec Eight a) (n :: Nat) :: a where
     VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> xs) 6 = g
     VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> xs) 7 = h
 
-data PutAt :: a -> MyNat -> Vec n a -> Exp (Vec n a)
+data PutAt :: a -> Nat -> Vec n a -> Exp (Vec n a)
 type instance Eval (PutAt x Z (y :-> ys))     = x :-> ys
 type instance Eval (PutAt x (S n) (y :-> ys)) = y :-> Eval (PutAt x n ys)

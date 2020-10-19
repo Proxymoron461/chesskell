@@ -1,7 +1,7 @@
 module KingTests where
 
 import Data.Type.Equality ((:~:)(..))
-import GHC.TypeLits (Nat)
+import qualified GHC.TypeLits as TL (Nat)
 import Data.Proxy(Proxy(..))
 
 import Lib

@@ -1,6 +1,7 @@
 module FirstClassFunctions where
 
-import GHC.TypeLits
+import qualified GHC.TypeLits as TL
+import Data.Type.Nat hiding (SNat(..))
 
 -----------------------------------------------------------------------------------------------
 
@@ -15,19 +16,15 @@ type Exp a = a -> Type
 type family Eval (e :: Exp a) :: a
 
 -- Open type family for Show instances for types!
-type family TypeShow (x :: a) :: Symbol
+type family TypeShow (x :: a) :: TL.Symbol
 
--- Custom Nat class, to allow pattern matching on Nat > 2
-data MyNat where
-    Z :: MyNat
-    S :: MyNat -> MyNat
-
+-- Show instances for Data.Type.Nat
 type instance TypeShow (Z) = "Z"
 type instance TypeShow (S n) = "S " ++ TypeShow n
 
-type instance TypeShow (n :: Nat) = TypeShowNat n
+type instance TypeShow (n :: TL.Nat) = TypeShowNat n
 
-type family TypeShowNat (n :: Nat) :: Symbol where
+type family TypeShowNat (n :: TL.Nat) :: TL.Symbol where
     TypeShowNat 0 = "0"
     TypeShowNat 1 = "1"
     TypeShowNat 2 = "2"
@@ -37,31 +34,26 @@ type family TypeShowNat (n :: Nat) :: Symbol where
     TypeShowNat 6 = "6"
     TypeShowNat 7 = "7"
     TypeShowNat 8 = "8"
-    TypeShowNat n = TypeShow (Eval (NatToMyNat n))
+    TypeShowNat n = TypeShow (Eval (TLNatToNat n))
 
-data IsZero :: MyNat -> Exp Bool
+data IsZero :: Nat -> Exp Bool
 type instance Eval (IsZero Z)     = True
 type instance Eval (IsZero (S n)) = False
 
-data Plus :: Nat -> Nat -> Exp Nat
-type instance Eval (Plus x y) = x + y
+data FCFPlus :: TL.Nat -> TL.Nat -> Exp TL.Nat
+type instance Eval (FCFPlus x y) = x TL.+ y
 
-data Equal :: MyNat -> MyNat -> Exp Bool
+data Equal :: Nat -> Nat -> Exp Bool
 type instance Eval (Equal (S m) (S n)) = Eval (Equal m n)
 type instance Eval (Equal Z (S n)) = False
 type instance Eval (Equal (S m) Z) = False
 type instance Eval (Equal Z Z) = True
 
-data MyNatToNat :: MyNat -> Exp Nat
-type instance Eval (MyNatToNat Z)     = 0
-type instance Eval (MyNatToNat (S n)) = 1 + (Eval (MyNatToNat n))
+data NatToTLNat :: Nat -> Exp TL.Nat
+type instance Eval (NatToTLNat n) = ToGHC n
 
-data NatToMyNat :: Nat -> Exp MyNat
-type instance Eval (NatToMyNat n) = NatToMyNatNonFCF n
-
-type family NatToMyNatNonFCF (n :: Nat) :: MyNat where
-    NatToMyNatNonFCF 0 = Z
-    NatToMyNatNonFCF n = S (NatToMyNatNonFCF (n - 1))
+data TLNatToNat :: TL.Nat -> Exp Nat
+type instance Eval (TLNatToNat n) = FromGHC n
 
 type Eight = S (S (S (S (S (S (S (S Z)))))))
 
@@ -101,8 +93,8 @@ data CW2 :: (a -> b -> c) -> a -> b -> Exp c
 type instance Eval (CW2 f a b) = f a b
 
 -- Curry-able add function!
-data Add :: Nat -> Nat -> Exp Nat
-type instance Eval (Add x y)    = x + y
+data Add :: TL.Nat -> TL.Nat -> Exp TL.Nat
+type instance Eval (Add x y)    = x TL.+ y
 
 -- Type-level functors! (Almost)
 data Map :: (a -> Exp b) -> f a -> Exp (f b)
@@ -120,7 +112,7 @@ type instance Eval (f <$> x) = Eval (Map f x)
 -- (<*>) :: Applicative f => f (a -> b) -> f a -> f b
 -- :kind! Eval (Map (Add 1) (Just 1)) = 'Just 2
 -- :kind! Eval (Apply (Eval (Map (CW Add) (Just 1))) (Just 5)) = 'Just 6
--- :kind! Eval ((Eval ((CW Plus) <$> [2,1,0])) <*> [1,2,3]) = '[3,4,5,2,3,4,1,2,3]
+-- :kind! Eval ((Eval ((CW FCFPlus) <$> [2,1,0])) <*> [1,2,3]) = '[3,4,5,2,3,4,1,2,3]
 
 data Apply :: f (a -> Exp b) -> f a -> Exp (f b)
 type instance Eval (Apply _ Nothing)         = Nothing
@@ -148,8 +140,8 @@ type instance Eval (Flatten f x) = Eval (Join (Eval (Apply f x)))
 
 -- This delays the evaluation of the type error!
 -- (Thanks https://blog.poisson.chat/posts/2018-08-06-one-type-family.html#fnref4)
-data TE' :: ErrorMessage -> Exp a
-type instance Eval (TE' msg) = TypeError msg
+data TE' :: TL.ErrorMessage -> Exp a
+type instance Eval (TE' msg) = TL.TypeError msg
 
 -- A quick way of checking if two types are equal!
 -- TODO: Test this to make sure it all works??
@@ -226,7 +218,7 @@ type instance Eval (Holds (f ': fs) x) = Eval ((Eval (f x)) :&&: (Holds fs x))
 data In :: a -> [a] -> Exp Bool
 type instance Eval (In x ys) = Eval (Any ((:==:) x) ys)
 
--- :kind! Eval (Or True (TE' (Text "eeeeh")))
+-- :kind! Eval (Or True (TE' (TL.Text "eeeeh")))
 -- A lazy version of Or, which only evaluates its' second param if the first fails.
 data LazyOr :: Bool -> Exp Bool -> Exp Bool
 type instance Eval (LazyOr True  _) = True
@@ -257,9 +249,9 @@ data All :: (a -> Exp Bool) -> [a] -> Exp Bool
 type instance Eval (All p '[])       = True
 type instance Eval (All p (x ': xs)) = Eval (Eval (p x) :&&: All p xs)
 
-data Length :: t a -> Exp Nat
+data Length :: t a -> Exp TL.Nat
 type instance Eval (Length '[])        = 0
-type instance Eval (Length (x ': xs))  = 1 + Eval (Length xs)
+type instance Eval (Length (x ': xs))  = 1 TL.+ Eval (Length xs)
 
 data Tail :: [a] -> Exp [a]
 type instance Eval (Tail '[])       = '[]
@@ -282,16 +274,16 @@ data Filter :: (a -> Exp Bool) -> [a] -> Exp [a]
 type instance Eval (Filter p '[]) = '[]
 type instance Eval (Filter p (x ': xs)) = Eval (If (Eval (p x)) (ID (x ': Eval (Filter p xs))) (Filter p xs))
 
-data FilterCount :: (a -> Exp Bool) -> [a] -> Exp Nat
+data FilterCount :: (a -> Exp Bool) -> [a] -> Exp TL.Nat
 type instance Eval (FilterCount p xs) = Eval (Length (Eval (Filter p xs)))
 
-data Take :: Nat -> [a] -> Exp [a]
-type instance Eval (Take n xs) = Eval (TakeMyNat (Eval (NatToMyNat n)) xs)
+data Take :: TL.Nat -> [a] -> Exp [a]
+type instance Eval (Take n xs) = Eval (TakeNat (Eval (TLNatToNat n)) xs)
 
-data TakeMyNat :: MyNat -> [a] -> Exp [a]
-type instance Eval (TakeMyNat Z     _)         = '[]
-type instance Eval (TakeMyNat (S n) '[])       = '[]
-type instance Eval (TakeMyNat (S n) (x ': xs)) = x ': Eval (TakeMyNat n xs)
+data TakeNat :: Nat -> [a] -> Exp [a]
+type instance Eval (TakeNat Z     _)         = '[]
+type instance Eval (TakeNat (S n) '[])       = '[]
+type instance Eval (TakeNat (S n) (x ': xs)) = x ': Eval (TakeNat n xs)
 
 data TakeWhile :: (a -> Exp Bool) -> [a] -> Exp [a]
 type instance Eval (TakeWhile p xs) = Eval (TakeWhilePlus p (Const False) xs)
@@ -323,7 +315,7 @@ type instance Eval (Find f (x ': xs)) = Eval (If (Eval (f x)) (ID (Just x)) (Fin
 type family (++) (x :: a) (y :: a) :: a
 type instance ('[] ++ ys) = ys
 type instance ((x ': xs) ++ ys) = x ': (xs ++ ys)
-type instance ((xs :: Symbol) ++ (ys :: Symbol)) = xs `AppendSymbol` ys
+type instance ((xs :: TL.Symbol) ++ (ys :: TL.Symbol)) = xs `TL.AppendSymbol` ys
 
 data Append :: a -> a -> Exp a
 type instance Eval (Append x y) = x ++ y
@@ -331,9 +323,9 @@ type instance Eval (Append x y) = x ++ y
 data Concat :: [[a]] -> Exp [a]
 type instance Eval (Concat xs) = Eval (Foldr Append '[] xs)
 
-data Replicate :: Nat -> a -> Exp [a]
-type instance Eval (Replicate n x) = Eval (ReplicateMyNat (Eval (NatToMyNat n)) x)
+data Replicate :: TL.Nat -> a -> Exp [a]
+type instance Eval (Replicate n x) = Eval (ReplicateNat (Eval (TLNatToNat n)) x)
 
-data ReplicateMyNat :: MyNat -> a -> Exp [a]
-type instance Eval (ReplicateMyNat Z x)     = '[]
-type instance Eval (ReplicateMyNat (S n) x) = x ': Eval (ReplicateMyNat n x)
+data ReplicateNat :: Nat -> a -> Exp [a]
+type instance Eval (ReplicateNat Z x)     = '[]
+type instance Eval (ReplicateNat (S n) x) = x ': Eval (ReplicateNat n x)

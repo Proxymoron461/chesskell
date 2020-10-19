@@ -4,10 +4,10 @@ import Test.Hspec
 import Test.HUnit.Lang (Assertion, assertFailure)
 import Test.ShouldNotTypecheck (shouldNotTypecheck)
 import Control.DeepSeq (force, NFData)
-import Control.Exception (evaluate, try, TypeError(..))
+import Control.Exception (evaluate, try, TL.TypeError(..))
 import Data.Type.Equality ((:~:)(..))
 import Data.Proxy(Proxy(..))
-import GHC.TypeLits (Nat)
+import qualified GHC.TypeLits as TL (Nat)
 
 import Lib
 import Vec
@@ -58,10 +58,10 @@ getPieceAtTest1 :: Just TestPiece :~: Eval (GetPieceAt TestBoard (At A 1))
 getPieceAtTest1 = Refl
 
 -- :k VecAtR Z :: Vec n a -> Exp (Maybe a)
-getPieceAtTest2 :: Just TestPiece :~: Eval (Join (Eval (Bind ((Flip (!!)) (Eval (NatToMyNat 0))) (Eval (TestBoard !! (Eval (NatToMyNat 0)))))))
+getPieceAtTest2 :: Just TestPiece :~: Eval (Join (Eval (Bind ((Flip (!!)) (Eval ( 0))) (Eval (TestBoard !! (Eval ( 0)))))))
 getPieceAtTest2 = Refl
 
--- :kind! VecAt (Z :<> (S Z)) :: MyNat -> Exp (Maybe MyNat)
+-- :kind! VecAt (Z :<> (S Z)) :: Nat -> Exp (Maybe Nat)
 getPieceAtTest3 :: Just Z :~: Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z)))
 getPieceAtTest3 = Refl
 
@@ -159,7 +159,7 @@ shouldTypecheck a = do
     result <- try (evaluate (force a))  -- Using Haskell’s do-notation
     case result of
         Right _ -> return ()  -- Test passes
-        Left (TypeError msg) -> assertFailure ("Term didn’t compile.")
+        Left (TL.TypeError msg) -> assertFailure ("Term didn’t compile.")
 
 shouldTypeCheck :: NFData a => a -> Assertion
 shouldTypeCheck = shouldTypecheck

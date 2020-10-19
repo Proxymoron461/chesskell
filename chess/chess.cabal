@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3a195675f795181de169978ed9b4659dbd052686845315032a4c836756287845
+-- hash: c6d2c852f0be6bed1c5257762e000d9bb2cd8727dd4cf7ccd592b12a272798ba
 
 name:           chess
 version:        0.1.0.0
@@ -40,6 +40,7 @@ library
   default-extensions: DataKinds PolyKinds TypeFamilies GADTs TypeOperators ConstraintKinds UndecidableInstances ScopedTypeVariables TypeApplications FlexibleInstances RankNTypes TemplateHaskell
   build-depends:
       base >=4.7 && <5
+    , fin
     , singletons
     , template-haskell
   default-language: Haskell2010
@@ -55,6 +56,7 @@ executable chess-exe
   build-depends:
       base >=4.7 && <5
     , chess
+    , fin
     , singletons
     , template-haskell
   default-language: Haskell2010
@@ -76,6 +78,7 @@ test-suite chess-test
     , base >=4.7 && <5
     , chess
     , deepseq
+    , fin
     , hspec
     , should-not-typecheck
     , singletons
