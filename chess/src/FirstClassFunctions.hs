@@ -40,8 +40,8 @@ data IsZero :: Nat -> Exp Bool
 type instance Eval (IsZero Z)     = True
 type instance Eval (IsZero (S n)) = False
 
-data FCFPlus :: TL.Nat -> TL.Nat -> Exp TL.Nat
-type instance Eval (FCFPlus x y) = x TL.+ y
+data FCFPlus :: Nat -> Nat -> Exp Nat
+type instance Eval (FCFPlus x y) = x + y
 
 data Equal :: Nat -> Nat -> Exp Bool
 type instance Eval (Equal (S m) (S n)) = Eval (Equal m n)
@@ -93,8 +93,8 @@ data CW2 :: (a -> b -> c) -> a -> b -> Exp c
 type instance Eval (CW2 f a b) = f a b
 
 -- Curry-able add function!
-data Add :: TL.Nat -> TL.Nat -> Exp TL.Nat
-type instance Eval (Add x y)    = x TL.+ y
+data Add :: Nat -> Nat -> Exp Nat
+type instance Eval (Add x y)    = x + y
 
 -- Type-level functors! (Almost)
 data Map :: (a -> Exp b) -> f a -> Exp (f b)
@@ -249,9 +249,9 @@ data All :: (a -> Exp Bool) -> [a] -> Exp Bool
 type instance Eval (All p '[])       = True
 type instance Eval (All p (x ': xs)) = Eval (Eval (p x) :&&: All p xs)
 
-data Length :: t a -> Exp TL.Nat
-type instance Eval (Length '[])        = 0
-type instance Eval (Length (x ': xs))  = 1 TL.+ Eval (Length xs)
+data Length :: t a -> Exp Nat
+type instance Eval (Length '[])        = Z
+type instance Eval (Length (x ': xs))  = (S Z) + Eval (Length xs)
 
 data Tail :: [a] -> Exp [a]
 type instance Eval (Tail '[])       = '[]
@@ -274,7 +274,7 @@ data Filter :: (a -> Exp Bool) -> [a] -> Exp [a]
 type instance Eval (Filter p '[]) = '[]
 type instance Eval (Filter p (x ': xs)) = Eval (If (Eval (p x)) (ID (x ': Eval (Filter p xs))) (Filter p xs))
 
-data FilterCount :: (a -> Exp Bool) -> [a] -> Exp TL.Nat
+data FilterCount :: (a -> Exp Bool) -> [a] -> Exp Nat
 type instance Eval (FilterCount p xs) = Eval (Length (Eval (Filter p xs)))
 
 data Take :: TL.Nat -> [a] -> Exp [a]
@@ -329,3 +329,18 @@ type instance Eval (Replicate n x) = Eval (ReplicateNat (Eval (TLNatToNat n)) x)
 data ReplicateNat :: Nat -> a -> Exp [a]
 type instance Eval (ReplicateNat Z x)     = '[]
 type instance Eval (ReplicateNat (S n) x) = x ': Eval (ReplicateNat n x)
+
+type family (+) (x :: Nat) (y :: Nat) :: Nat where
+    x + y = Plus x y
+
+type family (-) (x :: Nat) (y :: Nat) :: Nat where
+    Z     - Z     = Z
+    (S m) - Z     = (S m)
+    Z     - (S n) = TL.TypeError (TL.Text "Trying to go below zero!")
+    (S m) - (S n) = m - n
+
+type family (<=?) (x :: Nat) (y :: Nat) :: Bool where
+    Z     <=? Z     = True
+    Z     <=? (S n) = True
+    (S m) <=? Z     = False
+    (S m) <=? (S n) = m <=? n

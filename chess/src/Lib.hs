@@ -10,10 +10,10 @@ someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
 data GetAllBelow :: Position -> Exp [Position]
-type instance Eval (GetAllBelow (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row 0)))))
+type instance Eval (GetAllBelow (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetweenDTNat row Nat0)))))
 
 data GetNBelow :: TL.Nat -> Position -> Exp [Position]
-type instance Eval (GetNBelow n (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row (Eval (SafeMinus row n)))))))
+type instance Eval (GetNBelow n (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetweenDTNat row (row - (FromGHC n)))))))
 
 -- Takes in x and y, and performs x - y with a lower bound of 0
 data SafeMinus :: TL.Nat -> TL.Nat -> Exp TL.Nat
@@ -33,8 +33,8 @@ type instance Eval (RangeBetweenHelper n m LT) = (n TL.+ 1) ': (Eval (RangeBetwe
 type instance Eval (RangeBetweenHelper n m EQ) = '[]
 type instance Eval (RangeBetweenHelper n m GT) = (n TL.- 1) ': (Eval (RangeBetweenHelper (n TL.- 1) m (TL.CmpNat (n TL.- 1) m)))
 
-data RangeBetweenDTNat :: TL.Nat -> TL.Nat -> Exp [Nat]
-type instance Eval (RangeBetweenDTNat n m) = Eval (Map TLNatToNat (Eval (RangeBetween n m)))
+data RangeBetweenDTNat :: Nat -> Nat -> Exp [Nat]
+type instance Eval (RangeBetweenDTNat n m) = Eval (Map TLNatToNat (Eval (RangeBetween (ToGHC n) (ToGHC m))))
 
 -- -- Generates a range between two Char values, non-inclusive of the first argument
 -- -- It will only go from lowercase "a" to lowercase "z"
@@ -57,9 +57,9 @@ data ColRangeBetween :: Column -> Column -> Exp [Column]
 type instance Eval (ColRangeBetween a b) = Eval (ColRangeBetweenHelper a b (CmpColumn a b))
 
 data ColRangeBetweenHelper :: Column -> Column -> Ordering -> Exp [Column]
-type instance Eval (ColRangeBetweenHelper a b LT) = Eval (TakeWhile (ColLessThan b) (Eval (Map FromJust (Eval (Filter IsJust (Eval (Map ((Flip (:+)) a) (Eval (RangeBetweenDTNat 0 8)))))))))
+type instance Eval (ColRangeBetweenHelper a b LT) = Eval (TakeWhile (ColLessThan b) (Eval (Map FromJust (Eval (Filter IsJust (Eval (Map ((Flip (:+)) a) (Eval (RangeBetweenDTNat Nat0 Nat8)))))))))
 type instance Eval (ColRangeBetweenHelper a b EQ) = '[]
-type instance Eval (ColRangeBetweenHelper a b GT) = Eval (TakeWhile (ColGreaterThan b) (Eval (Map FromJust (Eval (Filter IsJust (Eval (Map ((Flip (:-)) a) (Eval (RangeBetweenDTNat 0 8)))))))))
+type instance Eval (ColRangeBetweenHelper a b GT) = Eval (TakeWhile (ColGreaterThan b) (Eval (Map FromJust (Eval (Filter IsJust (Eval (Map ((Flip (:-)) a) (Eval (RangeBetweenDTNat Nat0 Nat8)))))))))
 
 data ColLessThan :: Column -> Column -> Exp Bool
 type instance Eval (ColLessThan b a) = Eval (IsLTEQ (CmpColumn a b))
@@ -107,10 +107,10 @@ type instance Eval (IsGTEQ EQ) = True
 type instance Eval (IsGTEQ GT) = True
 
 data GetAllAbove :: Position -> Exp [Position]
-type instance Eval (GetAllAbove (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row 8)))))
+type instance Eval (GetAllAbove (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetweenDTNat row Nat8)))))
 
 data GetNAbove :: TL.Nat -> Position -> Exp [Position]
-type instance Eval (GetNAbove n (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetween row (row TL.+ n))))))
+type instance Eval (GetNAbove n (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetweenDTNat row (row + (FromGHC n)))))))
 
 -- (:+) :: Nat -> Column -> Exp (Maybe Column)
 data GetNRight :: TL.Nat -> Position -> Exp [Position]
@@ -118,7 +118,7 @@ type instance Eval (GetNRight n pos) = Eval (Filter IsValidPosition (Eval (GetNR
 
 -- TODO: Combine with GetNLeftMaybes to achieve DRY?
 data GetNRightMaybes :: TL.Nat -> Position -> Exp [Maybe Column]
-type instance Eval (GetNRightMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:+)) col) (Eval (RangeBetweenDTNat 0 n)))))
+type instance Eval (GetNRightMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:+)) col) (Eval (Map TLNatToNat (Eval (RangeBetween 0 n)))))))
 
 -- TODO: Combine with GetNLeftPositionsNoChecks to achieve DRY?
 data GetNRightPositionsNoChecks :: TL.Nat -> Position -> Exp [Position]
@@ -130,9 +130,9 @@ type instance Eval (GetAllRight pos) = Eval (GetNRight 8 pos)
 data GetNLeft :: TL.Nat -> Position -> Exp [Position]
 type instance Eval (GetNLeft n pos) = Eval (Filter IsValidPosition (Eval (GetNLeftPositionsNoChecks n pos)))
 
--- Can reverse with RangeBetweenDTNat (n TL.+ 1) 1
+-- Can reverse with RangeBetweenDTNat (n + 1) 1
 data GetNLeftMaybes :: TL.Nat -> Position -> Exp [Maybe Column]
-type instance Eval (GetNLeftMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:-)) col) (Eval (RangeBetweenDTNat 0 n)))))
+type instance Eval (GetNLeftMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:-)) col) (Eval (Map TLNatToNat (Eval (RangeBetween 0 n)))))))
 
 data GetNLeftPositionsNoChecks :: TL.Nat -> Position -> Exp [Position]
 type instance Eval (GetNLeftPositionsNoChecks n (At col row)) = Eval (Map (((Flip (CW2 At)) row) . FromJust) (Eval (GetNLeftMaybes n (At col row))))
@@ -141,25 +141,25 @@ data GetAllLeft :: Position -> Exp [Position]
 type instance Eval (GetAllLeft pos) = Eval (GetNLeft 8 pos)
 
 data GetAllDiagNW :: Position -> Exp [Position]
-type instance Eval (GetAllDiagNW (At col row)) = Eval (ZipWith (Eval (ColRangeBetween col H)) (Eval (RangeBetween row 8)) (CW2 At))
+type instance Eval (GetAllDiagNW (At col row)) = Eval (ZipWith (Eval (ColRangeBetween col H)) (Eval (RangeBetweenDTNat row Nat8)) (CW2 At))
 
 data GetAllDiagSW :: Position -> Exp [Position]
-type instance Eval (GetAllDiagSW (At col row)) = Eval (ZipWith (Eval (ColRangeBetween col H)) (Eval (RangeBetween row 1)) (CW2 At))
+type instance Eval (GetAllDiagSW (At col row)) = Eval (ZipWith (Eval (ColRangeBetween col H)) (Eval (RangeBetweenDTNat row Nat1)) (CW2 At))
 
 data GetAllDiagSE :: Position -> Exp [Position]
-type instance Eval (GetAllDiagSE (At col row)) = Eval (ZipWith (Eval (ColRangeBetween col A)) (Eval (RangeBetween row 1)) (CW2 At))
+type instance Eval (GetAllDiagSE (At col row)) = Eval (ZipWith (Eval (ColRangeBetween col A)) (Eval (RangeBetweenDTNat row Nat1)) (CW2 At))
 
 data GetAllDiagNE :: Position -> Exp [Position]
-type instance Eval (GetAllDiagNE (At col row)) = Eval (ZipWith (Eval (ColRangeBetween col A)) (Eval (RangeBetween row 8)) (CW2 At))
+type instance Eval (GetAllDiagNE (At col row)) = Eval (ZipWith (Eval (ColRangeBetween col A)) (Eval (RangeBetweenDTNat row Nat8)) (CW2 At))
 
 data GetAllKnightPositions :: Position -> Exp [Position]
 type instance Eval (GetAllKnightPositions pos) = Eval (Filter IsValidPosition (Eval (GetKnightAboveBelow pos) ++ Eval (GetKnightLeftRight pos)))
 
 data GetKnightAboveBelow :: Position -> Exp [Position]
-type instance Eval (GetKnightAboveBelow (At col row)) = Eval (Eval (CW (CW2 At) <$> Eval (GetKnightColumns col 1)) <*> Eval (GetKnightRows row 2))
+type instance Eval (GetKnightAboveBelow (At col row)) = Eval (Eval (CW (CW2 At) <$> Eval (GetKnightColumns col 1)) <*> Eval (GetKnightRows row Nat2))
 
 data GetKnightLeftRight :: Position -> Exp [Position]
-type instance Eval (GetKnightLeftRight (At col row)) = Eval (Eval (CW (CW2 At) <$> Eval (GetKnightColumns col 2)) <*> Eval (GetKnightRows row 1))
+type instance Eval (GetKnightLeftRight (At col row)) = Eval (Eval (CW (CW2 At) <$> Eval (GetKnightColumns col 2)) <*> Eval (GetKnightRows row Nat1))
 
 data GetKnightColumns :: Column -> TL.Nat -> Exp [Column]
 type instance Eval (GetKnightColumns col n) = Eval (GetKnightColumnsNat col (Eval (TLNatToNat n)))
@@ -167,13 +167,13 @@ type instance Eval (GetKnightColumns col n) = Eval (GetKnightColumnsNat col (Eva
 data GetKnightColumnsNat :: Column -> Nat -> Exp [Column]
 type instance Eval (GetKnightColumnsNat col n) = Eval (FilterMap (IsJust) (FromJust) '[ Eval (n :+ col), Eval (n :- col) ])
 
-data GetKnightRows :: TL.Nat -> TL.Nat -> Exp [TL.Nat]
-type instance Eval (GetKnightRows row n) = Eval (If (n TL.<=? row) (ID '[ row TL.- n, row TL.+ n]) (ID '[ row TL.+ n ]))
+data GetKnightRows :: Nat -> Nat -> Exp [Nat]
+type instance Eval (GetKnightRows row n) = Eval (If (n <=? row) (ID '[ row - n, row + n]) (ID '[ row + n ]))
 
 -- :kind! Eval ((Eval ((CW FCFPlus) <$> [2,1,0])) <*> [1,2,3])
 -- NOTE: Uses Tail to remove the current position!
 data GetAdjacent :: Position -> Exp [Position]
-type instance Eval (GetAdjacent (At col row)) = Eval (Filter IsValidPosition (Eval (Tail (Eval ((Eval (CW (CW2 At) <$> (Eval (GetAdjacentColumns col)))) <*> '[row, row TL.+ 1, Eval (SafeMinus row 1)])))))
+type instance Eval (GetAdjacent (At col row)) = Eval (Filter IsValidPosition (Eval (Tail (Eval ((Eval (CW (CW2 At) <$> (Eval (GetAdjacentColumns col)))) <*> '[row, row + Nat1, row - Nat1])))))
 
 data GetAdjacentColumns :: Column -> Exp [Column]
 type instance Eval (GetAdjacentColumns col) = col ': Eval (Map FromJust (Eval (Filter IsJust '[Eval ((S Z) :+ col), Eval ((S Z) :- col)])))
@@ -197,8 +197,8 @@ type instance Eval (HasTeam Black (MkPiece Black _ _)) = True
 type instance Eval (HasTeam White (MkPiece Black _ _)) = False
 type instance Eval (HasTeam Black (MkPiece White _ _)) = False
 
-data HasRow :: TL.Nat -> Position -> Exp Bool
-type instance Eval (HasRow x (At _ y)) = Eval ((x TL.<=? y) :&&: ID (y TL.<=? x))
+data HasRow :: Nat -> Position -> Exp Bool
+type instance Eval (HasRow x (At _ y)) = Eval ((x <=? y) :&&: ID (y <=? x))
 
 -- Type families for getting all available squares in a straight line, with nothing in the way
 data AllReachableFunc :: Team -> Board -> Position -> (Position -> Exp [Position]) -> Exp [Position]
@@ -408,8 +408,8 @@ type instance Eval (IsSpaceVulnerableToEnPassant team board pos) = Eval (FromMay
 
 data PawnMovedTwoLast :: Piece -> Exp Bool
 type instance Eval (PawnMovedTwoLast piece) = Eval (If (Eval (HasTeam White piece)) 
-    (Eval (LastPieceToMove piece) :&&: (((HasRow 4 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) piece))
-    (Eval (LastPieceToMove piece) :&&: (((HasRow 5 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) piece)))
+    (Eval (LastPieceToMove piece) :&&: (((HasRow Nat4 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) piece))
+    (Eval (LastPieceToMove piece) :&&: (((HasRow Nat5 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) piece)))
 
 data PawnPostStart :: Piece -> Board -> Exp [Position]
 type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) ++ (Eval (PawnTakePositions pawn board))
@@ -473,7 +473,7 @@ type LEmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :->
 type LEmptyBoard = LEmptyRow :-> LEmptyRow :-> LEmptyRow :-> LEmptyRow :-> LEmptyRow :-> LEmptyRow :-> LEmptyRow :<> LEmptyRow
 
 
-type MyTestInfo = Info Z (At A 1) False
-type MyTestBoard = Eval (SetPiecesAt '[ '(MkPiece Black King MyTestInfo, At A 1), '(MkPiece White King MyTestInfo, At H 8), '(MkPiece Black Queen MyTestInfo, At D 3), '(MkPiece White Queen MyTestInfo, At E 3)] LEmptyBoard)
+type MyTestInfo = Info Z (At A Nat1) False
+type MyTestBoard = Eval (SetPiecesAt '[ '(MkPiece Black King MyTestInfo, At A Nat1), '(MkPiece White King MyTestInfo, At H Nat8), '(MkPiece Black Queen MyTestInfo, At D Nat3), '(MkPiece White Queen MyTestInfo, At E Nat3)] LEmptyBoard)
 
 -- Eval (LazyAnd (Eval ('[] :<= '[])) ('[] :<= '[]))  -- Fails because of ambiguous types??

@@ -4,7 +4,7 @@ import qualified GHC.TypeLits as TL
 import FirstClassFunctions
 import Data.Type.Nat hiding (SNat(..))
 
--- FIXME: a -> Vec n -> Vec (n TL.+ 1) a causes issues. Why??
+-- FIXME: a -> Vec n -> Vec (n + 1) a causes issues. Why??
 data Vec (n :: Nat) (a :: Type) where
     VEnd   :: Vec Z a
     (:->)  :: a -> Vec n a -> Vec (S n) a
@@ -32,7 +32,7 @@ data AnyVec :: (a -> Exp Bool) -> Vec n a -> Exp Bool
 type instance Eval (AnyVec p VEnd)       = False
 type instance Eval (AnyVec p (x :-> xs)) = Eval (Eval (p x) :||: AnyVec p xs)
 
-data VFilterCount :: (a -> Exp Bool) -> Vec n a -> Exp TL.Nat
+data VFilterCount :: (a -> Exp Bool) -> Vec n a -> Exp Nat
 type instance Eval (VFilterCount p xs) = Eval (FilterCount p (Eval (VecToList xs)))
 
 -- Vector instance for Map
@@ -40,8 +40,8 @@ type instance Eval (Map f VEnd)       = VEnd
 type instance Eval (Map f (x :-> xs)) = Eval (f x) :-> Eval (Map f xs)
 
 -- Vector instance for Length
-type instance Eval (Length VEnd)       = 0
-type instance Eval (Length (x :-> xs)) = 1 TL.+ Eval (Length xs)
+type instance Eval (Length VEnd)       = Nat0
+type instance Eval (Length (x :-> xs)) = Nat1 + Eval (Length xs)
 
 -- Vector instance for Foldr
 type instance Eval (Foldr f z VEnd)       = z
@@ -62,15 +62,15 @@ type instance Eval (VecAt (x :-> xs) (S n)) = Eval (VecAt xs n)
 data (!!) :: Vec n a -> Nat -> Exp (Maybe a)
 type instance Eval (vec !! nat) = Eval (VecAt vec nat)
 
-type family VAUgly (vec :: Vec Eight a) (n :: TL.Nat) :: a where
-    VAUgly (a :-> xs) 0 = a
-    VAUgly (a :-> b :-> xs) 1 = b
-    VAUgly (a :-> b :-> c :-> xs) 2 = c
-    VAUgly (a :-> b :-> c :-> d :-> e) 3 = d
-    VAUgly (a :-> b :-> c :-> d :-> e :-> f) 4 = e
-    VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> g) 5 = f
-    VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> xs) 6 = g
-    VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> xs) 7 = h
+type family VAUgly (vec :: Vec Eight a) (n :: Nat) :: a where
+    VAUgly (a :-> xs) Nat0 = a
+    VAUgly (a :-> b :-> xs) Nat1 = b
+    VAUgly (a :-> b :-> c :-> xs) Nat2 = c
+    VAUgly (a :-> b :-> c :-> d :-> xs) Nat3 = d
+    VAUgly (a :-> b :-> c :-> d :-> e :-> xs) Nat4 = e
+    VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> xs) Nat5 = f
+    VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> xs) Nat6 = g
+    VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> xs) Nat7 = h
 
 data PutAt :: a -> Nat -> Vec n a -> Exp (Vec n a)
 type instance Eval (PutAt x Z (y :-> ys))     = x :-> ys

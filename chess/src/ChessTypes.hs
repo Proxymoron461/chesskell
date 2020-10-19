@@ -86,8 +86,8 @@ type instance Eval (PieceTeam (MkPiece team _ _)) = team
 data PieceType :: Piece -> Exp PieceName
 type instance Eval (PieceType (MkPiece _ name _)) = name
 
-data NoOfPieces :: Board -> Exp TL.Nat
-type instance Eval (NoOfPieces board) = Eval (Foldr FCFPlus 0 (Eval ((VFilterCount IsJust) <$> board)))
+data NoOfPieces :: Board -> Exp Nat
+type instance Eval (NoOfPieces board) = Eval (Foldr FCFPlus Nat0 (Eval ((VFilterCount IsJust) <$> board)))
 
 data IsPawn :: Piece -> Exp Bool
 type instance Eval (IsPawn (MkPiece _ name _)) = Eval (name :==: Pawn)
@@ -120,11 +120,11 @@ type instance TypeShow H = "H"
 -- TODO: Type level char??
 -- Goes column-row, e.g. At A 4 means first column from left, 4 up from the bottom, where Black is at the top
 data Position where
-    At :: Column -> TL.Nat -> Position
+    At :: Column -> Nat -> Position
 
 type instance TypeShow (At col row) = "At " ++ TypeShow col ++ " (" ++ TypeShow row ++ ")"
 
-type ValidRows = 1 :-> 2 :-> 3 :-> 4 :-> 5 :-> 6 :-> 7 :<> 8
+type ValidRows = Nat1 :-> Nat2 :-> Nat3 :-> Nat4 :-> Nat5 :-> Nat6 :-> Nat7 :<> Nat8
 
 -- TODO: Remove these, because now Column is a data type!
 data ValidColumn :: Column -> Exp (Maybe Column)
@@ -133,7 +133,7 @@ type instance Eval (ValidColumn x) = Just x
 data IsValidColumn :: Column -> Exp Bool
 type instance Eval (IsValidColumn x) = True
 
-data IsValidRow :: TL.Nat -> Exp Bool
+data IsValidRow :: Nat -> Exp Bool
 type instance Eval (IsValidRow x) = Eval (If (Elem x ValidRows) (ID True) (ID False))
 
 data IsValidPosition :: Position -> Exp Bool
@@ -150,14 +150,14 @@ type family FromJust' (x :: Maybe a) :: a where
     FromJust' (Just x) = x
 
 data GPANCUgly :: Board -> Position -> Exp (Maybe Piece)
-type instance Eval (GPANCUgly (a :-> xs) (At col 1)) = VAUgly a (Eval (NatToTLNat (ColToIndex col)))
-type instance Eval (GPANCUgly (a :-> b :-> c) (At col 2)) = VAUgly b (Eval (NatToTLNat (ColToIndex col)))
-type instance Eval (GPANCUgly (a :-> b :-> c :-> d) (At col 3)) = VAUgly c (Eval (NatToTLNat (ColToIndex col)))
-type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e) (At col 4)) = VAUgly d (Eval (NatToTLNat (ColToIndex col)))
-type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f) (At col 5)) = VAUgly e (Eval (NatToTLNat (ColToIndex col)))
-type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g) (At col 6)) = VAUgly f (Eval (NatToTLNat (ColToIndex col)))
-type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h) (At col 7)) = VAUgly g (Eval (NatToTLNat (ColToIndex col)))
-type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> xs) (At col 8)) = VAUgly h (Eval (NatToTLNat (ColToIndex col)))
+type instance Eval (GPANCUgly (a :-> xs) (At col Nat1)) = VAUgly a (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c) (At col Nat2)) = VAUgly b (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d) (At col Nat3)) = VAUgly c (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e) (At col Nat4)) = VAUgly d (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f) (At col Nat5)) = VAUgly e (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g) (At col Nat6)) = VAUgly f (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h) (At col Nat7)) = VAUgly g (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> xs) (At col Nat8)) = VAUgly h (ColToIndex col)
 
 data GetPieceAtWhich :: Board -> Position -> (a -> Exp Bool) -> Exp (Maybe Piece)
 type instance Eval (GetPieceAtWhich board pos f) = Eval (MaybeWhich f (Eval (GetPieceAt board pos)))
@@ -180,12 +180,12 @@ type instance Eval (SetPieceAtNoChecks piece board (At col row)) = Eval (SetRow 
 data SetPiecesAt :: [(Piece, Position)] -> Board -> Exp Board
 type instance Eval (SetPiecesAt pps board) = Eval (Foldr (Uncurry2 SetPieceAtSwapped) board pps)
 
-data GetRow :: Board -> TL.Nat -> Exp (Maybe Row)
-type instance Eval (GetRow board n) = Just $ VAUgly board (n TL.- 1)
+data GetRow :: Board -> Nat -> Exp (Maybe Row)
+type instance Eval (GetRow board (S n)) = Just $ VAUgly board n
 
 -- Uses 1 for first row, and 8 for last row!
-data SetRow :: Board -> TL.Nat -> Row -> Exp Board
-type instance Eval (SetRow board n row) = Eval (PutAt row (Eval (TLNatToNat (n TL.- 1))) board)
+data SetRow :: Board -> Nat -> Row -> Exp Board
+type instance Eval (SetRow board (S n) row) = Eval (PutAt row n board)
 
 -- Type families to add an offset to columns!
 -- TODO: Customise the number of columns?? As it is, it's chess-specific.
