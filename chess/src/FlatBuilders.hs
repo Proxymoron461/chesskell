@@ -1,5 +1,13 @@
 module FlatBuilders where
 
+import TermToType
+import ChessTypes
+import Data.Singletons
+import Data.Singletons.Prelude.Bool
+import Data.Type.Nat hiding (SNat(..))
+import Lib
+import FirstClassFunctions
+
 -- A continuation has form (t -> m)
 type Spec t = forall m. (t -> m) -> m
 
@@ -46,3 +54,55 @@ result :: Term String String
 result s = "Result: " ++ s
 
 -- add 5 to 7 and' display the result = "Result: 12"
+
+-- Want EDSL to have the form:
+-- start white pawn A 4
+-- black king B 6
+-- white bishop C 7 end
+
+-- So let's start my making it in non-CPS style!
+
+type family PieceFromSing (s :: SPiece p) :: Piece where
+    PieceFromSing ('SMkPiece team name info) = 'MkPiece (TeamFromSing team) (NameFromSing name) (InfoFromSing info)
+
+type family TeamFromSing (s :: STeam t) :: Team where
+    TeamFromSing SWhite = White
+    TeamFromSing SBlack = Black
+
+type family NameFromSing (s :: SPieceName t) :: PieceName where
+    NameFromSing SPawn = Pawn
+    NameFromSing SRook = Rook
+    NameFromSing SBishop = Bishop
+    NameFromSing SKnight = Knight
+    NameFromSing SQueen = Queen
+    NameFromSing SKing = King
+
+type family InfoFromSing (s :: SPieceInfo t) :: PieceInfo where
+    InfoFromSing (SInfo moves pos last) = 'Info (NatFromSing moves) (PosFromSing pos) (BoolFromSing last)
+
+type family NatFromSing (s :: SNat n) :: Nat where
+    NatFromSing SZ = Z
+    NatFromSing (SS n) = S (NatFromSing n)
+
+type family PosFromSing (s :: SPosition k) :: Position where
+    PosFromSing (SAt col row) = 'At (ColFromSing col) (NatFromSing row)
+
+type family ColFromSing (s :: SColumn k) :: Column where
+    ColFromSing SA = A
+    ColFromSing SB = B
+    ColFromSing SC = C
+    ColFromSing SD = D
+    ColFromSing SE = E
+    ColFromSing SF = F
+    ColFromSing SG = G
+    ColFromSing SH = H
+
+type family BoolFromSing (s :: SBool b) :: Bool where
+    BoolFromSing SFalse = False
+    BoolFromSing STrue = True
+
+move :: SPosition from -> SPosition to -> Proxy (b :: Maybe Board) -> Proxy (Eval (b >>= Move from to))
+move (sFrom :: SPosition from) (sTo :: SPosition to) (pBoard :: Proxy (b :: Maybe Board))
+    = Proxy @(Eval (b >>= Move from to))
+
+x = move (SAt SE (SS (SS (SS SZ)))) (SAt SG (SS (SS (SS SZ)))) (Proxy @('Just MyTestBoard))
