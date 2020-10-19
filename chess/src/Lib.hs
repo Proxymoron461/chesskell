@@ -415,6 +415,7 @@ data PawnPostStart :: Piece -> Board -> Exp [Position]
 type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) ++ (Eval (PawnTakePositions pawn board))
 
 -- Type family for actually moving the piece, and handling the side effects.
+-- TODO: Make sure that no moves allow you to stay in place
 -- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
 -- TODO: Handle takes (i.e. moves that remove pieces from play)
 -- TODO: Ensure no moves place that piece's King into check
