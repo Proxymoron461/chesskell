@@ -11,7 +11,7 @@ import Data.Singletons.Prelude.Bool
 
 -- Constraints for transforming term-level values to type-level, erm, types
 
--- Use singletons where it doesn't throw horrible errors
+-- Transform various types into singleton types (for use at the value-level)
 $(genSingletons [''PieceName])
 $(genSingletons [''Team])
 $(genSingletons [''MyNat])
