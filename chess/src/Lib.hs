@@ -420,14 +420,6 @@ type instance Eval (MovePawn (MkPiece White Pawn info) (At col row) board) = Eva
 
 -----------------------------------------------------------------------------------------------
 
-data SNat (n :: MyNat) where
-    SZ :: SNat Z
-    SS :: SNat n -> SNat (S n)
-
-type family MyNatToSNat (n :: MyNat) :: SNat n where
-    MyNatToSNat Z     = SZ
-    MyNatToSNat (S n) = SS (MyNatToSNat n)
-
 data MyNatLength :: [a] -> Exp MyNat
 type instance Eval (MyNatLength '[]) = Z
 type instance Eval (MyNatLength (x ': xs)) = S $ Eval (MyNatLength xs)
