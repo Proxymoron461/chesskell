@@ -1,6 +1,6 @@
 module FlatBuilders where
 
-import TermToType
+import MakeSingletons
 import ChessTypes
 import Data.Singletons
 import Data.Singletons.Prelude.Bool
@@ -105,4 +105,22 @@ move :: SPosition from -> SPosition to -> Proxy (b :: Maybe Board) -> Proxy (Eva
 move (sFrom :: SPosition from) (sTo :: SPosition to) (pBoard :: Proxy (b :: Maybe Board))
     = Proxy @(Eval (b >>= Move from to))
 
-x = move (SAt SE (SS (SS (SS SZ)))) (SAt SG (SS (SS (SS SZ)))) (Proxy @('Just MyTestBoard))
+next :: (Proxy (b :: Maybe Board)) -> SPosition from -> SPosition to -> Proxy (Eval (b >>= Move from to))
+next b f t = move f t b
+
+start :: SPosition from -> SPosition to -> Proxy (Eval (Move from to StartBoard))
+start f t = move f t (Proxy @('Just StartBoard))
+
+-- TODO: Make this the actual chess board start, with pieces in correct places
+type StartBoard = MyTestBoard 
+
+sNat0 = SZ
+sNat1 = SS sNat0
+sNat2 = SS sNat1
+sNat3 = SS sNat2
+sNat4 = SS sNat3
+sNat5 = SS sNat4
+sNat6 = SS sNat5
+sNat7 = SS sNat6
+
+x = start (SAt SE sNat3) (SAt SG sNat3)
