@@ -57,7 +57,7 @@ type instance Eval (VecAt VEnd _)           = Nothing
 type instance Eval (VecAt (x :-> xs) Z)     = Just x
 type instance Eval (VecAt (x :-> xs) (S n)) = Eval (VecAt xs n)
 
--- :kind! Eval (("a" :-> "b" :<> "c") !! (S (S Z))) = 'Just "c"
+-- :kind! Eval ((A :-> B :<> C) !! (S (S Z))) = 'Just C
 data (!!) :: Vec n a -> MyNat -> Exp (Maybe a)
 type instance Eval (vec !! nat) = Eval (VecAt vec nat)
 

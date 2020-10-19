@@ -175,13 +175,13 @@ type family IsTypeEqualNonFCF (x :: a) (y :: b) :: Bool where
     IsTypeEqualNonFCF x x = 'True
     IsTypeEqualNonFCF x y = 'False
 
--- :kind! Eval (If (Eval (IsJust (Eval (GetPieceAt TestBoard (At "a" 1))))) (ID "yes") (ID "no")) = "yes"
--- :kind! Eval (If (Eval (IsJust (Eval (GetPieceAt TestBoard (At "a" 2))))) (ID "yes") (ID "no")) = "no"
+-- :kind! Eval (If (Eval (IsJust (Eval (GetPieceAt TestBoard (At A 1))))) (ID "yes") (ID "no")) = "yes"
+-- :kind! Eval (If (Eval (IsJust (Eval (GetPieceAt TestBoard (At A 2))))) (ID "yes") (ID "no")) = "no"
 data If :: Bool -> Exp b -> Exp b -> Exp b
 type instance Eval (If 'True thenDo elseDo) = Eval thenDo
 type instance Eval (If 'False  thenDo elseDo) = Eval elseDo
 
--- :kind! Eval (MaybeIf IsValidColumn (Just "a")) = 'True
+-- :kind! Eval (MaybeIf IsValidColumn (Just A)) = 'True
 -- :kind! Eval (MaybeIf IsValidColumn (Just "z")) = 'False
 data MaybeIf :: (a -> Exp Bool) -> Maybe a -> Exp Bool
 type instance Eval (MaybeIf p Nothing)  = False
@@ -305,7 +305,7 @@ type instance Eval (TakeWhilePlus p q (x ': xs)) = Eval (If (Eval (p x)) (ID (x 
 data Zip :: [a] -> [b] -> Exp [(a, b)]
 type instance Eval (Zip xs ys) = Eval (ZipWith xs ys (CW2 '(,)))
 
--- :kind! Eval (ZipWith '["a", "b"] '[1, 2] (CW2 At)) = '[ 'At "a" 1, 'At "b" 2]
+-- :kind! Eval (ZipWith '[A, B] '[1, 2] (CW2 At)) = '[ 'At A 1, 'At B 2]
 data ZipWith :: [a] -> [b] -> (a -> b -> Exp c) -> Exp [c]
 type instance Eval (ZipWith '[] _ _) = '[]
 type instance Eval (ZipWith _ '[] _) = '[]

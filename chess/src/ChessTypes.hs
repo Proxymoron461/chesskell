@@ -106,22 +106,31 @@ type instance Eval (IsKing (MkPiece _ name _)) = Eval (name :==: King)
 data IsQueen :: Piece -> Exp Bool
 type instance Eval (IsQueen (MkPiece _ name _)) = Eval (name :==: Queen)
 
+data Column = A | B | C | D | E | F | G | H
+type instance TypeShow A = "A"
+type instance TypeShow B = "B"
+type instance TypeShow C = "C"
+type instance TypeShow D = "D"
+type instance TypeShow E = "E"
+type instance TypeShow F = "F"
+type instance TypeShow G = "G"
+type instance TypeShow H = "H"
+
 -- TODO: Type level char??
--- Goes column-row, e.g. At "a" 4 means first column from left, 4 up from the bottom, where Black is at the top
+-- Goes column-row, e.g. At A 4 means first column from left, 4 up from the bottom, where Black is at the top
 data Position where
-    At :: Symbol -> Nat -> Position
+    At :: Column -> Nat -> Position
 
-type instance TypeShow (At col row) = "At " ++ col ++ " (" ++ TypeShow row ++ ")"
-
-type ValidColumns = "a" :-> "b" :-> "c" :-> "d" :-> "e" :-> "f" :-> "g" :<> "h"
+type instance TypeShow (At col row) = "At " ++ TypeShow col ++ " (" ++ TypeShow row ++ ")"
 
 type ValidRows = 1 :-> 2 :-> 3 :-> 4 :-> 5 :-> 6 :-> 7 :<> 8
 
-data ValidColumn :: Symbol -> Exp (Maybe Symbol)
-type instance Eval (ValidColumn x) = Eval (If (Elem x ValidColumns) (ID (Just x)) (ID Nothing))
+-- TODO: Remove these, because now Column is a data type!
+data ValidColumn :: Column -> Exp (Maybe Column)
+type instance Eval (ValidColumn x) = Just x
 
-data IsValidColumn :: Symbol -> Exp Bool
-type instance Eval (IsValidColumn x) = Eval (IsJust (Eval (ValidColumn x)))
+data IsValidColumn :: Column -> Exp Bool
+type instance Eval (IsValidColumn x) = True
 
 data IsValidRow :: Nat -> Exp Bool
 type instance Eval (IsValidRow x) = Eval (If (Elem x ValidRows) (ID True) (ID False))
@@ -180,40 +189,40 @@ type instance Eval (SetRow board n row) = Eval (PutAt row (Eval (NatToMyNat (n -
 -- Type families to add an offset to columns!
 -- TODO: Customise the number of columns?? As it is, it's chess-specific.
 -- TODO: Flip the arguments, they're the wrong way round!!
-data (:+) :: MyNat -> Symbol -> Exp (Maybe Symbol)
-data (:-) :: MyNat -> Symbol -> Exp (Maybe Symbol)
+data (:+) :: MyNat -> Column -> Exp (Maybe Column)
+data (:-) :: MyNat -> Column -> Exp (Maybe Column)
 
 type instance Eval ((:+) Z         col) = Eval (ValidColumn col)
-type instance Eval ((:+) (S Z)     "a") = Just "b"
-type instance Eval ((:+) (S Z)     "b") = Just "c"
-type instance Eval ((:+) (S Z)     "c") = Just "d"
-type instance Eval ((:+) (S Z)     "d") = Just "e"
-type instance Eval ((:+) (S Z)     "e") = Just "f"
-type instance Eval ((:+) (S Z)     "f") = Just "g"
-type instance Eval ((:+) (S Z)     "g") = Just "h"
-type instance Eval ((:+) (S Z)     "h") = Nothing
+type instance Eval ((:+) (S Z)     A) = Just B
+type instance Eval ((:+) (S Z)     B) = Just C
+type instance Eval ((:+) (S Z)     C) = Just D
+type instance Eval ((:+) (S Z)     D) = Just E
+type instance Eval ((:+) (S Z)     E) = Just F
+type instance Eval ((:+) (S Z)     F) = Just G
+type instance Eval ((:+) (S Z)     G) = Just H
+type instance Eval ((:+) (S Z)     H) = Nothing
 type instance Eval ((:+) (S (S n)) col) = Eval (Bind ((:+) (S n)) (Eval ((:+) (S Z) col)))
 
 type instance Eval ((:-) Z         col) = Eval (ValidColumn col)
-type instance Eval ((:-) (S Z)     "a") = Nothing
-type instance Eval ((:-) (S Z)     "b") = Just "a"
-type instance Eval ((:-) (S Z)     "c") = Just "b"
-type instance Eval ((:-) (S Z)     "d") = Just "c"
-type instance Eval ((:-) (S Z)     "e") = Just "d"
-type instance Eval ((:-) (S Z)     "f") = Just "e"
-type instance Eval ((:-) (S Z)     "g") = Just "f"
-type instance Eval ((:-) (S Z)     "h") = Just "g"
+type instance Eval ((:-) (S Z)     A) = Nothing
+type instance Eval ((:-) (S Z)     B) = Just A
+type instance Eval ((:-) (S Z)     C) = Just B
+type instance Eval ((:-) (S Z)     D) = Just C
+type instance Eval ((:-) (S Z)     E) = Just D
+type instance Eval ((:-) (S Z)     F) = Just E
+type instance Eval ((:-) (S Z)     G) = Just F
+type instance Eval ((:-) (S Z)     H) = Just G
 type instance Eval ((:-) (S (S n)) col) = Eval (Bind ((:-) (S n)) (Eval ((:-) (S Z) col)))
 
 -- TODO: Maybe make this tied less to ValidColumns??
-type family ColToIndex (col :: Symbol) :: Maybe Nat where
+type family ColToIndex (col :: Column) :: Maybe Nat where
     -- ColToIndex col = ElemIndex ValidColumns col
-    ColToIndex "a" = Just 0
-    ColToIndex "b" = Just 1
-    ColToIndex "c" = Just 2
-    ColToIndex "d" = Just 3
-    ColToIndex "e" = Just 4
-    ColToIndex "f" = Just 5
-    ColToIndex "g" = Just 6
-    ColToIndex "h" = Just 7
+    ColToIndex A = Just 0
+    ColToIndex B = Just 1
+    ColToIndex C = Just 2
+    ColToIndex D = Just 3
+    ColToIndex E = Just 4
+    ColToIndex F = Just 5
+    ColToIndex G = Just 6
+    ColToIndex H = Just 7
     ColToIndex _ = Nothing

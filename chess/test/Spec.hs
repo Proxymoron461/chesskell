@@ -12,6 +12,7 @@ import GHC.TypeLits (Nat)
 import Lib
 import Vec
 import FirstClassFunctions
+import ChessTypes
 
 import Movement
 import TestTypes
@@ -20,40 +21,40 @@ import KingTests
 ----------------------------------------------------------------------------------------------
 -- TEST FUNCTIONS
 
-pawnTest1 :: '[ At "d" 3, At "d" 2] :~: Eval (PawnReachableBelow TestBoard2 (At "d" 4) 2)
+pawnTest1 :: '[ At D 3, At D 2] :~: Eval (PawnReachableBelow TestBoard2 (At D 4) 2)
 pawnTest1 = Refl
 
-whitePawnToQueenTest :: Just (MkPiece White Queen (Info (S Z) (At "d" 8) True)) :~: Eval ((Eval (Move (At "d" 7) (At "d" 8) (Eval (SetPieceAt (MkPiece White Pawn TestInfo) EmptyBoard (At "d" 7))))) >>= (Flip GetPieceAt) (At "d" 8))
+whitePawnToQueenTest :: Just (MkPiece White Queen (Info (S Z) (At D 8) True)) :~: Eval ((Eval (Move (At D 7) (At D 8) (Eval (SetPieceAt (MkPiece White Pawn TestInfo) EmptyBoard (At D 7))))) >>= (Flip GetPieceAt) (At D 8))
 whitePawnToQueenTest = Refl
 
-blackPawnToQueenTest :: Just (MkPiece Black Queen (Info (S Z) (At "d" 1) True)) :~: Eval ((Eval (Move (At "d" 2) (At "d" 1) (Eval (SetPieceAt (MkPiece Black Pawn TestInfo) EmptyBoard (At "d" 2))))) >>= (Flip GetPieceAt) (At "d" 1))
+blackPawnToQueenTest :: Just (MkPiece Black Queen (Info (S Z) (At D 1) True)) :~: Eval ((Eval (Move (At D 2) (At D 1) (Eval (SetPieceAt (MkPiece Black Pawn TestInfo) EmptyBoard (At D 2))))) >>= (Flip GetPieceAt) (At D 1))
 blackPawnToQueenTest = Refl
 
-getReachableLeftTest1 :: '[ At "c" 2, At "b" 2, At "a" 2] :~: Eval (AllReachableLeft Black TestBoard2 (At "d" 2))
+getReachableLeftTest1 :: '[ At C 2, At B 2, At A 2] :~: Eval (AllReachableLeft Black TestBoard2 (At D 2))
 getReachableLeftTest1 = Refl
 
-getReachableLeftTest2 :: '[ At "c" 2, At "b" 2] :~: Eval (AllReachableLeft White TestBoard2 (At "d" 2))
+getReachableLeftTest2 :: '[ At C 2, At B 2] :~: Eval (AllReachableLeft White TestBoard2 (At D 2))
 getReachableLeftTest2 = Refl
 
-getReachableLeftTest3 :: '[ At "b" 1, At "a" 1] :~: Eval (AllReachableLeft White TestBoard (At "c" 1))
+getReachableLeftTest3 :: '[ At B 1, At A 1] :~: Eval (AllReachableLeft White TestBoard (At C 1))
 getReachableLeftTest3 = Refl
 
-getReachableLeftTest4 :: '[ At "b" 1 ] :~: Eval (AllReachableLeft Black TestBoard (At "c" 1))
+getReachableLeftTest4 :: '[ At B 1 ] :~: Eval (AllReachableLeft Black TestBoard (At C 1))
 getReachableLeftTest4 = Refl
 
-getReachableLeftTest5 :: ('[] :: [Position]) :~: Eval (AllReachableLeft Black TestBoard (At "a" 1))
+getReachableLeftTest5 :: ('[] :: [Position]) :~: Eval (AllReachableLeft Black TestBoard (At A 1))
 getReachableLeftTest5 = Refl
 
-pawnReachableAboveTest1 :: ('[] :: [Position]) :~: Eval (PawnReachableAbove TestBoard2 (At "b" 7) 2)
+pawnReachableAboveTest1 :: ('[] :: [Position]) :~: Eval (PawnReachableAbove TestBoard2 (At B 7) 2)
 pawnReachableAboveTest1 = Refl
 
-pawnReachableAboveTest2 :: ('[ At "d" 5, At "d" 6] ) :~: Eval (PawnReachableAbove TestBoard2 (At "d" 4) 2)
+pawnReachableAboveTest2 :: ('[ At D 5, At D 6] ) :~: Eval (PawnReachableAbove TestBoard2 (At D 4) 2)
 pawnReachableAboveTest2 = Refl
 
-pawnReachableBelowTest1 :: ('[] :: [Position]) :~: Eval (PawnReachableBelow TestBoard2 (At "a" 3) 2)
+pawnReachableBelowTest1 :: ('[] :: [Position]) :~: Eval (PawnReachableBelow TestBoard2 (At A 3) 2)
 pawnReachableBelowTest1 = Refl
 
-getPieceAtTest1 :: Just TestPiece :~: Eval (GetPieceAt TestBoard (At "a" 1))
+getPieceAtTest1 :: Just TestPiece :~: Eval (GetPieceAt TestBoard (At A 1))
 getPieceAtTest1 = Refl
 
 -- :k VecAtR Z :: Vec n a -> Exp (Maybe a)
@@ -64,29 +65,29 @@ getPieceAtTest2 = Refl
 getPieceAtTest3 :: Just Z :~: Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z)))
 getPieceAtTest3 = Refl
 
-canMoveToTest1 :: True :~: Eval (CanMoveTo (At "a" 7) (At "a" 6) (Eval (SetPieceAt (MkPiece Black Pawn (Info (S Z) TestPosition False)) EmptyBoard (At "a" 7))))
+canMoveToTest1 :: True :~: Eval (CanMoveTo (At A 7) (At A 6) (Eval (SetPieceAt (MkPiece Black Pawn (Info (S Z) TestPosition False)) EmptyBoard (At A 7))))
 canMoveToTest1 = Refl
 
-canMoveToTest2 :: True :~: Eval (CanMoveTo (At "a" 7) (At "a" 5) (Eval (SetPieceAt (MkPiece Black Pawn (Info Z TestPosition False)) EmptyBoard (At "a" 7))))
+canMoveToTest2 :: True :~: Eval (CanMoveTo (At A 7) (At A 5) (Eval (SetPieceAt (MkPiece Black Pawn (Info Z TestPosition False)) EmptyBoard (At A 7))))
 canMoveToTest2 = Refl
 
-canMoveToTest3 :: False :~: Eval (CanMoveTo (At "a" 7) (At "a" 5) (Eval (SetPieceAt (MkPiece Black Pawn (Info (S Z) TestPosition False)) EmptyBoard (At "a" 7))))
+canMoveToTest3 :: False :~: Eval (CanMoveTo (At A 7) (At A 5) (Eval (SetPieceAt (MkPiece Black Pawn (Info (S Z) TestPosition False)) EmptyBoard (At A 7))))
 canMoveToTest3 = Refl
 
-canMoveToTest4 :: False :~: Eval (CanMoveTo (At "a" 7) (At "a" 5) (Eval (SetPieceAt (MkPiece White Pawn TestInfo) (Eval (SetPieceAt (MkPiece Black Pawn TestInfo) EmptyBoard (At "a" 7))) (At "a" 6))))
+canMoveToTest4 :: False :~: Eval (CanMoveTo (At A 7) (At A 5) (Eval (SetPieceAt (MkPiece White Pawn TestInfo) (Eval (SetPieceAt (MkPiece Black Pawn TestInfo) EmptyBoard (At A 7))) (At A 6))))
 canMoveToTest4 = Refl
 
-type CanReachBoard = Eval (SetPiecesAt '[ '(MkPiece White Rook TestInfo, At "d" 5), '(MkPiece Black King TestInfo, At "d" 4)] EmptyBoard )
-canMoveToTest5 :: False :~: Eval (CanMoveTo (At "d" 5) (At "d" 4) CanReachBoard)
+type CanReachBoard = Eval (SetPiecesAt '[ '(MkPiece White Rook TestInfo, At D 5), '(MkPiece Black King TestInfo, At D 4)] EmptyBoard )
+canMoveToTest5 :: False :~: Eval (CanMoveTo (At D 5) (At D 4) CanReachBoard)
 canMoveToTest5 = Refl
 
-canReachTest1 :: True :~: Eval (Eval (Eval (CanMoveTo (At "d" 5) (At "d" 4) CanReachBoard) :==: False) :&&: (Eval (CanReach (At "d" 5) (At "d" 4) CanReachBoard) :==: True))
+canReachTest1 :: True :~: Eval (Eval (Eval (CanMoveTo (At D 5) (At D 4) CanReachBoard) :==: False) :&&: (Eval (CanReach (At D 5) (At D 4) CanReachBoard) :==: True))
 canReachTest1 = Refl
 
-pieceMoveListWhitePawnTest :: '[ At "a" 3, At "a" 4 ] :~: Eval (PieceMoveList TestWhitePawn TestBoard2)
+pieceMoveListWhitePawnTest :: '[ At A 3, At A 4 ] :~: Eval (PieceMoveList TestWhitePawn TestBoard2)
 pieceMoveListWhitePawnTest = Refl
 
-pawnTakePositionsBlackTest :: '[ At "a" 7, At "c" 7] :~: Eval (PawnTakePositions TestBlackPawn TestBoard2)
+pawnTakePositionsBlackTest :: '[ At A 7, At C 7] :~: Eval (PawnTakePositions TestBlackPawn TestBoard2)
 pawnTakePositionsBlackTest = Refl
 
 pawnTakePositionsWhiteTest :: ('[] :: [Position]) :~: Eval (PawnTakePositions TestWhitePawn TestBoard2)
@@ -101,25 +102,25 @@ listEqualityTest2 = Refl
 listEqualityTest3 :: 'False :~: Eval (TestList :=:=: (90 ': TestList))
 listEqualityTest3 = Refl
 
-knightPositionsTest1 :: 'True :~: Eval (('[At "e" 6, At "e" 2, At "c" 6, At "c" 2, At "b" 5, At "b" 3, At "f" 5, At "f" 3]) :=:=: Eval (GetAllKnightPositions (At "d" 4)))
+knightPositionsTest1 :: 'True :~: Eval (('[At E 6, At E 2, At C 6, At C 2, At B 5, At B 3, At F 5, At F 3]) :=:=: Eval (GetAllKnightPositions (At D 4)))
 knightPositionsTest1 = Refl
 
-knightPositionsTest2 :: 'True :~: Eval (('[At "b" 3, At "c" 2 ]) :=:=: Eval (GetAllKnightPositions (At "a" 1)))
+knightPositionsTest2 :: 'True :~: Eval (('[At B 3, At C 2 ]) :=:=: Eval (GetAllKnightPositions (At A 1)))
 knightPositionsTest2 = Refl
 
-allReachableGivenListTest1 :: ('[] :: [Position]) :~: Eval (AllReachableGivenList White TestBoard2 '[ At "a" 2, At "a" 7, At "b" 3 ])
+allReachableGivenListTest1 :: ('[] :: [Position]) :~: Eval (AllReachableGivenList White TestBoard2 '[ At A 2, At A 7, At B 3 ])
 allReachableGivenListTest1 = Refl
 
-allReachableGivenListTest2 :: '[ At "a" 1, At "a" 2, At "a" 7, At "b" 3 ] :~: Eval (AllReachableGivenList Black TestBoard2 '[ At "a" 1, At "a" 2, At "a" 7, At "b" 3 ])
+allReachableGivenListTest2 :: '[ At A 1, At A 2, At A 7, At B 3 ] :~: Eval (AllReachableGivenList Black TestBoard2 '[ At A 1, At A 2, At A 7, At B 3 ])
 allReachableGivenListTest2 = Refl
 
-getAdjacentTest1 :: 'True :~: Eval ('[At "a" 2, At "b" 1, At "b" 2] :=:=: Eval (GetAdjacent (At "a" 1)))
+getAdjacentTest1 :: 'True :~: Eval ('[At A 2, At B 1, At B 2] :=:=: Eval (GetAdjacent (At A 1)))
 getAdjacentTest1 = Refl
 
-getAdjacentTest2 :: 'True :~: Eval ('[At "e" 4, At "e" 5, At "e" 6, At "g" 4, At "g" 5, At "g" 6,At "f" 4, At "f" 6] :=:=: Eval (GetAdjacent (At "f" 5)))
+getAdjacentTest2 :: 'True :~: Eval ('[At E 4, At E 5, At E 6, At G 4, At G 5, At G 6,At F 4, At F 6] :=:=: Eval (GetAdjacent (At F 5)))
 getAdjacentTest2 = Refl
 
-getAdjacentTest3 :: 'False :~: Eval (In (At "d" 4) (Eval (GetAdjacent (At "d" 4))))
+getAdjacentTest3 :: 'False :~: Eval (In (At D 4) (Eval (GetAdjacent (At D 4))))
 getAdjacentTest3 = Refl
 
 oppositeTeamTest1 :: White :~: Eval (OppositeTeam Black)
@@ -128,22 +129,22 @@ oppositeTeamTest1 = Refl
 oppositeTeamTest2 :: Black :~: Eval (OppositeTeam White)
 oppositeTeamTest2 = Refl
 
-setPieceAtTest1 :: At "b" 6 :~: Eval (PiecePosition (Eval (FromJust (Eval (GetPieceAt (Eval (SetPieceAt (MkPiece Black Pawn (Info Z (At "d" 2) False)) EmptyBoard (At "b" 6))) (At "b" 6))))))
+setPieceAtTest1 :: At B 6 :~: Eval (PiecePosition (Eval (FromJust (Eval (GetPieceAt (Eval (SetPieceAt (MkPiece Black Pawn (Info Z (At D 2) False)) EmptyBoard (At B 6))) (At B 6))))))
 setPieceAtTest1 = Refl
 
 -- :kind! Flip (SetPieceAt piece) :: Position -> Board -> Exp Board
 -- data Foldr :: (a -> b -> Exp b) -> b -> [a] -> Exp b
-setPieceAtTest2 :: 3 :~: Eval (NoOfPieces (Eval (Foldr (Uncurry2 SetPieceAtSwapped) EmptyBoard (Eval (Zip TestPieceList '[At "b" 1, At "b" 2, At "b" 3])))))
+setPieceAtTest2 :: 3 :~: Eval (NoOfPieces (Eval (Foldr (Uncurry2 SetPieceAtSwapped) EmptyBoard (Eval (Zip TestPieceList '[At B 1, At B 2, At B 3])))))
 setPieceAtTest2 = Refl
 
-setPieceAtTest3 :: 1 :~: Eval (NoOfPieces (Eval (Foldr (Uncurry2 SetPieceAtSwapped) EmptyBoard (Eval (Zip TestPieceList (Eval (Replicate 3 (At "b" 1))))))))
+setPieceAtTest3 :: 1 :~: Eval (NoOfPieces (Eval (Foldr (Uncurry2 SetPieceAtSwapped) EmptyBoard (Eval (Zip TestPieceList (Eval (Replicate 3 (At B 1))))))))
 setPieceAtTest3 = Refl
 
-setPiecesAtTest1 :: 3 :~: Eval (NoOfPieces (Eval (SetPiecesAt (Eval (Zip TestPieceList '[At "b" 1, At "b" 2, At "b" 3])) EmptyBoard)))
+setPiecesAtTest1 :: 3 :~: Eval (NoOfPieces (Eval (SetPiecesAt (Eval (Zip TestPieceList '[At B 1, At B 2, At B 3])) EmptyBoard)))
 setPiecesAtTest1 = Refl
 
-setPiecesAtTest2 :: (Eval (Foldr (Uncurry2 SetPieceAtSwapped) EmptyBoard (Eval (Zip TestPieceList '[At "b" 1, At "b" 2, At "b" 3]))))
-                    :~: (Eval (SetPiecesAt (Eval (Zip TestPieceList '[At "b" 1, At "b" 2, At "b" 3])) EmptyBoard))
+setPiecesAtTest2 :: (Eval (Foldr (Uncurry2 SetPieceAtSwapped) EmptyBoard (Eval (Zip TestPieceList '[At B 1, At B 2, At B 3]))))
+                    :~: (Eval (SetPiecesAt (Eval (Zip TestPieceList '[At B 1, At B 2, At B 3])) EmptyBoard))
 setPiecesAtTest2 = Refl
 
 -- -- TODO: Make en passant tests

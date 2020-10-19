@@ -16,22 +16,10 @@ $(genSingletons [''PieceName])
 $(genSingletons [''Team])
 $(genSingletons [''MyNat])
 
--- -- FIXME: Nasty errors, try and go through this
--- -- 1. Could not deduce: Demote FirstClassFunctions.MyNat ~ FirstClassFunctions.MyNat
--- -- 2. Couldn't match expected type ‘FirstClassFunctions.MyNat’ with actual type ‘Demote FirstClassFunctions.MyNat’
--- $(genSingletons [''PieceInfo])
-
--- -- FIXME: Nasty errors again
--- -- Couldn't match type ‘Symbol’ with ‘text-1.2.4.0:Data.Text.Internal.Text’
--- --     Expected type: Symbol
--- --     Actual type: Demote Symbol
--- $(genSingletons [''Position])
-
-data MySymbol = A | B | C | D | E | F | G | H
-$(genSingletons [''MySymbol])
+$(genSingletons [''Column])
 
 data MyPosition where
-    At :: MySymbol -> MyNat -> MyPosition
+    At :: Column -> MyNat -> MyPosition
 
 $(genSingletons [''MyPosition])
 
