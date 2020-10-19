@@ -31,7 +31,7 @@ library
       FirstClassFunctions
       FlatBuilders
       Lib
-      TermToType
+      MakeSingletons
       Vec
   other-modules:
       Paths_chess

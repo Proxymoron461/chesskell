@@ -1,4 +1,4 @@
-module TermToType where
+module MakeSingletons where
 
 import Data.Proxy(Proxy(..))
 import ChessTypes
