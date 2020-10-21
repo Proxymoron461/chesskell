@@ -184,10 +184,6 @@ type instance Eval (IsOpposingTeam (MkPiece Black _ _) (MkPiece Black _ _)) = Fa
 type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece Black _ _)) = True
 type instance Eval (IsOpposingTeam (MkPiece Black _ _) (MkPiece White _ _)) = True
 
-data OppositeTeam :: Team -> Exp Team
-type instance Eval (OppositeTeam White) = Black
-type instance Eval (OppositeTeam Black) = White
-
 data IsSameTeam :: Piece -> Piece -> Exp Bool
 type instance Eval (IsSameTeam p1 p2) = Eval ((Not . (IsOpposingTeam p1)) p2)
 
@@ -414,11 +410,20 @@ type instance Eval (PawnMovedTwoLast piece) = Eval (If (Eval (HasTeam White piec
 data PawnPostStart :: Piece -> Board -> Exp [Position]
 type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) ++ (Eval (PawnTakePositions pawn board))
 
+-- New datatype to hold the board, as well as some intermediate state
+-- TODO: Improve to contain the position of the piece that last moved??
+data BoardDecorator where
+    Dec :: Board -> Team -> BoardDecorator
+
+-- Only moves a piece if the predicate passes, and the last piece to move was not this piece
+data MoveWithStateCheck :: (Piece -> Exp Bool) -> Position -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (MoveWithStateCheck p fromPos toPos (Dec board team))
+    = 'Dec (Eval (FromJust (Eval (IfValidThenMove (HasTeam (OppositeTeam' team) .&. p) fromPos toPos board)))) (OppositeTeam' team)
 
 -- TODO: Scrap "Maybe Board" and just use board or type error??
-data IfValidThenMove :: Team -> Position -> Position -> Board -> Exp (Maybe Board)
-type instance Eval (IfValidThenMove team fromPos toPos board)
-    = Eval (If (Eval (IsPieceAtWhich board fromPos (HasTeam team))) (Move fromPos toPos board) (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
+data IfValidThenMove :: (Piece -> Exp Bool) -> Position -> Position -> Board -> Exp (Maybe Board)
+type instance Eval (IfValidThenMove f fromPos toPos board)
+    = Eval (If (Eval (IsPieceAtWhich board fromPos f)) (Move fromPos toPos board) (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
 
 -- Type family for actually moving the piece, and handling the side effects.
 -- TODO: Make sure that no moves allow you to stay in place
@@ -476,12 +481,3 @@ type instance Eval (MovePawn (MkPiece White Pawn info) (At col row) board) = Eva
 data NatLength :: [a] -> Exp Nat
 type instance Eval (NatLength '[]) = Z
 type instance Eval (NatLength (x ': xs)) = S $ Eval (NatLength xs)
-
-type LEmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
-type LEmptyBoard = LEmptyRow :-> LEmptyRow :-> LEmptyRow :-> LEmptyRow :-> LEmptyRow :-> LEmptyRow :-> LEmptyRow :<> LEmptyRow
-
-
-type MyTestInfo = Info Z (At A Nat1) False
-type MyTestBoard = Eval (SetPiecesAt '[ '(MkPiece Black King MyTestInfo, At A Nat1), '(MkPiece White King MyTestInfo, At H Nat8), '(MkPiece Black Queen MyTestInfo, At D Nat3), '(MkPiece White Queen MyTestInfo, At E Nat3)] LEmptyBoard)
-
--- Eval (LazyAnd (Eval ('[] :<= '[])) ('[] :<= '[]))  -- Fails because of ambiguous types??
