@@ -20,6 +20,13 @@ data Team = Black | White
 type instance TypeShow Black = "Black"
 type instance TypeShow White = "White"
 
+data OppositeTeam :: Team -> Exp Team
+type instance Eval (OppositeTeam team) = OppositeTeam' team
+
+type family OppositeTeam' (t :: Team) :: Team where
+    OppositeTeam' White = Black
+    OppositeTeam' Black = White
+
 -- Make singleton types for each piece??
 data PieceName = Pawn
                | Bishop
@@ -232,3 +239,49 @@ type family ColToIndex (col :: Column) :: Nat where
     ColToIndex F = Nat5
     ColToIndex G = Nat6
     ColToIndex H = Nat7
+
+-----------------------------------------------------------------------------------------------------
+
+type LastMoveInfo = (Maybe Board, Team)
+
+-- type StartBoard = Eval (SetPiecesAt '[ '(MkPiece Black King MyTestInfo, At A Nat1), '(MkPiece White King MyTestInfo, At H Nat8), '(MkPiece Black Queen MyTestInfo, At D Nat3), '(MkPiece White Queen MyTestInfo, At E Nat3)] EmptyBoard)
+type StartInfo = 'Info Z (At A Z) False
+
+type family RowPositions (n :: TL.Nat) :: [Position] where
+    RowPositions n = RowPositionsDTNat (FromGHC n)
+
+type family RowPositionsDTNat (n :: Nat) :: [Position] where
+    RowPositionsDTNat n = '[ At A n, At B n, At C n, At D n, At E n, At F n, At G n, At H n]
+
+-- Left-to-right construction of a row of pieces, given the team
+type family PieceRow (t :: Team) :: [Piece] where
+    PieceRow t = ('[
+        MkPiece t Rook StartInfo,
+        MkPiece t Knight StartInfo,
+        MkPiece t Bishop StartInfo,
+        MkPiece t Queen StartInfo,
+        MkPiece t King StartInfo,
+        MkPiece t Bishop StartInfo,
+        MkPiece t Knight StartInfo,
+        MkPiece t Rook StartInfo ])
+
+-- FIXME: Horrible memory usage. Just set this out manually?
+type StartBoard = Eval (SetPiecesAt (
+  Eval (Zip (PieceRow Black) (RowPositions 8))
+  ++ Eval (Zip (Eval (Replicate 8 (MkPiece Black Pawn StartInfo))) (RowPositions 7))
+  ++ Eval (Zip (Eval (Replicate 8 (MkPiece White Pawn StartInfo))) (RowPositions 2))
+  ++ Eval (Zip (PieceRow White) (RowPositions 1))) EmptyBoard)
+
+type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
+type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
+
+
+-- -- data SetRow :: Board -> Nat -> Row -> Exp Board
+-- type StartBoard = (EmptyRow
+--     :-> EmptyRow
+--     :-> EmptyRow
+--     :-> EmptyRow
+--     :-> EmptyRow
+--     :-> EmptyRow
+--     :-> EmptyRow
+--     :-> EmptyRow)
