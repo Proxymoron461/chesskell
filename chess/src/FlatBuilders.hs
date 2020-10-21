@@ -113,7 +113,7 @@ sNat7 = SS sNat6
 --       -> Proxy ( '(Eval (b >>= IfValidThenMove (HasTeam (Eval (OppositeTeam t))) from to), Eval (OppositeTeam t)) )
 
 -- Starts as black, because the first move needs to be white
-chess :: Spec (Proxy (Dec StartBoard Black))
+chess :: Spec (Proxy (b :: BoardDecorator))
 chess cont = cont (Proxy @(Dec StartBoard Black))
 
 data MoveArgs where
@@ -147,3 +147,6 @@ end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
 
 -- TODO: Generate all the positions, with names like a4, h8, etc.
+
+-- Having a go and seeing if it compiles!
+x = chess pawn (SAt SA sNat2) to (SAt SA sNat4) pawn (SAt SA sNat7) to (SAt SA sNat6) end
