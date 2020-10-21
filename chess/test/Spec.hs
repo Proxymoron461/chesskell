@@ -4,7 +4,7 @@ import Test.Hspec
 import Test.HUnit.Lang (Assertion, assertFailure)
 import Test.ShouldNotTypecheck (shouldNotTypecheck)
 import Control.DeepSeq (force, NFData)
-import Control.Exception (evaluate, try, TL.TypeError(..))
+import Control.Exception (evaluate, try, TypeError(..))
 import Data.Type.Equality ((:~:)(..))
 import Data.Proxy(Proxy(..))
 import qualified GHC.TypeLits as TL (Nat)
@@ -160,7 +160,7 @@ shouldTypecheck a = do
     result <- try (evaluate (force a))  -- Using Haskell’s do-notation
     case result of
         Right _ -> return ()  -- Test passes
-        Left (TL.TypeError msg) -> assertFailure ("Term didn’t compile.")
+        Left (TypeError msg) -> assertFailure ("Term didn’t compile.")
 
 shouldTypeCheck :: NFData a => a -> Assertion
 shouldTypeCheck = shouldTypecheck
