@@ -165,6 +165,7 @@ shouldTypecheck a = do
 shouldTypeCheck :: NFData a => a -> Assertion
 shouldTypeCheck = shouldTypecheck
 
+-- TODO: Multiple test suites over multiple files??
 main :: IO ()
 main = hspec $ do
   describe "List Equality Tests" $ do
