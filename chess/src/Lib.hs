@@ -414,6 +414,12 @@ type instance Eval (PawnMovedTwoLast piece) = Eval (If (Eval (HasTeam White piec
 data PawnPostStart :: Piece -> Board -> Exp [Position]
 type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) ++ (Eval (PawnTakePositions pawn board))
 
+
+-- TODO: Scrap "Maybe Board" and just use board or type error??
+data IfValidThenMove :: Team -> Position -> Position -> Board -> Exp (Maybe Board)
+type instance Eval (IfValidThenMove team fromPos toPos board)
+    = Eval (If (Eval (IsPieceAtWhich board fromPos (HasTeam team))) (Move fromPos toPos board) (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
+
 -- Type family for actually moving the piece, and handling the side effects.
 -- TODO: Make sure that no moves allow you to stay in place
 -- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
@@ -421,6 +427,7 @@ type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) +
 -- TODO: Ensure no moves place that piece's King into check
 -- TODO: Ensure that if the King is in check, the next move takes him out of it
 -- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
+-- TODO: Ensure that the moves go Black, White, Black, White...
 data Move :: Position -> Position -> Board -> Exp (Maybe Board)
 type instance Eval (Move fromPos toPos board) = Eval (If (Eval (CanMoveTo fromPos toPos board)) (MoveNoChecks fromPos toPos board) (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
 

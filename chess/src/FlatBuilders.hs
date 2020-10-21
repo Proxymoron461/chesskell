@@ -111,8 +111,25 @@ next b f t = move f t b
 start :: SPosition from -> SPosition to -> Proxy (Eval (Move from to StartBoard))
 start f t = move f t (Proxy @('Just StartBoard))
 
+move' :: SPosition from -> SPosition to -> Proxy '(b :: Maybe Board, t :: Team)
+         -> Proxy ( '(Eval (b >>= IfValidThenMove (Eval (OppositeTeam t)) from to), Eval (OppositeTeam t)) )
+move' (sFrom :: SPosition from) (sTo :: SPosition to) (pBoard :: Proxy '(b :: Maybe Board, t :: Team))
+    = Proxy @( '(Eval (b >>= IfValidThenMove (Eval (OppositeTeam t)) from to), Eval (OppositeTeam t)) )
+
+next' :: Proxy ( '(b :: Maybe Board, t :: Team) ) -> SPosition from -> SPosition to
+         -> Proxy ( '(Eval (b >>= IfValidThenMove (Eval (OppositeTeam t)) from to), Eval (OppositeTeam t)) )
+next' b f t = move' f t b
+
+-- Starts as black because White needs to make the next move
+start' :: SPosition from -> SPosition to
+          -> Proxy '((Eval (IfValidThenMove White from to StartBoard)), White)
+start' f t = move' f t (Proxy @( '(Just StartBoard, Black) ))
+
+type LastMoveInfo = (Maybe Board, Team)
+
 -- TODO: Make this the actual chess board start, with pieces in correct places
-type StartBoard = MyTestBoard 
+-- TODO: Make more like algebraic notation, with no start position given, just end position
+type StartBoard = Eval (SetPiecesAt '[ '(MkPiece Black King MyTestInfo, At A Nat1), '(MkPiece White King MyTestInfo, At H Nat8), '(MkPiece Black Queen MyTestInfo, At D Nat3), '(MkPiece White Queen MyTestInfo, At E Nat3)] LEmptyBoard)
 
 sNat0 = SZ
 sNat1 = SS sNat0
@@ -123,4 +140,10 @@ sNat5 = SS sNat4
 sNat6 = SS sNat5
 sNat7 = SS sNat6
 
-x = start (SAt SE sNat3) (SAt SG sNat3)
+x = next (start (SAt SE sNat3) (SAt SG sNat3)) (SAt SD sNat3) (SAt SE sNat3)
+
+x' = next' (start' (SAt SE sNat3) (SAt SG sNat3)) (SAt SD sNat3) (SAt SE sNat3)
+
+-- -- Should not compile - White moves twice.
+-- -- But there needs to be a better way of doing this.
+-- y' = next' (start' (SAt SE sNat3) (SAt SG sNat3)) (SAt SG sNat3) (SAt SE sNat3)

@@ -89,23 +89,26 @@ type instance Eval (PieceType (MkPiece _ name _)) = name
 data NoOfPieces :: Board -> Exp Nat
 type instance Eval (NoOfPieces board) = Eval (Foldr FCFPlus Nat0 (Eval ((VFilterCount IsJust) <$> board)))
 
+data IsPiece :: PieceName -> Piece -> Exp Bool
+type instance Eval (IsPiece name (MkPiece _ pcName _)) = Eval (name :==: pcName)
+
 data IsPawn :: Piece -> Exp Bool
-type instance Eval (IsPawn (MkPiece _ name _)) = Eval (name :==: Pawn)
+type instance Eval (IsPawn piece) = Eval (IsPiece Pawn piece)
 
 data IsBishop :: Piece -> Exp Bool
-type instance Eval (IsBishop (MkPiece _ name _)) = Eval (name :==: Bishop)
+type instance Eval (IsBishop piece) = Eval (IsPiece Bishop piece)
 
 data IsKnight :: Piece -> Exp Bool
-type instance Eval (IsKnight (MkPiece _ name _)) = Eval (name :==: Knight)
+type instance Eval (IsKnight piece) = Eval (IsPiece Knight piece)
 
 data IsRook :: Piece -> Exp Bool
-type instance Eval (IsRook (MkPiece _ name _)) = Eval (name :==: Rook)
+type instance Eval (IsRook piece) = Eval (IsPiece Rook piece)
 
 data IsKing :: Piece -> Exp Bool
-type instance Eval (IsKing (MkPiece _ name _)) = Eval (name :==: King)
+type instance Eval (IsKing piece) = Eval (IsPiece King piece)
 
 data IsQueen :: Piece -> Exp Bool
-type instance Eval (IsQueen (MkPiece _ name _)) = Eval (name :==: Queen)
+type instance Eval (IsQueen piece) = Eval (IsPiece Queen piece)
 
 data Column = A | B | C | D | E | F | G | H
 type instance TypeShow A = "A"
@@ -161,6 +164,9 @@ type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> x
 
 data GetPieceAtWhich :: Board -> Position -> (a -> Exp Bool) -> Exp (Maybe Piece)
 type instance Eval (GetPieceAtWhich board pos f) = Eval (MaybeWhich f (Eval (GetPieceAt board pos)))
+
+data IsPieceAtWhich :: Board -> Position -> (a -> Exp Bool) -> Exp Bool
+type instance Eval (IsPieceAtWhich board pos f) = Eval ((IsJust . (GetPieceAtWhich board pos)) f)
 
 data ApplyFuncAt :: (Piece -> Exp Piece) -> Board -> Position -> Exp Board
 type instance Eval (ApplyFuncAt f board pos) = Eval (FromMaybe board ((FlipToLast SetPieceAt) board pos . f) (Eval (GetPieceAt board pos)))
