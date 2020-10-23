@@ -13,7 +13,6 @@ import Data.Type.Nat hiding (SNat(..))
 -- NOTE: These boards are upside-down - the first row is the last one visually
 type TestPosition = At A Nat1  -- i.e. bottom left
 type TestPiece    = MkPiece Black Pawn (Info Z TestPosition False)
-type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :-> EmptyRow
                     :-> EmptyRow
@@ -38,7 +37,7 @@ type TestBoard2   = EmptyRow
 
 type TestList = Eval (RangeBetween 0 10)
 
-type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
-
 type TestInfo = Info Z (At A Nat1) False
 type TestPieceList = '[MkPiece Black Pawn TestInfo, MkPiece White Pawn TestInfo, MkPiece White King TestInfo]
+
+type KingBoard = Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At A Nat1), '(MkPiece Black King TestInfo, At H Nat8) ] EmptyBoard)

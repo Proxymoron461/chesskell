@@ -383,7 +383,6 @@ type instance Eval (PawnMove (MkPiece Black Pawn info) board n) = Eval (PawnReac
 type instance Eval (PawnMove (MkPiece White Pawn info) board n) = Eval (PawnReachableAbove board (Eval (GetPosition info)) n)
 
 -- Pawns can take diagonally in front of themselves: so this gets those positions if a take is possible!
--- TODO: Handle "en passant" takes
 data PawnTakePositions :: Piece -> Board -> Exp [Position]
 type instance Eval (PawnTakePositions (MkPiece Black Pawn info) board) = (Eval (NReachableDiagSE Black board (Eval (GetPosition info)) 1)
     ++ (Eval (NReachableDiagSW Black board (Eval (GetPosition info)) 1))
@@ -398,7 +397,7 @@ type instance Eval (GetEnPassantPositions (MkPiece team name info) board) = Eval
 data GetLeftRightPositions :: Position -> Exp [Position]
 type instance Eval (GetLeftRightPositions pos) = Eval (FilterMap IsJust FromJust (Eval ('[GetOneLeft, GetOneRight] <*> '[ pos ])))
 
--- TODO: Ensure that this is only valid on the move immediately after that pawn moves
+-- Note that Team here is the ATTACKING TEAM
 data IsSpaceVulnerableToEnPassant :: Team -> Board -> Position -> Exp Bool
 type instance Eval (IsSpaceVulnerableToEnPassant team board pos) = Eval (FromMaybe False PawnMovedTwoLast (Eval (GetPieceAtWhich board pos (IsPawn .&. HasTeam (Eval (OppositeTeam team))))))
 
@@ -473,11 +472,5 @@ type instance Eval (MoveKing king toPos board) = Eval (MovePieceTo king toPos bo
 -- TODO: Allow players to choose what to promote their pawn to!
 -- TODO: Handle en passant in "else" branch
 data MovePawn :: Piece -> Position -> Board -> Exp Board
-type instance Eval (MovePawn (MkPiece Black Pawn info) (At col row) board) = Eval (If (Eval (row :==: 1)) (MovePieceTo (MkPiece Black Queen info) (At col row) board) (MovePieceTo (MkPiece Black Pawn info) (At col row) board))
-type instance Eval (MovePawn (MkPiece White Pawn info) (At col row) board) = Eval (If (Eval (row :==: 8)) (MovePieceTo (MkPiece White Queen info) (At col row) board) (MovePieceTo (MkPiece White Pawn info) (At col row) board))
-
------------------------------------------------------------------------------------------------
-
-data NatLength :: [a] -> Exp Nat
-type instance Eval (NatLength '[]) = Z
-type instance Eval (NatLength (x ': xs)) = S $ Eval (NatLength xs)
+type instance Eval (MovePawn (MkPiece Black Pawn info) (At col row) board) = Eval (If (Eval (row :==: Nat1)) (MovePieceTo (MkPiece Black Queen info) (At col row) board) (MovePieceTo (MkPiece Black Pawn info) (At col row) board))
+type instance Eval (MovePawn (MkPiece White Pawn info) (At col row) board) = Eval (If (Eval (row :==: Nat8)) (MovePieceTo (MkPiece White Queen info) (At col row) board) (MovePieceTo (MkPiece White Pawn info) (At col row) board))

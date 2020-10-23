@@ -34,6 +34,7 @@ sNat7 = SS sNat6
 -- type Spec t = forall m. (t -> m) -> m
 chess :: Spec (Proxy (Dec StartBoard Black))
 chess cont = cont (Proxy @(Dec StartBoard Black))
+-- chess cont = cont (Proxy :: Proxy (Dec StartBoard Black))
 
 data MoveArgs where
     MA :: BoardDecorator -> Position -> PieceName -> Position -> MoveArgs

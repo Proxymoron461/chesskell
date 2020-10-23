@@ -179,6 +179,7 @@ type instance Eval (SetPieceAtSwapped piece pos board) = Eval (SetPieceAt piece 
 data ClearPieceAt :: Position -> Board -> Exp Board
 type instance Eval (ClearPieceAt (At col row) board) = Eval (SetRow board row (Eval (PutAt Nothing (ColToIndex col) (Eval (FromJust (Eval (GetRow board row)))))))
 
+-- TODO: Optimise to not use GetRow??
 data SetPieceAtNoChecks :: Piece -> Board -> Position -> Exp Board
 type instance Eval (SetPieceAtNoChecks piece board (At col row)) = Eval (SetRow board row (Eval (PutAt (Just (Eval (SetPiecePosition piece (At col row)))) (ColToIndex col) (Eval (FromJust (Eval (GetRow board row)))))))
 
