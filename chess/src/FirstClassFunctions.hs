@@ -162,7 +162,6 @@ data Reverse :: [a] -> Exp [a]
 type instance Eval (Reverse '[]) = '[]
 type instance Eval (Reverse (x ': xs)) = Eval (Reverse xs) ++ '[x]
 
--- TODO: Maybe make y have kind a as well?
 type family IsTypeEqualNonFCF (x :: a) (y :: b) :: Bool where
     IsTypeEqualNonFCF x x = 'True
     IsTypeEqualNonFCF x y = 'False
@@ -173,8 +172,8 @@ data If :: Bool -> Exp b -> Exp b -> Exp b
 type instance Eval (If 'True thenDo elseDo) = Eval thenDo
 type instance Eval (If 'False  thenDo elseDo) = Eval elseDo
 
--- :kind! Eval (MaybeIf IsValidColumn (Just A)) = 'True
--- :kind! Eval (MaybeIf IsValidColumn (Just "z")) = 'False
+-- :kind! Eval (MaybeIf IsZero (Just Z)) = 'True
+-- :kind! Eval (MaybeIf IsZero (Just (S Z))) = 'False
 data MaybeIf :: (a -> Exp Bool) -> Maybe a -> Exp Bool
 type instance Eval (MaybeIf p Nothing)  = False
 type instance Eval (MaybeIf p (Just x)) = Eval (p x)
@@ -257,7 +256,6 @@ data Tail :: [a] -> Exp [a]
 type instance Eval (Tail '[])       = '[]
 type instance Eval (Tail (x ': xs)) = xs
 
--- TODO: FilterMap instance for vectors??
 data FilterMap :: (a -> Exp Bool) -> (a -> Exp b) -> [a] -> Exp [b]
 type instance Eval (FilterMap p f (x ': xs)) = Eval (If (Eval (p x)) (ID (Eval (f x) ': Eval (FilterMap p f xs))) (FilterMap p f xs))
 type instance Eval (FilterMap p f '[])       = '[]
@@ -269,7 +267,6 @@ type instance Eval (MapFilter f p (x ': xs)) = Eval (MapFilterHelper (Eval (f x)
 data MapFilterHelper :: b -> (a -> Exp b) -> (b -> Exp Bool) -> [a] -> Exp [b]
 type instance Eval (MapFilterHelper x f p ys) = Eval (If (Eval (p x)) (ID (x ': (Eval (MapFilter f p ys)))) (MapFilter f p ys))
 
--- TODO: Kind-polymorphic Filter instances??
 data Filter :: (a -> Exp Bool) -> [a] -> Exp [a]
 type instance Eval (Filter p '[]) = '[]
 type instance Eval (Filter p (x ': xs)) = Eval (If (Eval (p x)) (ID (x ': Eval (Filter p xs))) (Filter p xs))
@@ -311,7 +308,7 @@ data Find :: (a -> Exp Bool) -> f a -> Exp (Maybe a)
 type instance Eval (Find f '[])       = Nothing
 type instance Eval (Find f (x ': xs)) = Eval (If (Eval (f x)) (ID (Just x)) (Find f xs))
 
--- TODO: Make more type safe?? Currently 1 ++ 2 would compile without issues (maybe)
+-- TODO: Make more type safe?? Currently 1 ++ 2 compiles without issues (maybe)
 type family (++) (x :: a) (y :: a) :: a
 type instance ('[] ++ ys) = ys
 type instance ((x ': xs) ++ ys) = x ': (xs ++ ys)
