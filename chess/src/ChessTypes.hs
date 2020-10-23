@@ -265,23 +265,442 @@ type family PieceRow (t :: Team) :: [Piece] where
         MkPiece t Knight StartInfo,
         MkPiece t Rook StartInfo ])
 
--- FIXME: Horrible memory usage. Just set this out manually?
-type StartBoard = Eval (SetPiecesAt (
-  Eval (Zip (PieceRow Black) (RowPositions 8))
-  ++ Eval (Zip (Eval (Replicate 8 (MkPiece Black Pawn StartInfo))) (RowPositions 7))
-  ++ Eval (Zip (Eval (Replicate 8 (MkPiece White Pawn StartInfo))) (RowPositions 2))
-  ++ Eval (Zip (PieceRow White) (RowPositions 1))) EmptyBoard)
+-- -- FIXME: Horrible memory usage. Just set this out manually?
+-- type StartBoard = Eval (SetPiecesAt (
+--   Eval (Zip (PieceRow Black) (RowPositions 8))
+--   ++ Eval (Zip (Eval (Replicate 8 (MkPiece Black Pawn StartInfo))) (RowPositions 7))
+--   ++ Eval (Zip (Eval (Replicate 8 (MkPiece White Pawn StartInfo))) (RowPositions 2))
+--   ++ Eval (Zip (PieceRow White) (RowPositions 1))) EmptyBoard)
 
 type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
 
-
--- -- data SetRow :: Board -> Nat -> Row -> Exp Board
--- type StartBoard = (EmptyRow
---     :-> EmptyRow
---     :-> EmptyRow
---     :-> EmptyRow
---     :-> EmptyRow
---     :-> EmptyRow
---     :-> EmptyRow
---     :-> EmptyRow)
+type StartBoard = ('Just
+     ('MkPiece
+        'White
+        'Rook
+        ('Info Z ('At 'A (S Z)) 'False))
+   ':-> ('Just
+           ('MkPiece
+              'White
+              'Knight
+              ('Info Z ('At 'B (S Z)) 'False))
+         ':-> ('Just
+                 ('MkPiece
+                    'White
+                    'Bishop
+                    ('Info Z ('At 'C (S Z)) 'False))
+               ':-> ('Just
+                       ('MkPiece
+                          'White
+                          'Queen
+                          ('Info Z ('At 'D (S Z)) 'False))
+                     ':-> ('Just
+                             ('MkPiece
+                                'White
+                                'King
+                                ('Info Z ('At 'E (S Z)) 'False))
+                           ':-> ('Just
+                                   ('MkPiece
+                                      'White
+                                      'Bishop
+                                      ('Info Z ('At 'F (S Z)) 'False))
+                                 ':-> ('Just
+                                         ('MkPiece
+                                            'White
+                                            'Knight
+                                            ('Info
+                                               Z
+                                               ('At 'G (S Z))
+                                               'False))
+                                       ':-> ('Just
+                                               ('MkPiece
+                                                  'White
+                                                  'Rook
+                                                  ('Info
+                                                     Z
+                                                     ('At 'H (S Z))
+                                                     'False))
+                                             ':-> 'VEnd))))))))
+  ':-> (('Just
+           ('MkPiece
+              'White
+              'Pawn
+              ('Info
+                 Z
+                 ('At 'A (S (S Z)))
+                 'False))
+         ':-> ('Just
+                 ('MkPiece
+                    'White
+                    'Pawn
+                    ('Info
+                       Z
+                       ('At 'B (S (S Z)))
+                       'False))
+               ':-> ('Just
+                       ('MkPiece
+                          'White
+                          'Pawn
+                          ('Info
+                             Z
+                             ('At 'C (S (S Z)))
+                             'False))
+                     ':-> ('Just
+                             ('MkPiece
+                                'White
+                                'Pawn
+                                ('Info
+                                   Z
+                                   ('At 'D (S (S Z)))
+                                   'False))
+                           ':-> ('Just
+                                   ('MkPiece
+                                      'White
+                                      'Pawn
+                                      ('Info
+                                         Z
+                                         ('At 'E (S (S Z)))
+                                         'False))
+                                 ':-> ('Just
+                                         ('MkPiece
+                                            'White
+                                            'Pawn
+                                            ('Info
+                                               Z
+                                               ('At 'F (S (S Z)))
+                                               'False))
+                                       ':-> ('Just
+                                               ('MkPiece
+                                                  'White
+                                                  'Pawn
+                                                  ('Info
+                                                     Z
+                                                     ('At
+                                                        'G (S (S Z)))
+                                                     'False))
+                                             ':-> ('Just
+                                                     ('MkPiece
+                                                        'White
+                                                        'Pawn
+                                                        ('Info
+                                                           Z
+                                                           ('At
+                                                              'H
+                                                              (S
+                                                                 (S Z)))
+                                                           'False))
+                                                   ':-> 'VEnd))))))))
+        ':-> (('Nothing
+               ':-> ('Nothing
+                     ':-> ('Nothing
+                           ':-> ('Nothing
+                                 ':-> ('Nothing
+                                       ':-> ('Nothing
+                                             ':-> ('Nothing ':-> ('Nothing ':-> 'VEnd))))))))
+              ':-> (('Nothing
+                     ':-> ('Nothing
+                           ':-> ('Nothing
+                                 ':-> ('Nothing
+                                       ':-> ('Nothing
+                                             ':-> ('Nothing
+                                                   ':-> ('Nothing ':-> ('Nothing ':-> 'VEnd))))))))
+                    ':-> (('Nothing
+                           ':-> ('Nothing
+                                 ':-> ('Nothing
+                                       ':-> ('Nothing
+                                             ':-> ('Nothing
+                                                   ':-> ('Nothing
+                                                         ':-> ('Nothing
+                                                               ':-> ('Nothing ':-> 'VEnd))))))))
+                          ':-> (('Nothing
+                                 ':-> ('Nothing
+                                       ':-> ('Nothing
+                                             ':-> ('Nothing
+                                                   ':-> ('Nothing
+                                                         ':-> ('Nothing
+                                                               ':-> ('Nothing
+                                                                     ':-> ('Nothing
+                                                                           ':-> 'VEnd))))))))
+                                ':-> (('Just
+                                         ('MkPiece
+                                            'Black
+                                            'Pawn
+                                            ('Info
+                                               Z
+                                               ('At
+                                                  'A
+                                                  (S
+                                                     (S
+                                                        (S
+                                                           (S
+                                                              (S
+                                                                 (S
+                                                                    (S Z))))))))
+                                               'False))
+                                       ':-> ('Just
+                                               ('MkPiece
+                                                  'Black
+                                                  'Pawn
+                                                  ('Info
+                                                     Z
+                                                     ('At
+                                                        'B
+                                                        (S
+                                                           (S
+                                                              (S
+                                                                 (S
+                                                                    (S
+                                                                       (S
+                                                                          (S
+                                                                             Z))))))))
+                                                     'False))
+                                             ':-> ('Just
+                                                     ('MkPiece
+                                                        'Black
+                                                        'Pawn
+                                                        ('Info
+                                                           Z
+                                                           ('At
+                                                              'C
+                                                              (S
+                                                                 (S
+                                                                    (S
+                                                                       (S
+                                                                          (S
+                                                                             (S
+                                                                                (S
+                                                                                   Z))))))))
+                                                           'False))
+                                                   ':-> ('Just
+                                                           ('MkPiece
+                                                              'Black
+                                                              'Pawn
+                                                              ('Info
+                                                                 Z
+                                                                 ('At
+                                                                    'D
+                                                                    (S
+                                                                       (S
+                                                                          (S
+                                                                             (S
+                                                                                (S
+                                                                                   (S
+                                                                                      (S
+                                                                                         Z))))))))
+                                                                 'False))
+                                                         ':-> ('Just
+                                                                 ('MkPiece
+                                                                    'Black
+                                                                    'Pawn
+                                                                    ('Info
+                                                                       Z
+                                                                       ('At
+                                                                          'E
+                                                                          (S
+                                                                             (S
+                                                                                (S
+                                                                                   (S
+                                                                                      (S
+                                                                                         (S
+                                                                                            (S
+                                                                                               Z))))))))
+                                                                       'False))
+                                                               ':-> ('Just
+                                                                       ('MkPiece
+                                                                          'Black
+                                                                          'Pawn
+                                                                          ('Info
+                                                                             Z
+                                                                             ('At
+                                                                                'F
+                                                                                (S
+                                                                                   (S
+                                                                                      (S
+                                                                                         (S
+                                                                                            (S
+                                                                                               (S
+                                                                                                  (S
+                                                                                                     Z))))))))
+                                                                             'False))
+                                                                     ':-> ('Just
+                                                                             ('MkPiece
+                                                                                'Black
+                                                                                'Pawn
+                                                                                ('Info
+                                                                                   Z
+                                                                                   ('At
+                                                                                      'G
+                                                                                      (S
+                                                                                         (S
+                                                                                            (S
+                                                                                               (S
+                                                                                                  (S
+                                                                                                     (S
+                                                                                                        (S
+                                                                                                           Z))))))))
+                                                                                   'False))
+                                                                           ':-> ('Just
+                                                                                   ('MkPiece
+                                                                                      'Black
+                                                                                      'Pawn
+                                                                                      ('Info
+                                                                                         Z
+                                                                                         ('At
+                                                                                            'H
+                                                                                            (S
+                                                                                               (S
+                                                                                                  (S
+                                                                                                     (S
+                                                                                                        (S
+                                                                                                           (S
+                                                                                                              (S
+                                                                                                                 Z))))))))
+                                                                                         'False))
+                                                                                 ':-> 'VEnd))))))))
+                                      ':-> (('Just
+                                               ('MkPiece
+                                                  'Black
+                                                  'Rook
+                                                  ('Info
+                                                     Z
+                                                     ('At
+                                                        'A
+                                                        (S
+                                                           (S
+                                                              (S
+                                                                 (S
+                                                                    (S
+                                                                       (S
+                                                                          (S
+                                                                             (S
+                                                                                Z)))))))))
+                                                     'False))
+                                             ':-> ('Just
+                                                     ('MkPiece
+                                                        'Black
+                                                        'Knight
+                                                        ('Info
+                                                           Z
+                                                           ('At
+                                                              'B
+                                                              (S
+                                                                 (S
+                                                                    (S
+                                                                       (S
+                                                                          (S
+                                                                             (S
+                                                                                (S
+                                                                                   (S
+                                                                                      Z)))))))))
+                                                           'False))
+                                                   ':-> ('Just
+                                                           ('MkPiece
+                                                              'Black
+                                                              'Bishop
+                                                              ('Info
+                                                                 Z
+                                                                 ('At
+                                                                    'C
+                                                                    (S
+                                                                       (S
+                                                                          (S
+                                                                             (S
+                                                                                (S
+                                                                                   (S
+                                                                                      (S
+                                                                                         (S
+                                                                                            Z)))))))))
+                                                                 'False))
+                                                         ':-> ('Just
+                                                                 ('MkPiece
+                                                                    'Black
+                                                                    'Queen
+                                                                    ('Info
+                                                                       Z
+                                                                       ('At
+                                                                          'D
+                                                                          (S
+                                                                             (S
+                                                                                (S
+                                                                                   (S
+                                                                                      (S
+                                                                                         (S
+                                                                                            (S
+                                                                                               (S
+                                                                                                  Z)))))))))
+                                                                       'False))
+                                                               ':-> ('Just
+                                                                       ('MkPiece
+                                                                          'Black
+                                                                          'King
+                                                                          ('Info
+                                                                             Z
+                                                                             ('At
+                                                                                'E
+                                                                                (S
+                                                                                   (S
+                                                                                      (S
+                                                                                         (S
+                                                                                            (S
+                                                                                               (S
+                                                                                                  (S
+                                                                                                     (S
+                                                                                                        Z)))))))))
+                                                                             'False))
+                                                                     ':-> ('Just
+                                                                             ('MkPiece
+                                                                                'Black
+                                                                                'Bishop
+                                                                                ('Info
+                                                                                   Z
+                                                                                   ('At
+                                                                                      'F
+                                                                                      (S
+                                                                                         (S
+                                                                                            (S
+                                                                                               (S
+                                                                                                  (S
+                                                                                                     (S
+                                                                                                        (S
+                                                                                                           (S
+                                                                                                              Z)))))))))
+                                                                                   'False))
+                                                                           ':-> ('Just
+                                                                                   ('MkPiece
+                                                                                      'Black
+                                                                                      'Knight
+                                                                                      ('Info
+                                                                                         Z
+                                                                                         ('At
+                                                                                            'G
+                                                                                            (S
+                                                                                               (S
+                                                                                                  (S
+                                                                                                     (S
+                                                                                                        (S
+                                                                                                           (S
+                                                                                                              (S
+                                                                                                                 (S
+                                                                                                                    Z)))))))))
+                                                                                         'False))
+                                                                                 ':-> ('Just
+                                                                                         ('MkPiece
+                                                                                            'Black
+                                                                                            'Rook
+                                                                                            ('Info
+                                                                                               Z
+                                                                                               ('At
+                                                                                                  'H
+                                                                                                  (S
+                                                                                                     (S
+                                                                                                        (S
+                                                                                                           (S
+                                                                                                              (S
+                                                                                                                 (S
+                                                                                                                    (S
+                                                                                                                       (S
+                                                                                                                          Z)))))))))
+                                                                                               'False))
+                                                                                       ':-> 'VEnd))))))))
+                                            ':-> 'VEnd)))))))
