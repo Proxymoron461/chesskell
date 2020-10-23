@@ -10,3 +10,4 @@ chess/writing/spec/spec.blg
 stack.yaml
 stack.yaml.lock
 .stack-work/*
+chess/chess.cabal
