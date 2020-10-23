@@ -33,22 +33,22 @@ type LastMoveTestBoard = Eval (SetPiecesAt '[ '(MkPiece White Queen TestInfo, At
                                               '(MkPiece White King TestInfo, At A Nat1), '(MkPiece Black King TestInfo, At E Nat8) ] EmptyBoard)
 type LastMoveBoardPostMove = (Eval (Move (At A Nat2) (At A Nat7) LastMoveTestBoard))
 
--- -- TODO: VERY slow, but doesn't crash compiler
--- lastMovedTest1 :: True :~: Eval (FromMaybe False (IsLastPieceMovedAt (At A Nat7)) ((Eval (Move (At A Nat2) (At A Nat7) LastMoveTestBoard))))
--- lastMovedTest1 = Refl
+-- TODO: VERY slow, but doesn't crash compiler
+lastMovedTest1 :: True :~: Eval (FromMaybe False (IsLastPieceMovedAt (At A Nat7)) ((Eval (Move (At A Nat2) (At A Nat7) LastMoveTestBoard))))
+lastMovedTest1 = Refl
 
--- -- TODO: VERY slow, but doesn't crash compiler
--- lastMovedTest2 :: False :~: Eval (FromMaybe True (IsLastPieceMovedAt (At E Nat7)) ((Eval (Move (At A Nat2) (At A Nat7) LastMoveTestBoard))))
--- lastMovedTest2 = Refl
+-- TODO: VERY slow, but doesn't crash compiler
+lastMovedTest2 :: False :~: Eval (FromMaybe True (IsLastPieceMovedAt (At E Nat7)) ((Eval (Move (At A Nat2) (At A Nat7) LastMoveTestBoard))))
+lastMovedTest2 = Refl
 
--- -- TODO: VERY slow, but doesn't crash compiler
--- lastMovedTest3 :: False :~: Eval (FromMaybe True (IsLastPieceMovedAt (At A Nat7)) (Eval ((Eval (Move (At A Nat2) (At A Nat7) LastMoveTestBoard)) >>= Move (At E Nat7) (At E Nat2))))
--- lastMovedTest3 = Refl
+-- TODO: VERY slow, but doesn't crash compiler
+lastMovedTest3 :: False :~: Eval (FromMaybe True (IsLastPieceMovedAt (At A Nat7)) (Eval ((Eval (Move (At A Nat2) (At A Nat7) LastMoveTestBoard)) >>= Move (At E Nat7) (At E Nat2))))
+lastMovedTest3 = Refl
 
--- -- TODO: VERY slow, but doesn't crash compiler
--- clearPieceTest1 :: Just False :~: Eval (((Flip IsPieceAt) (At A Nat2)) <$> (Eval (Move (At A Nat2) (At A Nat7) LastMoveTestBoard)))
--- clearPieceTest1 = Refl
+-- TODO: VERY slow, but doesn't crash compiler
+clearPieceTest1 :: Just False :~: Eval (((Flip IsPieceAt) (At A Nat2)) <$> (Eval (Move (At A Nat2) (At A Nat7) LastMoveTestBoard)))
+clearPieceTest1 = Refl
 
--- -- TODO: VERY slow, but doesn't crash compiler
--- clearPieceTest2 :: False :~: Eval (IsPieceAt (Eval (ClearPieceAt (At E Nat7) LastMoveTestBoard)) (At E Nat7))
--- clearPieceTest2 = Refl
+-- TODO: VERY slow, but doesn't crash compiler
+clearPieceTest2 :: False :~: Eval (IsPieceAt (Eval (ClearPieceAt (At E Nat7) LastMoveTestBoard)) (At E Nat7))
+clearPieceTest2 = Refl
