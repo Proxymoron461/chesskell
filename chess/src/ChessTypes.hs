@@ -136,18 +136,11 @@ type instance TypeShow (At col row) = "At " ++ TypeShow col ++ " (" ++ TypeShow 
 
 type ValidRows = Nat1 :-> Nat2 :-> Nat3 :-> Nat4 :-> Nat5 :-> Nat6 :-> Nat7 :<> Nat8
 
--- TODO: Remove these, because now Column is a data type!
-data ValidColumn :: Column -> Exp (Maybe Column)
-type instance Eval (ValidColumn x) = Just x
-
-data IsValidColumn :: Column -> Exp Bool
-type instance Eval (IsValidColumn x) = True
-
 data IsValidRow :: Nat -> Exp Bool
 type instance Eval (IsValidRow x) = Eval (If (Elem x ValidRows) (ID True) (ID False))
 
 data IsValidPosition :: Position -> Exp Bool
-type instance Eval (IsValidPosition (At col row)) = Eval ((Eval (IsValidColumn col)) :&&: (IsValidRow row))
+type instance Eval (IsValidPosition (At col row)) = Eval (IsValidRow row)
 
 -- This checks for the validity of the position before it sends one off!
 data GetPieceAt :: Board -> Position -> Exp (Maybe Piece)
@@ -202,11 +195,10 @@ type instance Eval (SetRow board (S n) row) = Eval (PutAt row n board)
 
 -- Type families to add an offset to columns!
 -- TODO: Customise the number of columns?? As it is, it's chess-specific.
--- TODO: Flip the arguments, they're the wrong way round!!
 data (:+) :: Nat -> Column -> Exp (Maybe Column)
 data (:-) :: Nat -> Column -> Exp (Maybe Column)
 
-type instance Eval ((:+) Z         col) = Eval (ValidColumn col)
+type instance Eval ((:+) Z         col) = col
 type instance Eval ((:+) (S Z)     A) = Just B
 type instance Eval ((:+) (S Z)     B) = Just C
 type instance Eval ((:+) (S Z)     C) = Just D
@@ -217,7 +209,7 @@ type instance Eval ((:+) (S Z)     G) = Just H
 type instance Eval ((:+) (S Z)     H) = Nothing
 type instance Eval ((:+) (S (S n)) col) = Eval (Bind ((:+) (S n)) (Eval ((:+) (S Z) col)))
 
-type instance Eval ((:-) Z         col) = Eval (ValidColumn col)
+type instance Eval ((:-) Z         col) = col
 type instance Eval ((:-) (S Z)     A) = Nothing
 type instance Eval ((:-) (S Z)     B) = Just A
 type instance Eval ((:-) (S Z)     C) = Just B
@@ -228,9 +220,7 @@ type instance Eval ((:-) (S Z)     G) = Just F
 type instance Eval ((:-) (S Z)     H) = Just G
 type instance Eval ((:-) (S (S n)) col) = Eval (Bind ((:-) (S n)) (Eval ((:-) (S Z) col)))
 
--- TODO: Maybe make this tied less to ValidColumns??
 type family ColToIndex (col :: Column) :: Nat where
-    -- ColToIndex col = ElemIndex ValidColumns col
     ColToIndex A = Nat0
     ColToIndex B = Nat1
     ColToIndex C = Nat2
@@ -264,13 +254,6 @@ type family PieceRow (t :: Team) :: [Piece] where
         MkPiece t Bishop StartInfo,
         MkPiece t Knight StartInfo,
         MkPiece t Rook StartInfo ])
-
--- -- FIXME: Horrible memory usage. Just set this out manually?
--- type StartBoard = Eval (SetPiecesAt (
---   Eval (Zip (PieceRow Black) (RowPositions 8))
---   ++ Eval (Zip (Eval (Replicate 8 (MkPiece Black Pawn StartInfo))) (RowPositions 7))
---   ++ Eval (Zip (Eval (Replicate 8 (MkPiece White Pawn StartInfo))) (RowPositions 2))
---   ++ Eval (Zip (PieceRow White) (RowPositions 1))) EmptyBoard)
 
 type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
