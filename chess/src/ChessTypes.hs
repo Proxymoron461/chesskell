@@ -198,7 +198,7 @@ type instance Eval (SetRow board (S n) row) = Eval (PutAt row n board)
 data (:+) :: Nat -> Column -> Exp (Maybe Column)
 data (:-) :: Nat -> Column -> Exp (Maybe Column)
 
-type instance Eval ((:+) Z         col) = col
+type instance Eval ((:+) Z         col) = Just col
 type instance Eval ((:+) (S Z)     A) = Just B
 type instance Eval ((:+) (S Z)     B) = Just C
 type instance Eval ((:+) (S Z)     C) = Just D
@@ -209,7 +209,7 @@ type instance Eval ((:+) (S Z)     G) = Just H
 type instance Eval ((:+) (S Z)     H) = Nothing
 type instance Eval ((:+) (S (S n)) col) = Eval (Bind ((:+) (S n)) (Eval ((:+) (S Z) col)))
 
-type instance Eval ((:-) Z         col) = col
+type instance Eval ((:-) Z         col) = Just col
 type instance Eval ((:-) (S Z)     A) = Nothing
 type instance Eval ((:-) (S Z)     B) = Just A
 type instance Eval ((:-) (S Z)     C) = Just B
