@@ -43,9 +43,8 @@ type SNat8 = 'SS SNat7
 
 -- Starts as black, because the first move needs to be white
 -- type Spec t = forall m. (t -> m) -> m
-type StartPos = 'At A Nat1  -- An invalid position
-chess :: Spec (Proxy (Dec StartBoard Black StartPos))
-chess cont = cont (Proxy @(Dec StartBoard Black StartPos))
+chess :: Spec (Proxy StartDec)
+chess cont = cont (Proxy @StartDec)
 -- chess cont = cont (Proxy :: Proxy (Dec StartBoard Black))
 
 data MoveArgs where

@@ -84,7 +84,7 @@ data PiecePosition :: Piece -> Exp Position
 type instance Eval (PiecePosition (MkPiece _ _ info)) = Eval (GetPosition info)
 
 data LastPieceToMove :: BoardDecorator -> Piece -> Exp Bool
-type instance Eval (LastPieceToMove boardDec (MkPiece _ _ info)) = Eval ((Eval (GetPosition info)) :==: (GetLastPosition boardDec))
+type instance Eval (LastPieceToMove boardDec piece) = Eval ((Eval (PiecePosition piece)) :==: (GetLastPosition boardDec))
 
 data ResetLastMoved :: Piece -> Exp Piece
 type instance Eval (ResetLastMoved (MkPiece team name (Info x y _))) = (MkPiece team name (Info x y False))
@@ -287,6 +287,8 @@ type family PieceRow (t :: Team) :: [Piece] where
 
 type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
+
+type StartDec = Dec StartBoard Black (At A Nat1)
 
 type StartBoard = ('Just
      ('MkPiece
