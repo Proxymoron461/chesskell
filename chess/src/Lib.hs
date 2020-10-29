@@ -459,8 +459,11 @@ type instance Eval (MovePieceSwitch piece toPos boardDec) = Just $ Eval (Switch 
 -- A variant of SetPieceAtDec, which increments the number of moves a piece has done,
 -- and sets that piece as the last piece having moved.
 -- NOTE: This is the function that correctly sets the BoardDecorator.
+-- TODO: Set king positions if the piece to be moved is a king
+-- TODO: Set en passant positions if the last piece moved is a pawn
 data MovePieceTo :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (MovePieceTo piece toPos boardDec) = Dec (GetBoard (Eval (SetLastPieceMoved toPos (Eval (SetPieceAtDec (Eval (IncrementMoves piece)) boardDec toPos))))) (Eval (PieceTeam piece)) toPos
+type instance Eval (MovePieceTo piece toPos (Dec board team pos kings enps))
+    = Dec (GetBoard (Eval (SetLastPieceMoved toPos (Eval (SetPieceAtDec (Eval (IncrementMoves piece)) (Dec board team pos kings enps) toPos))))) (Eval (PieceTeam piece)) toPos kings enps
 
 -- TODO: Handle castling (which should not increment the rook's move counter)
 -- Ensuring you don't move into check is handled by MovePiece
