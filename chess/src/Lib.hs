@@ -197,79 +197,79 @@ data HasRow :: Nat -> Position -> Exp Bool
 type instance Eval (HasRow x (At _ y)) = Eval ((x <=? y) :&&: ID (y <=? x))
 
 -- Type families for getting all available squares in a straight line, with nothing in the way
-data AllReachableFunc :: Team -> Board -> Position -> (Position -> Exp [Position]) -> Exp [Position]
-type instance Eval (AllReachableFunc team board pos f) = Eval (TakeWhilePlus (Not . (IsPieceAt board)) ((MaybeIf (Not . (HasTeam team))) . (GetPieceAt board)) (Eval (f pos)))
+data AllReachableFunc :: Team -> BoardDecorator -> Position -> (Position -> Exp [Position]) -> Exp [Position]
+type instance Eval (AllReachableFunc team boardDec pos f) = Eval (TakeWhilePlus (Not . (IsPieceAt boardDec)) ((MaybeIf (Not . (HasTeam team))) . (GetPieceAtDec boardDec)) (Eval (f pos)))
 
-data AllReachableLeft :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableLeft team board pos) = Eval (AllReachableFunc team board pos GetAllLeft)
+data AllReachableLeft :: Team -> BoardDecorator -> Position -> Exp [Position]
+type instance Eval (AllReachableLeft team boardDec pos) = Eval (AllReachableFunc team boardDec pos GetAllLeft)
 
-data AllReachableRight :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableRight team board pos) = Eval (AllReachableFunc team board pos GetAllRight)
+data AllReachableRight :: Team -> BoardDecorator -> Position -> Exp [Position]
+type instance Eval (AllReachableRight team boardDec pos) = Eval (AllReachableFunc team boardDec pos GetAllRight)
 
-data AllReachableAbove :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableAbove team board pos) = Eval (AllReachableFunc team board pos GetAllAbove)
+data AllReachableAbove :: Team -> BoardDecorator -> Position -> Exp [Position]
+type instance Eval (AllReachableAbove team boardDec pos) = Eval (AllReachableFunc team boardDec pos GetAllAbove)
 
-data AllReachableBelow :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableBelow team board pos) = Eval (AllReachableFunc team board pos GetAllBelow)
+data AllReachableBelow :: Team -> BoardDecorator -> Position -> Exp [Position]
+type instance Eval (AllReachableBelow team boardDec pos) = Eval (AllReachableFunc team boardDec pos GetAllBelow)
 
-data AllReachableStraightLine :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableStraightLine team board pos) = Eval (Concat (Eval (Map (AllReachableFunc team board pos) '[ GetAllLeft, GetAllRight, GetAllAbove, GetAllBelow ])))
+data AllReachableStraightLine :: Team -> BoardDecorator -> Position -> Exp [Position]
+type instance Eval (AllReachableStraightLine team boardDec pos) = Eval (Concat (Eval (Map (AllReachableFunc team boardDec pos) '[ GetAllLeft, GetAllRight, GetAllAbove, GetAllBelow ])))
 
-data AllReachableLineAndDiag :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableLineAndDiag team board pos) = (Eval (AllReachableStraightLine team board pos)) ++ (Eval (AllReachableDiag team board pos))
+data AllReachableLineAndDiag :: Team -> BoardDecorator -> Position -> Exp [Position]
+type instance Eval (AllReachableLineAndDiag team boardDec pos) = (Eval (AllReachableStraightLine team boardDec pos)) ++ (Eval (AllReachableDiag team boardDec pos))
 
 -- Reachable square type families for all diagonal directions at once: helpful
 -- for Bishops and Queens!
-data AllReachableDiag :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableDiag team board pos) = Eval (Concat (Eval (Map (AllReachableFunc team board pos) '[ GetAllDiagNW, GetAllDiagSW, GetAllDiagSE, GetAllDiagNE ])))
+data AllReachableDiag :: Team -> BoardDecorator -> Position -> Exp [Position]
+type instance Eval (AllReachableDiag team boardDec pos) = Eval (Concat (Eval (Map (AllReachableFunc team boardDec pos) '[ GetAllDiagNW, GetAllDiagSW, GetAllDiagSE, GetAllDiagNE ])))
 
 -- Reachable square type families for each diagonal direction
-data AllReachableDiagNW :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableDiagNW team board pos) = Eval (AllReachableFunc team board pos GetAllDiagNW)
+data AllReachableDiagNW :: Team -> BoardDecorator -> Position -> Exp [Position]
+type instance Eval (AllReachableDiagNW team boardDec pos) = Eval (AllReachableFunc team boardDec pos GetAllDiagNW)
 
-data AllReachableDiagSW :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableDiagSW team board pos) = Eval (AllReachableFunc team board pos GetAllDiagSW)
+data AllReachableDiagSW :: Team -> BoardDecorator -> Position -> Exp [Position]
+type instance Eval (AllReachableDiagSW team boardDec pos) = Eval (AllReachableFunc team boardDec pos GetAllDiagSW)
 
-data AllReachableDiagSE :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableDiagSE team board pos) = Eval (AllReachableFunc team board pos GetAllDiagSE)
+data AllReachableDiagSE :: Team -> BoardDecorator -> Position -> Exp [Position]
+type instance Eval (AllReachableDiagSE team boardDec pos) = Eval (AllReachableFunc team boardDec pos GetAllDiagSE)
 
-data AllReachableDiagNE :: Team -> Board -> Position -> Exp [Position]
-type instance Eval (AllReachableDiagNE team board pos) = Eval (AllReachableFunc team board pos GetAllDiagNE)
+data AllReachableDiagNE :: Team -> BoardDecorator -> Position -> Exp [Position]
+type instance Eval (AllReachableDiagNE team boardDec pos) = Eval (AllReachableFunc team boardDec pos GetAllDiagNE)
 
 -- Prunes a list for all spaces taken up by a piece of the same team
 -- (Perfect for kinds and knights!)
-data AllReachableGivenList :: Team -> Board -> [Position] -> Exp [Position]
-type instance Eval (AllReachableGivenList team board list) = Eval (Filter (FromMaybe True (Not . HasTeam team) . GetPieceAt board) list)
+data AllReachableGivenList :: Team -> BoardDecorator -> [Position] -> Exp [Position]
+type instance Eval (AllReachableGivenList team boardDec list) = Eval (Filter (FromMaybe True (Not . HasTeam team) . GetPieceAtDec boardDec) list)
 
 -- General function, for taking the first N reachable positions from a particular direction.
 -- NOTE: Relies on each directional function giving them in order of distance from the player
 -- NOTE: Does not work with AllReachableDiag, as that will only be in one direction.
-data NReachableFunc :: Team -> Board -> Position -> (Team -> Board -> Position -> Exp [Position]) -> TL.Nat -> Exp [Position]
-type instance Eval (NReachableFunc team board pos f n) = Eval (Take n (Eval (f team board pos)))
+data NReachableFunc :: Team -> BoardDecorator -> Position -> (Team -> BoardDecorator -> Position -> Exp [Position]) -> TL.Nat -> Exp [Position]
+type instance Eval (NReachableFunc team boardDec pos f n) = Eval (Take n (Eval (f team boardDec pos)))
 
-data NReachableDiagNW :: Team -> Board -> Position -> TL.Nat -> Exp [Position]
-type instance Eval (NReachableDiagNW team board pos n) = Eval (NReachableFunc team board pos AllReachableDiagNW n)
+data NReachableDiagNW :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp [Position]
+type instance Eval (NReachableDiagNW team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableDiagNW n)
 
-data NReachableDiagNE :: Team -> Board -> Position -> TL.Nat -> Exp [Position]
-type instance Eval (NReachableDiagNE team board pos n) = Eval (NReachableFunc team board pos AllReachableDiagNE n)
+data NReachableDiagNE :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp [Position]
+type instance Eval (NReachableDiagNE team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableDiagNE n)
 
-data NReachableDiagSW :: Team -> Board -> Position -> TL.Nat -> Exp [Position]
-type instance Eval (NReachableDiagSW team board pos n) = Eval (NReachableFunc team board pos AllReachableDiagSW n)
+data NReachableDiagSW :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp [Position]
+type instance Eval (NReachableDiagSW team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableDiagSW n)
 
-data NReachableDiagSE :: Team -> Board -> Position -> TL.Nat -> Exp [Position]
-type instance Eval (NReachableDiagSE team board pos n) = Eval (NReachableFunc team board pos AllReachableDiagSE n)
+data NReachableDiagSE :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp [Position]
+type instance Eval (NReachableDiagSE team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableDiagSE n)
 
-data NReachableBelow :: Team -> Board -> Position -> TL.Nat -> Exp [Position]
-type instance Eval (NReachableBelow team board pos n) = Eval (NReachableFunc team board pos AllReachableBelow n)
+data NReachableBelow :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp [Position]
+type instance Eval (NReachableBelow team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableBelow n)
 
-data NReachableAbove :: Team -> Board -> Position -> TL.Nat -> Exp [Position]
-type instance Eval (NReachableAbove team board pos n) = Eval (NReachableFunc team board pos AllReachableAbove n)
+data NReachableAbove :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp [Position]
+type instance Eval (NReachableAbove team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableAbove n)
 
-data NReachableLeft :: Team -> Board -> Position -> TL.Nat -> Exp [Position]
-type instance Eval (NReachableLeft team board pos n) = Eval (NReachableFunc team board pos AllReachableLeft n)
+data NReachableLeft :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp [Position]
+type instance Eval (NReachableLeft team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableLeft n)
 
-data NReachableRight :: Team -> Board -> Position -> TL.Nat -> Exp [Position]
-type instance Eval (NReachableRight team board pos n) = Eval (NReachableFunc team board pos AllReachableRight n)
+data NReachableRight :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp [Position]
+type instance Eval (NReachableRight team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableRight n)
 
 data GetOneLeft :: Position -> Exp (Maybe Position)
 type instance Eval (GetOneLeft (At col row)) = Eval (Eval ((S Z) :- col) >>= ((CW Just) . ((Flip (CW2 At)) row)))
@@ -279,198 +279,198 @@ type instance Eval (GetOneRight (At col row)) = Eval (Eval ((S Z) :+ col) >>= ((
 
 -- The pawn is the only piece whose attack rules differ from its' movement rules;
 -- so it requires a special case.
-data PawnReachableAbove :: Board -> Position -> TL.Nat -> Exp [Position]
-type instance Eval (PawnReachableAbove board pos n) = Eval (GetFreePositions (Eval (NReachableAbove White board pos n)) board)
+data PawnReachableAbove :: BoardDecorator -> Position -> TL.Nat -> Exp [Position]
+type instance Eval (PawnReachableAbove boardDec pos n) = Eval (GetFreePositions (Eval (NReachableAbove White boardDec pos n)) boardDec)
 
-data PawnReachableBelow :: Board -> Position -> TL.Nat -> Exp [Position]
-type instance Eval (PawnReachableBelow board pos n) = Eval (GetFreePositions (Eval (NReachableBelow Black board pos n)) board)
+data PawnReachableBelow :: BoardDecorator -> Position -> TL.Nat -> Exp [Position]
+type instance Eval (PawnReachableBelow boardDec pos n) = Eval (GetFreePositions (Eval (NReachableBelow Black boardDec pos n)) boardDec)
 
-data IsPieceAt :: Board -> Position -> Exp Bool
-type instance Eval (IsPieceAt board pos) = Eval (IsJust (Eval (GetPieceAt board pos)))
+data IsPieceAt :: BoardDecorator -> Position -> Exp Bool
+type instance Eval (IsPieceAt boardDec pos) = Eval (IsJust (Eval (GetPieceAtDec boardDec pos)))
 
-data IsKingAt :: Team -> Board -> Position -> Exp Bool
-type instance Eval (IsKingAt team board pos) = Eval (FromMaybe False (HasTeam team .&. IsKing) (Eval (GetPieceAt board pos)))
+data IsKingAt :: Team -> BoardDecorator -> Position -> Exp Bool
+type instance Eval (IsKingAt team boardDec pos) = Eval (FromMaybe False (HasTeam team .&. IsKing) (Eval (GetPieceAtDec boardDec pos)))
 
-data IsQueenAt :: Board -> Position -> Exp Bool
-type instance Eval (IsQueenAt board pos) = Eval (FromMaybe False IsQueen (Eval (GetPieceAt board pos)))
+data IsQueenAt :: BoardDecorator -> Position -> Exp Bool
+type instance Eval (IsQueenAt boardDec pos) = Eval (FromMaybe False IsQueen (Eval (GetPieceAtDec boardDec pos)))
 
-data GetFreePositions :: [Position] -> Board -> Exp [Position]
+data GetFreePositions :: [Position] -> BoardDecorator -> Exp [Position]
 type instance Eval (GetFreePositions '[] _) = '[]
-type instance Eval (GetFreePositions (p ': ps) board) = Eval (If (Eval ((Eval (IsPieceAt board p)) :||: ((Not . IsValidPosition) p))) (GetFreePositions ps board) (ID (p ': (Eval (GetFreePositions ps board)))))
+type instance Eval (GetFreePositions (p ': ps) boardDec) = Eval (If (Eval ((Eval (IsPieceAt boardDec p)) :||: ((Not . IsValidPosition) p))) (GetFreePositions ps boardDec) (ID (p ': (Eval (GetFreePositions ps boardDec)))))
 
 -- :k Foldr :: (Row -> [Pos] -> Exp [Pos]) -> [Pos] -> [Row] -> Exp [Pos]
-data GetUnderAttackPositions :: Team -> Board -> Exp [Position]
-type instance Eval (GetUnderAttackPositions team board) = Eval (Foldr (AddRowMovesToList team board) '[] board)
+data GetUnderAttackPositions :: Team -> BoardDecorator -> Exp [Position]
+type instance Eval (GetUnderAttackPositions team boardDec) = Eval (Foldr (AddRowMovesToList team boardDec) '[] (GetBoard boardDec))
 
-data AddRowMovesToList :: Team -> Board -> Row -> [Position] -> Exp [Position]
-type instance Eval (AddRowMovesToList team board row list) = Eval (GetRowUnderAttackPositions team board row) ++ list
+data AddRowMovesToList :: Team -> BoardDecorator -> Row -> [Position] -> Exp [Position]
+type instance Eval (AddRowMovesToList team boardDec row list) = Eval (GetRowUnderAttackPositions team boardDec row) ++ list
 
 -- :k Foldr :: (Maybe Piece -> [Pos] -> Exp [Pos]) -> [Pos] -> [Maybe Piece] -> Exp [Pos]
-data GetRowUnderAttackPositions :: Team -> Board -> Row -> Exp [Position]
-type instance Eval (GetRowUnderAttackPositions team board row) = Eval (Foldr (AddMovesToList team board) '[] row)
+data GetRowUnderAttackPositions :: Team -> BoardDecorator -> Row -> Exp [Position]
+type instance Eval (GetRowUnderAttackPositions team boardDec row) = Eval (Foldr (AddMovesToList team boardDec) '[] row)
 
-data AddMovesToList :: Team -> Board -> Maybe Piece -> [Position] -> Exp [Position]
-type instance Eval (AddMovesToList team board maybePiece list) = Eval (FromMaybe '[] ((Flip PieceAttackList) board) (Eval (If (Eval (MaybeIf (HasTeam team) maybePiece)) (ID maybePiece) (ID Nothing)))) ++ list
+data AddMovesToList :: Team -> BoardDecorator -> Maybe Piece -> [Position] -> Exp [Position]
+type instance Eval (AddMovesToList team boardDec maybePiece list) = Eval (FromMaybe '[] ((Flip PieceAttackList) boardDec) (Eval (If (Eval (MaybeIf (HasTeam team) maybePiece)) (ID maybePiece) (ID Nothing)))) ++ list
 
 type family NoKingError (team :: Team) where
-    NoKingError team = TL.TypeError (TL.Text ("There is no " ++ TypeShow team ++ " King on the board!"))
+    NoKingError team = TL.TypeError (TL.Text ("There is no " ++ TypeShow team ++ " King on the boardDec!"))
 
-data FindKing :: Team -> Board -> Exp Piece
-type instance Eval (FindKing team board) = Eval (FromMaybe (NoKingError team) FromJust (Eval (Find IsJust (Eval (FindKingInRow team <$> board)))))
+-- TODO: Optimise by including king positions in BoardDecorator??
+data FindKing :: Team -> BoardDecorator -> Exp Piece
+type instance Eval (FindKing team boardDec) = Eval (FromMaybe (NoKingError team) FromJust (Eval (Find IsJust (Eval (FindKingInRow team <$> (GetBoard boardDec))))))
 
 data FindKingInRow :: Team -> Row -> Exp (Maybe Piece)
 type instance Eval (FindKingInRow team row) = Eval (Join (Eval (Find (MaybeIf (IsKing .&. HasTeam team)) row)))
 
-data FindKingPosition :: Team -> Board -> Exp Position
-type instance Eval (FindKingPosition team board) = Eval (PiecePosition (Eval (FindKing team board)))
+data FindKingPosition :: Team -> BoardDecorator -> Exp Position
+type instance Eval (FindKingPosition team boardDec) = Eval (PiecePosition (Eval (FindKing team boardDec)))
 
-data IsKingInCheck :: Team -> Board -> Exp Bool
--- type instance Eval (IsKingInCheck team board) = Eval (Eval (FindKingPosition team board) `In` Eval (GetUnderAttackPositions (Eval (OppositeTeam team)) board))
-type instance Eval (IsKingInCheck team board) = Eval (Any (IsKingAt team board) (Eval (GetUnderAttackPositions (Eval (OppositeTeam team)) board)))
--- type instance Eval (IsKingInCheck team board) = False  -- Proves that this function is a major bottleneck
+data IsKingInCheck :: Team -> BoardDecorator -> Exp Bool
+-- type instance Eval (IsKingInCheck team boardDec) = Eval (Eval (FindKingPosition team boardDec) `In` Eval (GetUnderAttackPositions (Eval (OppositeTeam team)) boardDec))
+type instance Eval (IsKingInCheck team boardDec) = Eval (Any (IsKingAt team boardDec) (Eval (GetUnderAttackPositions (Eval (OppositeTeam team)) boardDec)))
+-- type instance Eval (IsKingInCheck team boardDec) = False  -- Proves that this function is a major bottleneck
 
 -- This function just checks the spots a piece can move to; it does not handle moving itself.
 -- That is in the other function, named Move.
--- Returns an empty list if the board is empty at that position!
+-- Returns an empty list if the boardDec is empty at that position!
 -- NOTE: This allows pieces to state that they can move to the King's position; but this is just for check purposes. They can't actually take the king.
-data CalculateValidMoves :: Position -> Board -> Exp [Position]
-type instance Eval (CalculateValidMoves pos board) = Eval (FromMaybe '[] ((Flip PieceMoveList) board) (Eval (GetPieceAt board pos)))
+data CalculateValidMoves :: Position -> BoardDecorator -> Exp [Position]
+type instance Eval (CalculateValidMoves pos boardDec) = Eval (FromMaybe '[] ((Flip PieceMoveList) boardDec) (Eval (GetPieceAtDec boardDec pos)))
 
 -- TODO: Check that the piece's reported position is its' actual position
 -- TODO: Test all this!!! Near-urgently!
-data PieceMoveList :: Piece -> Board -> Exp [Position]
-type instance Eval (PieceMoveList (MkPiece team Pawn info) board)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece team Pawn info) board) (PawnPostStart (MkPiece team Pawn info) board))
-type instance Eval (PieceMoveList (MkPiece team Bishop info) board) = Eval (AllReachableDiag team board (Eval (GetPosition info)))
-type instance Eval (PieceMoveList (MkPiece team Knight info) board) = Eval (AllReachableGivenList team board (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
-type instance Eval (PieceMoveList (MkPiece team Rook info) board)   = Eval (AllReachableStraightLine team board (Eval (GetPosition info)))
-type instance Eval (PieceMoveList (MkPiece team Queen info) board)  = Eval (AllReachableLineAndDiag team board (Eval (GetPosition info)))
-type instance Eval (PieceMoveList (MkPiece team King info) board)   = Eval (AllReachableGivenList team board (Eval (GetAdjacent (Eval (GetPosition info)))))
+data PieceMoveList :: Piece -> BoardDecorator -> Exp [Position]
+type instance Eval (PieceMoveList (MkPiece team Pawn info) boardDec)   = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece team Pawn info) boardDec) (PawnPostStart (MkPiece team Pawn info) boardDec))
+type instance Eval (PieceMoveList (MkPiece team Bishop info) boardDec) = Eval (AllReachableDiag team boardDec (Eval (GetPosition info)))
+type instance Eval (PieceMoveList (MkPiece team Knight info) boardDec) = Eval (AllReachableGivenList team boardDec (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
+type instance Eval (PieceMoveList (MkPiece team Rook info) boardDec)   = Eval (AllReachableStraightLine team boardDec (Eval (GetPosition info)))
+type instance Eval (PieceMoveList (MkPiece team Queen info) boardDec)  = Eval (AllReachableLineAndDiag team boardDec (Eval (GetPosition info)))
+type instance Eval (PieceMoveList (MkPiece team King info) boardDec)   = Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (Eval (GetPosition info)))))
 
-data PieceAttackList :: Piece -> Board -> Exp [Position]
-type instance Eval (PieceAttackList (MkPiece team Pawn info) board)   = Eval (PawnTakePositions (MkPiece team Pawn info) board)
-type instance Eval (PieceAttackList (MkPiece team Bishop info) board) = Eval (AllReachableDiag team board (Eval (GetPosition info)))
-type instance Eval (PieceAttackList (MkPiece team Knight info) board) = Eval (AllReachableGivenList team board (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
-type instance Eval (PieceAttackList (MkPiece team Rook info) board)   = Eval (AllReachableStraightLine team board (Eval (GetPosition info)))
-type instance Eval (PieceAttackList (MkPiece team Queen info) board)  = Eval (AllReachableLineAndDiag team board (Eval (GetPosition info)))
-type instance Eval (PieceAttackList (MkPiece team King info) board)   = Eval (AllReachableGivenList team board (Eval (GetAdjacent (Eval (GetPosition info)))))
+data PieceAttackList :: Piece -> BoardDecorator -> Exp [Position]
+type instance Eval (PieceAttackList (MkPiece team Pawn info) boardDec)   = Eval (PawnTakePositions (MkPiece team Pawn info) boardDec)
+type instance Eval (PieceAttackList (MkPiece team Bishop info) boardDec) = Eval (AllReachableDiag team boardDec (Eval (GetPosition info)))
+type instance Eval (PieceAttackList (MkPiece team Knight info) boardDec) = Eval (AllReachableGivenList team boardDec (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
+type instance Eval (PieceAttackList (MkPiece team Rook info) boardDec)   = Eval (AllReachableStraightLine team boardDec (Eval (GetPosition info)))
+type instance Eval (PieceAttackList (MkPiece team Queen info) boardDec)  = Eval (AllReachableLineAndDiag team boardDec (Eval (GetPosition info)))
+type instance Eval (PieceAttackList (MkPiece team King info) boardDec)   = Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (Eval (GetPosition info)))))
 
 -- First boolean argument determines the reach - the King check occurs if it is true,
 -- and it does not if it is False.
-data PieceCanReachKingCheck :: Bool -> Piece -> Position -> Board -> Exp Bool
-type instance Eval (PieceCanReachKingCheck True piece pos board) = Eval (Eval (pos `In` Eval (PieceMoveList piece board)) :&&: ((Not . IsKingAt (Eval (OppositeTeam (Eval (PieceTeam piece)))) board) pos))
-type instance Eval (PieceCanReachKingCheck False piece pos board) = Eval (pos `In` Eval (PieceMoveList piece board))
+data PieceCanReachKingCheck :: Bool -> Piece -> Position -> BoardDecorator -> Exp Bool
+type instance Eval (PieceCanReachKingCheck True piece pos boardDec) = Eval (Eval (pos `In` Eval (PieceMoveList piece boardDec)) :&&: ((Not . IsKingAt (Eval (OppositeTeam (Eval (PieceTeam piece)))) boardDec) pos))
+type instance Eval (PieceCanReachKingCheck False piece pos boardDec) = Eval (pos `In` Eval (PieceMoveList piece boardDec))
 
-data PieceCanMoveTo :: Piece -> Position -> Board -> Exp Bool
-type instance Eval (PieceCanMoveTo piece pos board) = Eval (PieceCanReachKingCheck True piece pos board)
+data PieceCanMoveTo :: Piece -> Position -> BoardDecorator -> Exp Bool
+type instance Eval (PieceCanMoveTo piece pos boardDec) = Eval (PieceCanReachKingCheck True piece pos boardDec)
 
-data CanMoveTo :: Position -> Position -> Board -> Exp Bool
-type instance Eval (CanMoveTo fromPos toPos board) = Eval (FromMaybe False ((FlipToLast PieceCanMoveTo) toPos board) (Eval (GetPieceAt board fromPos)))
+data CanMoveTo :: Position -> Position -> BoardDecorator -> Exp Bool
+type instance Eval (CanMoveTo fromPos toPos boardDec) = Eval (FromMaybe False ((FlipToLast PieceCanMoveTo) toPos boardDec) (Eval (GetPieceAtDec boardDec fromPos)))
 
-data PieceCanReach :: Piece -> Position -> Board -> Exp Bool
-type instance Eval (PieceCanReach piece pos board) = Eval (PieceCanReachKingCheck False piece pos board)
+data PieceCanReach :: Piece -> Position -> BoardDecorator -> Exp Bool
+type instance Eval (PieceCanReach piece pos boardDec) = Eval (PieceCanReachKingCheck False piece pos boardDec)
 
-data CanReach :: Position -> Position -> Board -> Exp Bool
-type instance Eval (CanReach fromPos toPos board) = Eval (FromMaybe False ((FlipToLast PieceCanReach) toPos board) (Eval (GetPieceAt board fromPos)))
+data CanReach :: Position -> Position -> BoardDecorator -> Exp Bool
+type instance Eval (CanReach fromPos toPos boardDec) = Eval (FromMaybe False ((FlipToLast PieceCanReach) toPos boardDec) (Eval (GetPieceAtDec boardDec fromPos)))
 
 -- Type family for where a pawn can move when it is in its' starting position
 -- TODO: Throw a type error if the Pawn has already moved??
-data PawnStartMove :: Piece -> Board -> Exp [Position]
-type instance Eval (PawnStartMove pawn board) = (Eval (PawnMove pawn board 2)) ++ (Eval (PawnTakePositions pawn board))
+data PawnStartMove :: Piece -> BoardDecorator -> Exp [Position]
+type instance Eval (PawnStartMove pawn boardDec) = (Eval (PawnMove pawn boardDec 2)) ++ (Eval (PawnTakePositions pawn boardDec))
 
 -- Type family for getting the initial pawn two-forward move!
-data PawnMove :: Piece -> Board -> TL.Nat -> Exp [Position]
-type instance Eval (PawnMove (MkPiece Black Pawn info) board n) = Eval (PawnReachableBelow board (Eval (GetPosition info)) n)
-type instance Eval (PawnMove (MkPiece White Pawn info) board n) = Eval (PawnReachableAbove board (Eval (GetPosition info)) n)
+data PawnMove :: Piece -> BoardDecorator -> TL.Nat -> Exp [Position]
+type instance Eval (PawnMove (MkPiece Black Pawn info) boardDec n) = Eval (PawnReachableBelow boardDec (Eval (GetPosition info)) n)
+type instance Eval (PawnMove (MkPiece White Pawn info) boardDec n) = Eval (PawnReachableAbove boardDec (Eval (GetPosition info)) n)
 
 -- Pawns can take diagonally in front of themselves: so this gets those positions if a take is possible!
-data PawnTakePositions :: Piece -> Board -> Exp [Position]
-type instance Eval (PawnTakePositions (MkPiece Black Pawn info) board) = (Eval (NReachableDiagSE Black board (Eval (GetPosition info)) 1)
-    ++ (Eval (NReachableDiagSW Black board (Eval (GetPosition info)) 1))
-    ++ (Eval (GetEnPassantPositions (MkPiece Black Pawn info) board)))
-type instance Eval (PawnTakePositions (MkPiece White Pawn info) board) = (Eval (NReachableDiagNE White board (Eval (GetPosition info)) 1)
-    ++ (Eval (NReachableDiagNW White board (Eval (GetPosition info)) 1))
-    ++ (Eval (GetEnPassantPositions (MkPiece White Pawn info) board)))
+data PawnTakePositions :: Piece -> BoardDecorator -> Exp [Position]
+type instance Eval (PawnTakePositions (MkPiece Black Pawn info) boardDec) = (Eval (NReachableDiagSE Black boardDec (Eval (GetPosition info)) 1)
+    ++ (Eval (NReachableDiagSW Black boardDec (Eval (GetPosition info)) 1))
+    ++ (Eval (GetEnPassantPositions (MkPiece Black Pawn info) boardDec)))
+type instance Eval (PawnTakePositions (MkPiece White Pawn info) boardDec) = (Eval (NReachableDiagNE White boardDec (Eval (GetPosition info)) 1)
+    ++ (Eval (NReachableDiagNW White boardDec (Eval (GetPosition info)) 1))
+    ++ (Eval (GetEnPassantPositions (MkPiece White Pawn info) boardDec)))
 
-data GetEnPassantPositions :: Piece -> Board -> Exp [Position]
-type instance Eval (GetEnPassantPositions (MkPiece team name info) board) = Eval (Filter (IsSpaceVulnerableToEnPassant team board) (Eval (GetLeftRightPositions (Eval (GetPosition info)))))
+data GetEnPassantPositions :: Piece -> BoardDecorator -> Exp [Position]
+type instance Eval (GetEnPassantPositions (MkPiece team name info) boardDec) = Eval (Filter (IsSpaceVulnerableToEnPassant team boardDec) (Eval (GetLeftRightPositions (Eval (GetPosition info)))))
 
 data GetLeftRightPositions :: Position -> Exp [Position]
 type instance Eval (GetLeftRightPositions pos) = Eval (FilterMap IsJust FromJust (Eval ('[GetOneLeft, GetOneRight] <*> '[ pos ])))
 
 -- Note that Team here is the ATTACKING TEAM
-data IsSpaceVulnerableToEnPassant :: Team -> Board -> Position -> Exp Bool
-type instance Eval (IsSpaceVulnerableToEnPassant team board pos) = Eval (FromMaybe False PawnMovedTwoLast (Eval (GetPieceAtWhich board pos (IsPawn .&. HasTeam (Eval (OppositeTeam team))))))
+data IsSpaceVulnerableToEnPassant :: Team -> BoardDecorator -> Position -> Exp Bool
+type instance Eval (IsSpaceVulnerableToEnPassant team boardDec pos) = Eval (FromMaybe False (PawnMovedTwoLast boardDec) (Eval (GetPieceAtWhichDec boardDec pos (IsPawn .&. HasTeam (Eval (OppositeTeam team))))))
 
-data PawnMovedTwoLast :: Piece -> Exp Bool
-type instance Eval (PawnMovedTwoLast piece) = Eval (If (Eval (HasTeam White piece)) 
-    (Eval (LastPieceToMove piece) :&&: (((HasRow Nat4 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) piece))
-    (Eval (LastPieceToMove piece) :&&: (((HasRow Nat5 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) piece)))
+data PawnMovedTwoLast :: BoardDecorator -> Piece -> Exp Bool
+type instance Eval (PawnMovedTwoLast boardDec piece) = Eval (If (Eval (HasTeam White piece)) 
+    (Eval (LastPieceToMove boardDec piece) :&&: (((HasRow Nat4 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) piece))
+    (Eval (LastPieceToMove boardDec piece) :&&: (((HasRow Nat5 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) piece)))
 
-data PawnPostStart :: Piece -> Board -> Exp [Position]
-type instance Eval (PawnPostStart pawn board) = (Eval (PawnMove pawn board 1)) ++ (Eval (PawnTakePositions pawn board))
-
--- New datatype to hold the board, as well as some intermediate state
--- TODO: Improve to contain the position of the piece that last moved??
-data BoardDecorator where
-    Dec :: Board -> Team -> BoardDecorator
+data PawnPostStart :: Piece -> BoardDecorator -> Exp [Position]
+type instance Eval (PawnPostStart pawn boardDec) = (Eval (PawnMove pawn boardDec 1)) ++ (Eval (PawnTakePositions pawn boardDec))
 
 -- Only moves a piece if the predicate passes, and the last piece to move was not this piece
+-- TODO: Improve so it doesn't discard team and position
 data MoveWithStateCheck :: (Piece -> Exp Bool) -> Position -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (MoveWithStateCheck p fromPos toPos (Dec board team))
-    = 'Dec (Eval (FromJust (Eval (IfValidThenMove (HasTeam (OppositeTeam' team) .&. p) fromPos toPos board)))) (OppositeTeam' team)
+type instance Eval (MoveWithStateCheck p fromPos toPos boardDec)
+    = Eval (FromJust (Eval (IfValidThenMove (HasTeam (OppositeTeam' (GetTeam boardDec)) .&. p) fromPos toPos boardDec)))
 
--- TODO: Scrap "Maybe Board" and just use board or type error??
-data IfValidThenMove :: (Piece -> Exp Bool) -> Position -> Position -> Board -> Exp (Maybe Board)
-type instance Eval (IfValidThenMove f fromPos toPos board)
-    = Eval (If (Eval (IsPieceAtWhich board fromPos f)) (Move fromPos toPos board) (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
+-- TODO: Scrap "Maybe BoardDecorator" and just use boardDec or type error??
+data IfValidThenMove :: (Piece -> Exp Bool) -> Position -> Position -> BoardDecorator -> Exp (Maybe BoardDecorator)
+type instance Eval (IfValidThenMove f fromPos toPos boardDec)
+    = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos f)) (Move fromPos toPos boardDec) (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
 
 -- Type family for actually moving the piece, and handling the side effects.
 -- TODO: Make sure that no moves allow you to stay in place
--- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the board)
+-- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the boardDec)
 -- TODO: Handle takes (i.e. moves that remove pieces from play)
 -- TODO: Ensure no moves place that piece's King into check
 -- TODO: Ensure that if the King is in check, the next move takes him out of it
 -- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
 -- TODO: Ensure that the moves go Black, White, Black, White...
-data Move :: Position -> Position -> Board -> Exp (Maybe Board)
-type instance Eval (Move fromPos toPos board) = Eval (If (Eval (CanMoveTo fromPos toPos board)) (MoveNoChecks fromPos toPos board) (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
+data Move :: Position -> Position -> BoardDecorator -> Exp (Maybe BoardDecorator)
+type instance Eval (Move fromPos toPos boardDec) = Eval (If (Eval (CanMoveTo fromPos toPos boardDec)) (MoveNoChecks fromPos toPos boardDec) (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
 
-data MoveNoChecks :: Position -> Position -> Board -> Exp (Maybe Board)
-type instance Eval (MoveNoChecks fromPos toPos board) = Eval (ClearPieceAt fromPos <$> (Eval (Eval (GetPieceAt board fromPos) >>= (FlipToLast MovePiece) toPos board)))
+data MoveNoChecks :: Position -> Position -> BoardDecorator -> Exp (Maybe BoardDecorator)
+type instance Eval (MoveNoChecks fromPos toPos boardDec) = Eval (ClearPieceAtDec fromPos <$> (Eval (Eval (GetPieceAtDec boardDec fromPos) >>= (FlipToLast MovePiece) toPos boardDec)))
 
 -- Does not check that it's valid the piece can move to the position, just moves them!
 -- For all pieces apart from the King and the Pawn, moving them is easy: they move
 -- a single piece, and have no side effects.
 -- But the King can castle, and the Pawn can do en passant and turn into a Queen!
 -- Very complicated stuff.
--- TODO: Check King is not in check after move (takes care of both problems - can't move into check and can't leave King in check either)
-data MovePiece :: Piece -> Position -> Board -> Exp (Maybe Board)
-type instance Eval (MovePiece piece toPos board) = Eval (Eval (MovePieceSwitch piece toPos board) >>= CheckNoCheck (Eval (PieceTeam piece)))
+-- Checks King is not in check after move (takes care of 2 problems - can't move into check and can't leave King in check either)
+data MovePiece :: Piece -> Position -> BoardDecorator -> Exp (Maybe BoardDecorator)
+type instance Eval (MovePiece piece toPos boardDec) = Eval (Eval (MovePieceSwitch piece toPos boardDec) >>= CheckNoCheck (Eval (PieceTeam piece)))
 
-data CheckNoCheck :: Team -> Board -> Exp (Maybe Board)
-type instance Eval (CheckNoCheck team board) = Eval (If (Eval (IsKingInCheck team board)) (ID Nothing) (ID $ Just board))
+data CheckNoCheck :: Team -> BoardDecorator -> Exp (Maybe BoardDecorator)
+type instance Eval (CheckNoCheck team boardDec) = Eval (If (Eval (IsKingInCheck team boardDec)) (ID Nothing) (ID $ Just boardDec))
 
-data MovePieceSwitch :: Piece -> Position -> Board -> Exp (Maybe Board)
-type instance Eval (MovePieceSwitch piece toPos board) = Just $ Eval (Switch '[
-    '(Eval (IsQueen piece), MovePieceTo piece toPos board),
-    '(Eval (IsRook piece), MovePieceTo piece toPos board),
-    '(Eval (IsBishop piece), MovePieceTo piece toPos board),
-    '(Eval (IsKnight piece), MovePieceTo piece toPos board),
-    '(Eval (IsKing piece), MoveKing piece toPos board),
-    '(Eval (IsPawn piece), MovePawn piece toPos board) ] )
+data MovePieceSwitch :: Piece -> Position -> BoardDecorator -> Exp (Maybe BoardDecorator)
+type instance Eval (MovePieceSwitch piece toPos boardDec) = Just $ Eval (Switch '[
+    '(Eval (IsQueen piece), MovePieceTo piece toPos boardDec),
+    '(Eval (IsRook piece), MovePieceTo piece toPos boardDec),
+    '(Eval (IsBishop piece), MovePieceTo piece toPos boardDec),
+    '(Eval (IsKnight piece), MovePieceTo piece toPos boardDec),
+    '(Eval (IsKing piece), MoveKing piece toPos boardDec),
+    '(Eval (IsPawn piece), MovePawn piece toPos boardDec) ] )
 
--- A variant of SetPieceAt, which increments the number of moves a piece has done,
+-- A variant of SetPieceAtDec, which increments the number of moves a piece has done,
 -- and sets that piece as the last piece having moved.
-data MovePieceTo :: Piece -> Position -> Board -> Exp Board
-type instance Eval (MovePieceTo piece toPos board) = Eval (SetLastPieceMoved toPos (Eval (SetPieceAt (Eval (IncrementMoves piece)) board toPos)))
+-- NOTE: This is the function that correctly sets the BoardDecorator.
+data MovePieceTo :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (MovePieceTo piece toPos boardDec) = Dec (GetBoard (Eval (SetLastPieceMoved toPos (Eval (SetPieceAtDec (Eval (IncrementMoves piece)) boardDec toPos))))) (Eval (PieceTeam piece)) toPos
 
 -- TODO: Handle castling (which should not increment the rook's move counter)
 -- Ensuring you don't move into check is handled by MovePiece
-data MoveKing :: Piece -> Position -> Board -> Exp Board
-type instance Eval (MoveKing king toPos board) = Eval (MovePieceTo king toPos board)
+-- TODO: Flow through MovePieceTo
+data MoveKing :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (MoveKing king toPos boardDec) = Eval (MovePieceTo king toPos boardDec)
 
 -- TODO: Allow players to choose what to promote their pawn to!
 -- TODO: Handle en passant in "else" branch
-data MovePawn :: Piece -> Position -> Board -> Exp Board
-type instance Eval (MovePawn (MkPiece Black Pawn info) (At col row) board) = Eval (If (Eval (row :==: Nat1)) (MovePieceTo (MkPiece Black Queen info) (At col row) board) (MovePieceTo (MkPiece Black Pawn info) (At col row) board))
-type instance Eval (MovePawn (MkPiece White Pawn info) (At col row) board) = Eval (If (Eval (row :==: Nat8)) (MovePieceTo (MkPiece White Queen info) (At col row) board) (MovePieceTo (MkPiece White Pawn info) (At col row) board))
+-- TODO: Flow through MovePieceTo
+data MovePawn :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (MovePawn (MkPiece Black Pawn info) (At col row) boardDec) = Eval (If (Eval (row :==: Nat1)) (MovePieceTo (MkPiece Black Queen info) (At col row) boardDec) (MovePieceTo (MkPiece Black Pawn info) (At col row) boardDec))
+type instance Eval (MovePawn (MkPiece White Pawn info) (At col row) boardDec) = Eval (If (Eval (row :==: Nat8)) (MovePieceTo (MkPiece White Queen info) (At col row) boardDec) (MovePieceTo (MkPiece White Pawn info) (At col row) boardDec))

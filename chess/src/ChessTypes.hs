@@ -47,8 +47,25 @@ type instance Eval (GetMoveCount (Info x _ _)) = x
 data GetPosition :: PieceInfo -> Exp Position
 type instance Eval (GetPosition (Info _ x _)) = x
 
-data LastPieceToMoveInfo :: PieceInfo -> Exp Bool
-type instance Eval (LastPieceToMoveInfo (Info _ _ x)) = x
+-- New datatype to hold the board, as well as some intermediate state
+-- TODO: Improve to contain the position of the piece that last moved??
+data BoardDecorator where
+    Dec :: Board -> Team -> Position -> BoardDecorator
+
+type family GetBoard (x :: BoardDecorator) :: Board where
+    GetBoard (Dec b _ _) = b
+
+type family SetBoard (b :: Board) (x :: BoardDecorator) :: BoardDecorator where
+   SetBoard b (Dec _ x y) = Dec b x y
+
+type family GetLastPosition (x :: BoardDecorator) :: Position where
+    GetLastPosition (Dec _ _ p) = p
+
+type family SetLastPosition (x :: Position) (y :: BoardDecorator) :: BoardDecorator where
+   SetLastPosition pos (Dec x y p) = Dec x y pos
+
+type family GetTeam (x :: BoardDecorator) :: Team where
+   GetTeam (Dec _ t _) = t
 
 -- TODO: Validity check??
 data SetPosition :: PieceInfo -> Position -> Exp PieceInfo
@@ -66,11 +83,8 @@ type instance Eval (PieceMoveCount (MkPiece _ _ info)) = Eval (GetMoveCount info
 data PiecePosition :: Piece -> Exp Position
 type instance Eval (PiecePosition (MkPiece _ _ info)) = Eval (GetPosition info)
 
-data LastPieceToMove :: Piece -> Exp Bool
-type instance Eval (LastPieceToMove (MkPiece _ _ info)) = Eval (LastPieceToMoveInfo info)
-
-data SetLastPieceToMove :: Piece -> Exp Piece
-type instance Eval (SetLastPieceToMove (MkPiece team name (Info x y _))) = (MkPiece team name (Info x y True))
+data LastPieceToMove :: BoardDecorator -> Piece -> Exp Bool
+type instance Eval (LastPieceToMove boardDec (MkPiece _ _ info)) = Eval ((Eval (GetPosition info)) :==: (GetLastPosition boardDec))
 
 data ResetLastMoved :: Piece -> Exp Piece
 type instance Eval (ResetLastMoved (MkPiece team name (Info x y _))) = (MkPiece team name (Info x y False))
@@ -78,11 +92,11 @@ type instance Eval (ResetLastMoved (MkPiece team name (Info x y _))) = (MkPiece 
 data ResetLastPieceMoved :: Board -> Exp Board
 type instance Eval (ResetLastPieceMoved board) = Eval ((Map (Map ResetLastMoved)) <$> board)
 
-data SetLastPieceMoved :: Position -> Board -> Exp Board
-type instance Eval (SetLastPieceMoved pos board) = Eval (ApplyFuncAt SetLastPieceToMove (Eval (ResetLastPieceMoved board)) pos)
+data IsLastPieceMovedAt :: Position -> BoardDecorator -> Exp Bool
+type instance Eval (IsLastPieceMovedAt pos boardDec) = Eval (pos :==: GetLastPosition boardDec)
 
-data IsLastPieceMovedAt :: Position -> Board -> Exp Bool
-type instance Eval (IsLastPieceMovedAt pos board) = Eval (FromMaybe False LastPieceToMove (Eval (GetPieceAt board pos)))
+data SetLastPieceMoved :: Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (SetLastPieceMoved pos boardDec) = SetLastPosition pos boardDec
 
 data SetPiecePosition :: Piece -> Position -> Exp Piece
 type instance Eval (SetPiecePosition (MkPiece t n info) pos) = MkPiece t n (Eval (SetPosition info pos))
@@ -149,6 +163,9 @@ type instance Eval (GetPieceAt board pos) = Eval (If (Eval (IsValidPosition pos)
 data GetPieceAtNoChecks :: Board -> Position -> Exp (Maybe Piece)
 type instance Eval (GetPieceAtNoChecks board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CW (!!)) <$> (Eval (GetRow board row)))) <*> (Just ((ColToIndex col))))))))
 
+data GetPieceAtDec :: BoardDecorator -> Position -> Exp (Maybe Piece)
+type instance Eval (GetPieceAtDec boardDec pos) = Eval (GetPieceAt (GetBoard boardDec) pos)
+
 type family FromJust' (x :: Maybe a) :: a where
     FromJust' (Just x) = x
 
@@ -165,8 +182,14 @@ type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> x
 data GetPieceAtWhich :: Board -> Position -> (a -> Exp Bool) -> Exp (Maybe Piece)
 type instance Eval (GetPieceAtWhich board pos f) = Eval (MaybeWhich f (Eval (GetPieceAt board pos)))
 
+data GetPieceAtWhichDec :: BoardDecorator -> Position -> (a -> Exp Bool) -> Exp (Maybe Piece)
+type instance Eval (GetPieceAtWhichDec boardDec pos f) = Eval (GetPieceAtWhich (GetBoard boardDec) pos f)
+
 data IsPieceAtWhich :: Board -> Position -> (a -> Exp Bool) -> Exp Bool
 type instance Eval (IsPieceAtWhich board pos f) = Eval ((IsJust . (GetPieceAtWhich board pos)) f)
+
+data IsPieceAtWhichDec :: BoardDecorator -> Position -> (a -> Exp Bool) -> Exp Bool
+type instance Eval (IsPieceAtWhichDec boardDec pos f) = Eval (IsPieceAtWhich (GetBoard boardDec) pos f)
 
 data ApplyFuncAt :: (Piece -> Exp Piece) -> Board -> Position -> Exp Board
 type instance Eval (ApplyFuncAt f board pos) = Eval (FromMaybe board ((FlipToLast SetPieceAt) board pos . f) (Eval (GetPieceAt board pos)))
@@ -176,8 +199,14 @@ type instance Eval (SetPieceAt piece board pos) = Eval (If (Eval (IsValidPositio
 data SetPieceAtSwapped :: Piece -> Position -> Board -> Exp Board
 type instance Eval (SetPieceAtSwapped piece pos board) = Eval (SetPieceAt piece board pos)
 
+data SetPieceAtDec :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
+type instance Eval (SetPieceAtDec x boardDec z) = SetBoard (Eval (SetPieceAt x (GetBoard boardDec) z)) boardDec
+
 data ClearPieceAt :: Position -> Board -> Exp Board
 type instance Eval (ClearPieceAt (At col row) board) = Eval (SetRow board row (Eval (PutAt Nothing (ColToIndex col) (Eval (FromJust (Eval (GetRow board row)))))))
+
+data ClearPieceAtDec :: Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (ClearPieceAtDec pos boardDec) = SetBoard (Eval (ClearPieceAt pos (GetBoard boardDec))) boardDec
 
 -- TODO: Optimise to not use GetRow??
 data SetPieceAtNoChecks :: Piece -> Board -> Position -> Exp Board

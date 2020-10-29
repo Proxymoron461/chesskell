@@ -43,8 +43,9 @@ type SNat8 = 'SS SNat7
 
 -- Starts as black, because the first move needs to be white
 -- type Spec t = forall m. (t -> m) -> m
-chess :: Spec (Proxy (Dec StartBoard Black))
-chess cont = cont (Proxy @(Dec StartBoard Black))
+type StartPos = 'At A Nat1  -- An invalid position
+chess :: Spec (Proxy (Dec StartBoard Black StartPos))
+chess cont = cont (Proxy @(Dec StartBoard Black StartPos))
 -- chess cont = cont (Proxy :: Proxy (Dec StartBoard Black))
 
 data MoveArgs where
@@ -73,6 +74,8 @@ to :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) ->
       -> Spec (Proxy (Eval (MoveWithStateCheck (IsPiece n) fromPos toPos b)))
 to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: SPosition toPos)  cont
     = cont (Proxy @(Eval (MoveWithStateCheck (IsPiece n) fromPos toPos b)))
+
+-- TODO: "becomes", which allows promotion to whatever piece you say you should promote to
 
 end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
