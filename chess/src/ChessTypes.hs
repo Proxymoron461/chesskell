@@ -50,31 +50,28 @@ type instance Eval (GetPosition (Info _ x _)) = x
 -- New datatype to hold the board, as well as some intermediate state
 -- TODO: Improve to contain the position of the piece that last moved??
 data BoardDecorator where
-    Dec :: Board -> Team -> Position -> (Position, Position) -> [Position] -> BoardDecorator
+    Dec :: Board -> Team -> Position -> (Position, Position) -> BoardDecorator
 
 type family GetBoard (x :: BoardDecorator) :: Board where
-    GetBoard (Dec b _ _ _ _) = b
+    GetBoard (Dec b _ _ _) = b
 
 type family SetBoard (b :: Board) (x :: BoardDecorator) :: BoardDecorator where
-   SetBoard b (Dec _ w x y z) = Dec b w x y z
+   SetBoard b (Dec _ w x y) = Dec b w x y
 
 type family GetLastPosition (x :: BoardDecorator) :: Position where
-    GetLastPosition (Dec _ _ p _ _) = p
+    GetLastPosition (Dec _ _ p _) = p
 
 type family SetLastPosition (x :: Position) (y :: BoardDecorator) :: BoardDecorator where
-   SetLastPosition pos (Dec w x p y z) = Dec w x pos y z
+   SetLastPosition pos (Dec w x p y) = Dec w x pos y
 
 type family GetTeam (x :: BoardDecorator) :: Team where
-   GetTeam (Dec _ t _ _ _) = t
+   GetTeam (Dec _ t _ _) = t
 
 type family GetWhiteKingPosition (x :: BoardDecorator) :: Position where
-   GetWhiteKingPosition (Dec _ _ _ '(white, _) _) = white
+   GetWhiteKingPosition (Dec _ _ _ '(white, _)) = white
 
 type family GetBlackKingPosition (x :: BoardDecorator) :: Position where
-   GetBlackKingPosition (Dec _ _ _ '(_, black) _) = black
-
-type family GetEnPassants (x :: BoardDecorator) :: [Position] where
-   GetEnPassants (Dec _ _ _ _ xs) = xs
+   GetBlackKingPosition (Dec _ _ _ '(_, black)) = black
 
 -- TODO: Validity check??
 data SetPosition :: PieceInfo -> Position -> Exp PieceInfo
@@ -294,10 +291,10 @@ type family PieceRow (t :: Team) :: [Piece] where
         MkPiece t Knight StartInfo,
         MkPiece t Rook StartInfo ])
 
-type EmptyRow     = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
+type EmptyRow   = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
 
-type StartDec = Dec StartBoard Black (At A Nat1) '(At E Nat1, At E Nat8) '[]
+type StartDec = Dec StartBoard Black (At A Nat1) '(At E Nat1, At E Nat8)
 
 type StartBoard = ('Just
      ('MkPiece
