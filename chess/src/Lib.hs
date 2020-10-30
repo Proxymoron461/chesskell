@@ -384,28 +384,31 @@ type instance Eval (PawnMove (MkPiece Black Pawn info) boardDec n) = Eval (PawnR
 type instance Eval (PawnMove (MkPiece White Pawn info) boardDec n) = Eval (PawnReachableAbove boardDec (Eval (GetPosition info)) n)
 
 -- Pawns can take diagonally in front of themselves: so this gets those positions if a take is possible!
+-- TODO: Replace (++) with something a lil more efficient??
 data PawnTakePositions :: Piece -> BoardDecorator -> Exp [Position]
 type instance Eval (PawnTakePositions (MkPiece Black Pawn info) boardDec) = (Eval (NReachableDiagSE Black boardDec (Eval (GetPosition info)) 1)
     ++ (Eval (NReachableDiagSW Black boardDec (Eval (GetPosition info)) 1))
-    ++ (Eval (GetEnPassantPositions (MkPiece Black Pawn info) boardDec)))
+    ++ (Eval (GetEnPassantPosition (MkPiece Black Pawn info) boardDec)))
 type instance Eval (PawnTakePositions (MkPiece White Pawn info) boardDec) = (Eval (NReachableDiagNE White boardDec (Eval (GetPosition info)) 1)
     ++ (Eval (NReachableDiagNW White boardDec (Eval (GetPosition info)) 1))
-    ++ (Eval (GetEnPassantPositions (MkPiece White Pawn info) boardDec)))
+    ++ (Eval (GetEnPassantPosition (MkPiece White Pawn info) boardDec)))
 
-data GetEnPassantPositions :: Piece -> BoardDecorator -> Exp [Position]
-type instance Eval (GetEnPassantPositions (MkPiece team name info) boardDec) = Eval (Filter (IsSpaceVulnerableToEnPassant team boardDec) (Eval (GetLeftRightPositions (Eval (GetPosition info)))))
+-- TODO: Make it Position, not [Position] - only one space at a time is vulnerable to en passant!
+data GetEnPassantPosition :: Piece -> BoardDecorator -> Exp [Position]
+type instance Eval (GetEnPassantPosition piece boardDec) =
+    Eval (If (Eval ((GetLastPosition boardDec) `In` Eval (GetLeftRightPositions (Eval (PiecePosition piece)))))
+    (FromMaybe '[] (ListReturn . PiecePosition) (Eval (GetPieceAtWhichDec boardDec (GetLastPosition boardDec) (IsPawn .&. PawnMovedTwoLast))))  -- then
+    (ID '[]))  --else
+
+data ListReturn :: a -> Exp [a]
+type instance Eval (ListReturn x) = '[ x ]
 
 data GetLeftRightPositions :: Position -> Exp [Position]
 type instance Eval (GetLeftRightPositions pos) = Eval (FilterMap IsJust FromJust (Eval ('[GetOneLeft, GetOneRight] <*> '[ pos ])))
 
--- Note that Team here is the ATTACKING TEAM
-data IsSpaceVulnerableToEnPassant :: Team -> BoardDecorator -> Position -> Exp Bool
-type instance Eval (IsSpaceVulnerableToEnPassant team boardDec pos) = Eval (FromMaybe False (PawnMovedTwoLast boardDec) (Eval (GetPieceAtWhichDec boardDec pos (IsPawn .&. HasTeam (Eval (OppositeTeam team))))))
-
-data PawnMovedTwoLast :: BoardDecorator -> Piece -> Exp Bool
-type instance Eval (PawnMovedTwoLast boardDec piece) = Eval (If (Eval (HasTeam White piece)) 
-    (Eval (LastPieceToMove boardDec piece) :&&: (((HasRow Nat4 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) piece))
-    (Eval (LastPieceToMove boardDec piece) :&&: (((HasRow Nat5 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) piece)))
+data PawnMovedTwoLast :: Piece -> Exp Bool
+type instance Eval (PawnMovedTwoLast (MkPiece White Pawn info)) = Eval (((HasRow Nat4 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) (MkPiece White Pawn info))
+type instance Eval (PawnMovedTwoLast (MkPiece Black Pawn info)) = Eval (((HasRow Nat5 . PiecePosition) .&. (Equal (S Z) . PieceMoveCount)) (MkPiece Black Pawn info))
 
 data PawnPostStart :: Piece -> BoardDecorator -> Exp [Position]
 type instance Eval (PawnPostStart pawn boardDec) = (Eval (PawnMove pawn boardDec 1)) ++ (Eval (PawnTakePositions pawn boardDec))
