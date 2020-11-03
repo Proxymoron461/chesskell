@@ -79,8 +79,6 @@ to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceNam
 end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
 
--- TODO: Generate all the positions, with names like a4, h8, etc.
-
 _a1 :: SPosition ('At A Nat1)
 _a1 = SAt SA sNat1
 _a2 :: SPosition ('At A Nat2)
@@ -222,3 +220,10 @@ x = chess
     pawn _a2 to _a4
     pawn _a7 to _a6
     end
+
+-- Code should deal with:
+    -- Checkmate (compile or don't compile?)
+    -- Draw (can only move into check)
+    -- Trapped pieces
+
+-- TODO: Fix code not compiling at checkmate??
