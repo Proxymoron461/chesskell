@@ -315,15 +315,11 @@ type instance Eval (AddMovesToList team boardDec maybePiece list) = Eval (FromMa
 type family NoKingError (team :: Team) where
     NoKingError team = TL.TypeError (TL.Text ("There is no " ++ TypeShow team ++ " King on the boardDec!"))
 
--- TODO: Optimise by including king positions in BoardDecorator??
 data FindKing :: Team -> BoardDecorator -> Exp Piece
-type instance Eval (FindKing team boardDec) = Eval (FromMaybe (NoKingError team) FromJust (Eval (Find IsJust (Eval (FindKingInRow team <$> (GetBoard boardDec))))))
-
-data FindKingInRow :: Team -> Row -> Exp (Maybe Piece)
-type instance Eval (FindKingInRow team row) = Eval (Join (Eval (Find (MaybeIf (IsKing .&. HasTeam team)) row)))
+type instance Eval (FindKing team boardDec) = Eval ((FromJust . GetPieceAt (GetBoard boardDec)) (Eval (FindKingPosition team boardDec)))
 
 data FindKingPosition :: Team -> BoardDecorator -> Exp Position
-type instance Eval (FindKingPosition team boardDec) = Eval (PiecePosition (Eval (FindKing team boardDec)))
+type instance Eval (FindKingPosition team boardDec) = GetKingPosition team boardDec
 
 data IsKingInCheck :: Team -> BoardDecorator -> Exp Bool
 -- type instance Eval (IsKingInCheck team boardDec) = Eval (Eval (FindKingPosition team boardDec) `In` Eval (GetUnderAttackPositions (Eval (OppositeTeam team)) boardDec))
@@ -462,11 +458,9 @@ type instance Eval (MovePieceSwitch piece toPos boardDec) = Just $ Eval (Switch 
 -- A variant of SetPieceAtDec, which increments the number of moves a piece has done,
 -- and sets that piece as the last piece having moved.
 -- NOTE: This is the function that correctly sets the BoardDecorator.
--- TODO: Set king positions if the piece to be moved is a king
--- TODO: Set en passant positions if the last piece moved is a pawn
 data MovePieceTo :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (MovePieceTo piece toPos (Dec board team pos kings))
-    = Dec (GetBoard (Eval (SetLastPieceMoved toPos (Eval (SetPieceAtDec (Eval (IncrementMoves piece)) (Dec board team pos kings) toPos))))) (Eval (PieceTeam piece)) toPos kings
+    = Dec (GetBoard (Eval (SetLastPieceMoved toPos (Eval (SetPieceAtDec (Eval (IncrementMoves piece)) (Dec board team pos kings) toPos))))) (Eval (PieceTeam piece)) toPos (UpdateKings kings piece toPos)
 
 -- TODO: Handle castling (which should not increment the rook's move counter)
 -- Ensuring you don't move into check is handled by MovePiece

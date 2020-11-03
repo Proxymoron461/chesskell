@@ -67,11 +67,14 @@ type family SetLastPosition (x :: Position) (y :: BoardDecorator) :: BoardDecora
 type family GetTeam (x :: BoardDecorator) :: Team where
    GetTeam (Dec _ t _ _) = t
 
-type family GetWhiteKingPosition (x :: BoardDecorator) :: Position where
-   GetWhiteKingPosition (Dec _ _ _ '(white, _)) = white
+type family GetKingPosition (t :: Team) (x :: BoardDecorator) :: Position where
+   GetKingPosition White (Dec _ _ _ '(white, _)) = white
+   GetKingPosition Black (Dec _ _ _ '(_, black)) = black
 
-type family GetBlackKingPosition (x :: BoardDecorator) :: Position where
-   GetBlackKingPosition (Dec _ _ _ '(_, black)) = black
+type family UpdateKings (x :: (Position, Position)) (y :: Piece) (z :: Position) :: (Position, Position) where
+   UpdateKings '(whitePos, _) (MkPiece Black King _) toPos = '(whitePos, toPos)
+   UpdateKings '(_, blackPos) (MkPiece White King _) toPos = '(toPos, blackPos)
+   UpdateKings kings          _                      _     = kings
 
 -- TODO: Validity check??
 data SetPosition :: PieceInfo -> Position -> Exp PieceInfo
