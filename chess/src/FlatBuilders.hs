@@ -70,9 +70,9 @@ king (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b from
 
 -- data MoveWithStateCheck :: (Piece -> Exp Bool) -> Position -> Position -> BoardDecorator -> Exp BoardDecorator
 to :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) -> SPosition toPos
-      -> Spec (Proxy (Eval (MoveWithStateCheck (IsPiece n) fromPos toPos b)))
+      -> Spec (Proxy (Eval (MoveWithStateCheck n fromPos toPos b)))
 to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: SPosition toPos)  cont
-    = cont (Proxy @(Eval (MoveWithStateCheck (IsPiece n) fromPos toPos b)))
+    = cont (Proxy @(Eval (MoveWithStateCheck n fromPos toPos b)))
 
 -- TODO: "becomes", which allows promotion to whatever piece you say you should promote to
 

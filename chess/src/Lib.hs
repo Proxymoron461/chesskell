@@ -448,23 +448,24 @@ type instance Eval (PawnMovedTwoLast (MkPiece Black Pawn info)) = Eval (((HasRow
 data PawnPostStart :: Piece -> BoardDecorator -> Exp [Position]
 type instance Eval (PawnPostStart pawn boardDec) = (Eval (PawnMove pawn boardDec 1)) ++ (Eval (PawnTakePositions pawn boardDec))
 
--- Only moves a piece if the predicate passes, and the last piece to move was not this piece
--- TODO: Improve so it doesn't discard team and position
-data MoveWithStateCheck :: (Piece -> Exp Bool) -> Position -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (MoveWithStateCheck p fromPos toPos boardDec)
-    = Eval (IfValidThenMove (HasTeam (OppositeTeam' (GetTeam boardDec)) .&. p) fromPos toPos boardDec)
+-- Only moves a piece if it is of the correct type
+data MoveWithStateCheck :: PieceName -> Position -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (MoveWithStateCheck name fromPos toPos boardDec)
+    = Eval (IfPieceThenMove name fromPos toPos boardDec)
 
--- TODO: Scrap "BoardDecorator" and just use boardDec or type error??
-data IfValidThenMove :: (Piece -> Exp Bool) -> Position -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (IfValidThenMove f fromPos toPos boardDec)
-    = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos f)) (Move fromPos toPos boardDec) (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
+data IfPieceThenMove :: PieceName -> Position -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (IfPieceThenMove name fromPos toPos boardDec)
+    = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos (IsPiece name))) (Move fromPos toPos boardDec) (TE' (TL.Text ("The piece at: " ++ TypeShow fromPos ++ " is not a: " ++ TypeShow name ++ "."))))
 
--- Type family for actually moving the piece, and handling the side effects.
--- TODO: Type error if fromPos :==: toPos
+-- Type family for moving a piece, and putting it through a series of checks first
 -- TODO: Handle takes (i.e. moves that remove pieces from play)
--- TODO: List of functions checking validity, one for before, another for after move e.g. '[ CheckTeam, CheckCanMoveTo, ... ]
+-- TODO: Add some "after" checks as well as the existing "before" ones
 data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (Move fromPos toPos boardDec) = Eval (If (Eval (CanMoveTo fromPos toPos boardDec)) (MoveNoChecks fromPos toPos boardDec) (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
+type instance Eval (Move fromPos toPos boardDec) = Eval ((MoveNoChecks fromPos toPos . DoChecks '[
+    CanMoveCheck fromPos toPos,
+    NotSamePosCheck fromPos toPos,
+    NotLastToMoveCheck fromPos,
+    TeamCheck fromPos ]) boardDec)
 
 data MoveNoChecks :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
 -- type instance Eval (MoveNoChecks fromPos toPos boardDec) = Eval (ClearPieceAtDec fromPos <$> (Eval (Eval (GetPieceAtDec boardDec fromPos) >>= (FlipToLast MovePiece) toPos boardDec)))
@@ -484,6 +485,30 @@ data MovePiece :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
 -- type instance Eval (MovePiece piece toPos boardDec) = Eval (Eval (MovePieceSwitch piece toPos boardDec) >>= CheckNoCheck (Eval (PieceTeam piece)))
 type instance Eval (MovePiece piece toPos boardDec)
     = Eval ((CheckNoCheck (Eval (PieceTeam piece)) . MovePieceSwitch piece toPos) boardDec)
+
+data CanMoveCheck :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (CanMoveCheck fromPos toPos boardDec)
+    = Eval (If (Eval (CanMoveTo fromPos toPos boardDec))
+        (ID boardDec)
+        (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
+
+data NotSamePosCheck :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (NotSamePosCheck fromPos toPos boardDec)
+    = Eval (If (Eval (fromPos :==: toPos))
+        (TE' (TL.Text ("Moves from a position to that same position are not allowed.")))
+        (ID boardDec))
+
+data TeamCheck :: Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (TeamCheck fromPos boardDec)
+    = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos (HasTeam (OppositeTeam' (GetTeam boardDec)))))
+        (ID boardDec)
+        (TE' (TL.Text ("The same team cannot move twice in a row."))))
+
+data NotLastToMoveCheck :: Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (NotLastToMoveCheck fromPos boardDec)
+    = Eval (If (Eval (fromPos :==: (GetLastPosition boardDec)))
+        (TE' (TL.Text ("The same piece is not allowed to move twice in a row.")))
+        (ID boardDec))
 
 data CheckNoCheck :: Team -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (CheckNoCheck team boardDec) = Eval (If (Eval (IsKingInCheck team boardDec)) (TE' (TL.Text "IsKingInCheck failed!")) (ID boardDec))
