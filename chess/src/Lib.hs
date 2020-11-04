@@ -460,20 +460,16 @@ type instance Eval (IfValidThenMove f fromPos toPos boardDec)
     = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos f)) (Move fromPos toPos boardDec) (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
 
 -- Type family for actually moving the piece, and handling the side effects.
--- TODO: Make sure that no moves allow you to stay in place
--- TODO: Handle moves that can transform pieces (e.g. Pawn moving to the edge of the boardDec)
+-- TODO: Type error if fromPos :==: toPos
 -- TODO: Handle takes (i.e. moves that remove pieces from play)
--- TODO: Ensure no moves place that piece's King into check
--- TODO: Ensure that if the King is in check, the next move takes him out of it
--- TODO: Move the piece/pieces, update those pieces' position info, increment those pieces' move count
--- TODO: Ensure that the moves go Black, White, Black, White...
+-- TODO: List of functions checking validity, one for before, another for after move e.g. '[ CheckTeam, CheckCanMoveTo, ... ]
 data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (Move fromPos toPos boardDec) = Eval (If (Eval (CanMoveTo fromPos toPos boardDec)) (MoveNoChecks fromPos toPos boardDec) (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
 
 data MoveNoChecks :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
 -- type instance Eval (MoveNoChecks fromPos toPos boardDec) = Eval (ClearPieceAtDec fromPos <$> (Eval (Eval (GetPieceAtDec boardDec fromPos) >>= (FlipToLast MovePiece) toPos boardDec)))
 type instance Eval (MoveNoChecks fromPos toPos boardDec)
-    = Eval (FromMaybeLazy (TE' (TL.Text "Bleh bleh no good"))
+    = Eval (FromMaybeLazy (TE' (TL.Text "Something went wrong in: MoveNoChecks"))
         (ClearPieceAtDec fromPos . (FlipToLast MovePiece) toPos boardDec)
         (Eval (GetPieceAtDec boardDec fromPos)))
 
@@ -483,6 +479,7 @@ type instance Eval (MoveNoChecks fromPos toPos boardDec)
 -- But the King can castle, and the Pawn can do en passant and turn into a Queen!
 -- Very complicated stuff.
 -- Checks King is not in check after move (takes care of 2 problems - can't move into check and can't leave King in check either)
+-- TODO: Check that piece's team :==: OppositeTeam' (GetTeam (boardDec)), otherwise error
 data MovePiece :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
 -- type instance Eval (MovePiece piece toPos boardDec) = Eval (Eval (MovePieceSwitch piece toPos boardDec) >>= CheckNoCheck (Eval (PieceTeam piece)))
 type instance Eval (MovePiece piece toPos boardDec)
@@ -490,6 +487,10 @@ type instance Eval (MovePiece piece toPos boardDec)
 
 data CheckNoCheck :: Team -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (CheckNoCheck team boardDec) = Eval (If (Eval (IsKingInCheck team boardDec)) (TE' (TL.Text "IsKingInCheck failed!")) (ID boardDec))
+
+data DoChecks :: [ BoardDecorator -> Exp BoardDecorator ] -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (DoChecks '[]       boardDec) = boardDec
+type instance Eval (DoChecks (f ': fs) boardDec) = Eval ((DoChecks fs . f) boardDec)
 
 data MovePieceSwitch :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (MovePieceSwitch piece toPos boardDec) = Eval (Switch '[
