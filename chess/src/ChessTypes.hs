@@ -175,9 +175,6 @@ type instance Eval (GetPieceAtNoChecks board (At col row)) = Eval (Join (Eval (J
 data GetPieceAtDec :: BoardDecorator -> Position -> Exp (Maybe Piece)
 type instance Eval (GetPieceAtDec boardDec pos) = Eval (GetPieceAt (GetBoard boardDec) pos)
 
-type family FromJust' (x :: Maybe a) :: a where
-    FromJust' (Just x) = x
-
 data GPANCUgly :: Board -> Position -> Exp (Maybe Piece)
 type instance Eval (GPANCUgly (a :-> xs) (At col Nat1)) = VAUgly a (ColToIndex col)
 type instance Eval (GPANCUgly (a :-> b :-> c) (At col Nat2)) = VAUgly b (ColToIndex col)
@@ -268,6 +265,12 @@ type family ColToIndex (col :: Column) :: Nat where
     ColToIndex F = Nat5
     ColToIndex G = Nat6
     ColToIndex H = Nat7
+
+type family OneLeft (p :: Position) :: Position where
+   OneLeft (At col row) = At (FromJust' (Eval (Nat1 :- col))) row
+
+type family OneRight (p :: Position) :: Position where
+   OneRight (At col row) = At (FromJust' (Eval (Nat1 :+ col))) row
 
 -----------------------------------------------------------------------------------------------------
 

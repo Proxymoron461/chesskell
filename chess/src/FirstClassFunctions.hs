@@ -190,7 +190,11 @@ data IsNothing :: Maybe a -> Exp Bool
 type instance Eval (IsNothing x) = Eval ((Not . IsJust) x)
 
 data FromJust :: Maybe a -> Exp a
-type instance Eval (FromJust (Just x)) = x
+type instance Eval (FromJust x) = FromJust' x
+
+type family FromJust' (x :: Maybe a) :: a where
+    FromJust' (Just x) = x
+    -- FromJust' (TL.TypeError e) = TL.TypeError e
 
 data ToJust :: a -> Exp (Maybe a)
 type instance Eval (ToJust x) = Just x
