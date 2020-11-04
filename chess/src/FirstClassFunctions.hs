@@ -18,23 +18,33 @@ type family Eval (e :: Exp a) :: a
 -- Open type family for Show instances for types!
 type family TypeShow (x :: a) :: TL.Symbol
 
--- Show instances for Data.Type.Nat
-type instance TypeShow (Z) = "Z"
-type instance TypeShow (S n) = "S " ++ TypeShow n
+-- Show instances for both custom Nat and Data.Type.Nat
+type instance TypeShow (n :: Nat) = TypeShowNat n
+type instance TypeShow (n :: TL.Nat) = TypeShowTLNat n
 
-type instance TypeShow (n :: TL.Nat) = TypeShowNat n
+type family TypeShowTLNat (n :: TL.Nat) :: TL.Symbol where
+    TypeShowTLNat 0 = "0"
+    TypeShowTLNat 1 = "1"
+    TypeShowTLNat 2 = "2"
+    TypeShowTLNat 3 = "3"
+    TypeShowTLNat 4 = "4"
+    TypeShowTLNat 5 = "5"
+    TypeShowTLNat 6 = "6"
+    TypeShowTLNat 7 = "7"
+    TypeShowTLNat 8 = "8"
+    TypeShowTLNat n = TypeShow (Eval (TLNatToNat n))
 
-type family TypeShowNat (n :: TL.Nat) :: TL.Symbol where
-    TypeShowNat 0 = "0"
-    TypeShowNat 1 = "1"
-    TypeShowNat 2 = "2"
-    TypeShowNat 3 = "3"
-    TypeShowNat 4 = "4"
-    TypeShowNat 5 = "5"
-    TypeShowNat 6 = "6"
-    TypeShowNat 7 = "7"
-    TypeShowNat 8 = "8"
-    TypeShowNat n = TypeShow (Eval (TLNatToNat n))
+type family TypeShowNat (n :: Nat) :: TL.Symbol where
+    TypeShowNat Nat0 = "0"
+    TypeShowNat Nat1 = "1"
+    TypeShowNat Nat2 = "2"
+    TypeShowNat Nat3 = "3"
+    TypeShowNat Nat4 = "4"
+    TypeShowNat Nat5 = "5"
+    TypeShowNat Nat6 = "6"
+    TypeShowNat Nat7 = "7"
+    TypeShowNat Nat8 = "8"
+    TypeShowNat (S n) = "S " ++ TypeShowNat n
 
 data IsZero :: Nat -> Exp Bool
 type instance Eval (IsZero Z)     = True

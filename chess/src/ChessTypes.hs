@@ -155,7 +155,7 @@ type instance TypeShow H = "H"
 data Position where
     At :: Column -> Nat -> Position
 
-type instance TypeShow (At col row) = "At " ++ TypeShow col ++ " (" ++ TypeShow row ++ ")"
+type instance TypeShow (At col row) = TypeShow col ++ TypeShow row
 
 type ValidRows = Nat1 :-> Nat2 :-> Nat3 :-> Nat4 :-> Nat5 :-> Nat6 :-> Nat7 :<> Nat8
 
