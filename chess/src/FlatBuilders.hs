@@ -76,6 +76,7 @@ to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceNam
 
 -- TODO: "becomes", which allows promotion to whatever piece you say you should promote to
 
+-- Even though it's a Proxy TypeError, it will split out errors just fine!
 end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
 
@@ -221,9 +222,7 @@ x = chess
     pawn _a7 to _a6
     end
 
--- Code should deal with:
+-- TODO: Code should deal with:
     -- Checkmate (compile or don't compile?)
     -- Draw (can only move into check)
     -- Trapped pieces
-
--- TODO: Fix code not compiling at checkmate??
