@@ -334,6 +334,26 @@ type family KingMoveList (p :: Piece) (b :: BoardDecorator) :: [Position] where
     KingMoveList (MkPiece team King info) boardDec
         = Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (Eval (GetPosition info)))))
 
+-- data PieceHasMoveCount :: Nat -> Piece -> Exp Bool
+type family CanCastleCheck (b :: BoardDecorator) :: Bool
+    CanCastleCheck boardDec = False  -- TODO: Implement
+
+type family UnmovedRookPositions (t :: Team) (b :: BoardDecorator) :: [Position] where
+    UnmovedRookPositions team boardDec = Eval (Filter ((Flip (IsPieceAtWhich boardDec)) (PieceHasMoveCount Z)) (RookStartPositions team))
+
+type family HasKingMoved (t :: Team) (b :: BoardDecorator) :: Bool where
+    HasKingMoved team boardDec = Eval (IsPieceAtWhichDec boardDec (GetKingPosition team boardDec) (PieceHasMoveCount Z))
+
+-- TODO: Check if all places between are free
+-- TODO: Check if all places between are NOT in check
+
+type family RookStartPositions (t :: Team) :: [Position] where
+    RookStartPositions White = '[ At A Nat1, At H Nat1 ]
+    RookStartPositions Black = '[ At A Nat8, At H Nat8 ]
+
+type family GetCastlePositions (b :: BoardDecorator) :: [Position] where
+    GetCastlePositions boardDec = TL.TypeError (TL.Text "Not implemented yet!")
+
 -- First boolean argument determines the reach - the King check occurs if it is true,
 -- and it does not if it is False.
 data PieceCanReachKingCheck :: Bool -> Piece -> Position -> BoardDecorator -> Exp Bool
