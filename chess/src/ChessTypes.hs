@@ -62,6 +62,9 @@ data PieceInfo where
 data GetMoveCount :: PieceInfo -> Exp Nat
 type instance Eval (GetMoveCount (Info x _ _)) = x
 
+data HasMoveCount :: Nat -> PieceInfo -> Exp Bool
+type instance Eval (HasMoveCount n (Info x _ _)) = Eval (n :==: x)
+
 data GetPosition :: PieceInfo -> Exp Position
 type instance Eval (GetPosition info) = GetPosition' info
 
@@ -112,6 +115,9 @@ type instance Eval (IncrementMoves (MkPiece team name info)) = MkPiece team name
 
 data PieceMoveCount :: Piece -> Exp Nat
 type instance Eval (PieceMoveCount (MkPiece _ _ info)) = Eval (GetMoveCount info)
+
+data PieceHasMoveCount :: Nat -> Piece -> Exp Bool
+type instance Eval (PieceHasMoveCount n (MkPiece _ _ info)) = Eval (HasMoveCount n info)
 
 data PiecePosition :: Piece -> Exp Position
 type instance Eval (PiecePosition (MkPiece _ _ info)) = Eval (GetPosition info)
