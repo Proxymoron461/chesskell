@@ -27,6 +27,24 @@ type family OppositeTeam' (t :: Team) :: Team where
     OppositeTeam' White = Black
     OppositeTeam' Black = White
 
+data IsOpposingTeam :: Piece -> Piece -> Exp Bool
+type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece White _ _)) = False
+type instance Eval (IsOpposingTeam (MkPiece Black _ _) (MkPiece Black _ _)) = False
+type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece Black _ _)) = True
+type instance Eval (IsOpposingTeam (MkPiece Black _ _) (MkPiece White _ _)) = True
+
+data IsSameTeam :: Piece -> Piece -> Exp Bool
+type instance Eval (IsSameTeam p1 p2) = Eval ((Not . (IsOpposingTeam p1)) p2)
+
+data HasTeam :: Team -> Piece -> Exp Bool
+type instance Eval (HasTeam White (MkPiece White _ _)) = True
+type instance Eval (HasTeam Black (MkPiece Black _ _)) = True
+type instance Eval (HasTeam White (MkPiece Black _ _)) = False
+type instance Eval (HasTeam Black (MkPiece White _ _)) = False
+
+data PromoteTo :: PieceName -> Piece -> Exp Piece
+type instance Eval (PromoteTo name (MkPiece t _ i)) = MkPiece t name i
+
 -- Make singleton types for each piece??
 data PieceName = Pawn
                | Bishop
@@ -215,6 +233,18 @@ data SetPieceAt :: Piece -> Board -> Position -> Exp Board
 type instance Eval (SetPieceAt piece board pos) = Eval (If (Eval (IsValidPosition pos)) (SetPieceAtNoChecks piece board pos) (ID board))
 data SetPieceAtSwapped :: Piece -> Position -> Board -> Exp Board
 type instance Eval (SetPieceAtSwapped piece pos board) = Eval (SetPieceAt piece board pos)
+
+type family PromotePieceTo (name :: PieceName) (pos :: Position) (b :: BoardDecorator) :: BoardDecorator where
+   PromotePieceTo King _ boardDec   = TL.TypeError (TL.Text "A Pawn cannot be promoted to a King.")  -- Cannot promote a piece to a King
+   PromotePieceTo name (At col Nat8) boardDec
+      = Eval (If (Eval (IsPieceAtWhichDec boardDec (At col Nat8) (IsPawn .&. HasTeam White)))
+            (ID (SetBoard (Eval (ApplyFuncAt (PromoteTo name) (GetBoard boardDec) (At col Nat8))) boardDec))
+            (TE' (TL.Text ("The only promotable pieces in row 8 are White Pawns."))))
+   PromotePieceTo name (At col Nat1) boardDec
+      = Eval (If (Eval (IsPieceAtWhichDec boardDec (At col Nat1) (IsPawn .&. HasTeam Black)))
+            (ID (SetBoard (Eval (ApplyFuncAt (PromoteTo name) (GetBoard boardDec) (At col Nat1))) boardDec))
+            (TE' (TL.Text ("The only promotable pieces in row 1 are Black Pawns."))))
+   PromotePieceTo _ (At col row) boardDec = TL.TypeError (TL.Text ("Pawns can only be promoted in rows 1 and 8, not row: " ++ TypeShow row))
 
 data SetPieceAtDec :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
 type instance Eval (SetPieceAtDec x boardDec z) = SetBoard (Eval (SetPieceAt x (GetBoard boardDec) z)) boardDec

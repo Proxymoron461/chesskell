@@ -60,6 +60,10 @@ to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceNam
 end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
 
+becomes :: Proxy (b :: BoardDecorator) -> SPieceName name
+           -> Spec (Proxy (PromotePieceTo name (GetLastPosition b) b))
+becomes (dec :: Proxy b) (n :: SPieceName name) cont = cont (Proxy @(PromotePieceTo name (GetLastPosition b) b))
+
 -- Having a go and seeing if it compiles!
 x = chess
     pawn _a2 to _a4

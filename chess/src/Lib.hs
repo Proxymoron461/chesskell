@@ -178,21 +178,6 @@ type instance Eval (GetAdjacent (At col row)) = Eval (Filter IsValidPosition (Ev
 data GetAdjacentColumns :: Column -> Exp [Column]
 type instance Eval (GetAdjacentColumns col) = col ': Eval (Map FromJust (Eval (Filter IsJust '[Eval ((S Z) :+ col), Eval ((S Z) :- col)])))
 
-data IsOpposingTeam :: Piece -> Piece -> Exp Bool
-type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece White _ _)) = False
-type instance Eval (IsOpposingTeam (MkPiece Black _ _) (MkPiece Black _ _)) = False
-type instance Eval (IsOpposingTeam (MkPiece White _ _) (MkPiece Black _ _)) = True
-type instance Eval (IsOpposingTeam (MkPiece Black _ _) (MkPiece White _ _)) = True
-
-data IsSameTeam :: Piece -> Piece -> Exp Bool
-type instance Eval (IsSameTeam p1 p2) = Eval ((Not . (IsOpposingTeam p1)) p2)
-
-data HasTeam :: Team -> Piece -> Exp Bool
-type instance Eval (HasTeam White (MkPiece White _ _)) = True
-type instance Eval (HasTeam Black (MkPiece Black _ _)) = True
-type instance Eval (HasTeam White (MkPiece Black _ _)) = False
-type instance Eval (HasTeam Black (MkPiece White _ _)) = False
-
 data HasRow :: Nat -> Position -> Exp Bool
 type instance Eval (HasRow x (At _ y)) = Eval ((x <=? y) :&&: ID (y <=? x))
 
