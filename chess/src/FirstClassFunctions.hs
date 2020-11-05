@@ -154,7 +154,6 @@ data TE' :: TL.ErrorMessage -> Exp a
 type instance Eval (TE' msg) = TL.TypeError msg
 
 -- A quick way of checking if two types are equal!
--- TODO: Test this to make sure it all works??
 data IsTypeEqual :: a -> b -> Exp Bool
 type instance Eval (IsTypeEqual a b) = IsTypeEqualNonFCF a b
 data (:==:) :: a -> b -> Exp Bool
