@@ -174,3 +174,15 @@ _h7 :: SPosition ('At H Nat7)
 _h7 = SAt SH sNat7
 _h8 :: SPosition ('At H Nat8)
 _h8 = SAt SH sNat8
+
+_Knight :: SPieceName ('Knight)
+_Knight = SKnight
+
+_Rook :: SPieceName ('Rook)
+_Rook = SRook
+
+_Bishop :: SPieceName ('Bishop)
+_Bishop = SBishop
+
+_Queen :: SPieceName ('Queen)
+_Queen = SQueen
