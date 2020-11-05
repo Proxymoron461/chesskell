@@ -47,8 +47,8 @@ type instance Eval (GetMoveCount (Info x _ _)) = x
 data GetPosition :: PieceInfo -> Exp Position
 type instance Eval (GetPosition (Info _ x _)) = x
 
--- New datatype to hold the board, as well as some intermediate state
--- TODO: Improve to contain the position of the piece that last moved??
+-- New datatype to hold the board, as well as some intermediate state, including:
+
 data BoardDecorator where
     Dec :: Board -> Team -> Position -> (Position, Position) -> BoardDecorator
 
@@ -66,6 +66,9 @@ type family SetLastPosition (x :: Position) (y :: BoardDecorator) :: BoardDecora
 
 type family GetTeam (x :: BoardDecorator) :: Team where
    GetTeam (Dec _ t _ _) = t
+
+type family GetMovingTeam (x :: BoardDecorator) :: Team where
+   GetMovingTeam boardDec = OppositeTeam' (GetTeam boardDec)
 
 type family GetKingPosition (t :: Team) (x :: BoardDecorator) :: Position where
    GetKingPosition White (Dec _ _ _ '(white, _)) = white
@@ -150,17 +153,25 @@ type instance TypeShow F = "F"
 type instance TypeShow G = "G"
 type instance TypeShow H = "H"
 
--- TODO: Type level char??
 -- Goes column-row, e.g. At A 4 means first column from left, 4 up from the bottom, where Black is at the top
 data Position where
     At :: Column -> Nat -> Position
 
 type instance TypeShow (At col row) = TypeShow col ++ TypeShow row
 
-type ValidRows = Nat1 :-> Nat2 :-> Nat3 :-> Nat4 :-> Nat5 :-> Nat6 :-> Nat7 :<> Nat8
-
 data IsValidRow :: Nat -> Exp Bool
-type instance Eval (IsValidRow x) = Eval (If (Elem x ValidRows) (ID True) (ID False))
+type instance Eval (IsValidRow x) = IsValidRowNonFCF x
+
+type family IsValidRowNonFCF (x :: Nat) :: Bool where
+   IsValidRowNonFCF Nat1 = True
+   IsValidRowNonFCF Nat2 = True
+   IsValidRowNonFCF Nat3 = True
+   IsValidRowNonFCF Nat4 = True
+   IsValidRowNonFCF Nat5 = True
+   IsValidRowNonFCF Nat6 = True
+   IsValidRowNonFCF Nat7 = True
+   IsValidRowNonFCF Nat8 = True
+   IsValidRowNonFCF _ = False
 
 data IsValidPosition :: Position -> Exp Bool
 type instance Eval (IsValidPosition (At col row)) = Eval (IsValidRow row)
@@ -230,7 +241,6 @@ data SetRow :: Board -> Nat -> Row -> Exp Board
 type instance Eval (SetRow board (S n) row) = Eval (PutAt row n board)
 
 -- Type families to add an offset to columns!
--- TODO: Customise the number of columns?? As it is, it's chess-specific.
 data (:+) :: Nat -> Column -> Exp (Maybe Column)
 data (:-) :: Nat -> Column -> Exp (Maybe Column)
 
