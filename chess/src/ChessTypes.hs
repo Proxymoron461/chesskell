@@ -238,7 +238,8 @@ data SetPieceAtSwapped :: Piece -> Position -> Board -> Exp Board
 type instance Eval (SetPieceAtSwapped piece pos board) = Eval (SetPieceAt piece board pos)
 
 type family PromotePieceTo (name :: PieceName) (pos :: Position) (b :: BoardDecorator) :: BoardDecorator where
-   PromotePieceTo King _ boardDec   = TL.TypeError (TL.Text "A Pawn cannot be promoted to a King.")  -- Cannot promote a piece to a King
+   PromotePieceTo Pawn _ boardDec   = TL.TypeError (TL.Text "A Pawn cannot be promoted to a Pawn.")
+   PromotePieceTo King _ boardDec   = TL.TypeError (TL.Text "A Pawn cannot be promoted to a King.")
    PromotePieceTo name (At col Nat8) boardDec
       = Eval (If (Eval (IsPieceAtWhichDec boardDec (At col Nat8) (IsPawn .&. HasTeam White)))
             (ID (SetBoard (Eval (ApplyFuncAt (PromoteTo name) (GetBoard boardDec) (At col Nat8))) boardDec))
