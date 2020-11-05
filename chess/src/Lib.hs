@@ -319,7 +319,7 @@ type instance Eval (PieceMoveList (MkPiece team Bishop info) boardDec) = Eval (A
 type instance Eval (PieceMoveList (MkPiece team Knight info) boardDec) = Eval (AllReachableGivenList team boardDec (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
 type instance Eval (PieceMoveList (MkPiece team Rook info) boardDec)   = Eval (AllReachableStraightLine team boardDec (Eval (GetPosition info)))
 type instance Eval (PieceMoveList (MkPiece team Queen info) boardDec)  = Eval (AllReachableLineAndDiag team boardDec (Eval (GetPosition info)))
-type instance Eval (PieceMoveList (MkPiece team King info) boardDec)   = Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (Eval (GetPosition info)))))
+type instance Eval (PieceMoveList (MkPiece team King info) boardDec)   = KingMoveList (MkPiece team King info) boardDec
 
 data PieceAttackList :: Piece -> BoardDecorator -> Exp [Position]
 type instance Eval (PieceAttackList (MkPiece team Pawn info) boardDec)   = Eval (PawnTakePositions (MkPiece team Pawn info) boardDec)
@@ -328,6 +328,11 @@ type instance Eval (PieceAttackList (MkPiece team Knight info) boardDec) = Eval 
 type instance Eval (PieceAttackList (MkPiece team Rook info) boardDec)   = Eval (AllReachableStraightLine team boardDec (Eval (GetPosition info)))
 type instance Eval (PieceAttackList (MkPiece team Queen info) boardDec)  = Eval (AllReachableLineAndDiag team boardDec (Eval (GetPosition info)))
 type instance Eval (PieceAttackList (MkPiece team King info) boardDec)   = Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (Eval (GetPosition info)))))
+
+-- TODO: Check for castling!
+type family KingMoveList (p :: Piece) (b :: BoardDecorator) :: [Position] where
+    KingMoveList (MkPiece team King info) boardDec
+        = Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (Eval (GetPosition info)))))
 
 -- First boolean argument determines the reach - the King check occurs if it is true,
 -- and it does not if it is False.
@@ -535,4 +540,3 @@ type instance Eval (MovePawn (MkPiece team Pawn info) toPos boardDec) =
 data EnPassantTakeAt :: Team -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (EnPassantTakeAt White pos boardDec) = Eval (ClearPieceAtDec (OneDown pos) boardDec)
 type instance Eval (EnPassantTakeAt Black pos boardDec) = Eval (ClearPieceAtDec (OneUp pos) boardDec)
-
