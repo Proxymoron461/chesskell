@@ -176,7 +176,7 @@ data GetAdjacent :: Position -> Exp [Position]
 type instance Eval (GetAdjacent (At col row)) = Eval (Filter IsValidPosition (Eval (Tail (Eval ((Eval (CW (CW2 At) <$> (Eval (GetAdjacentColumns col)))) <*> '[row, row + Nat1, row - Nat1])))))
 
 data GetAdjacentColumns :: Column -> Exp [Column]
-type instance Eval (GetAdjacentColumns col) = col ': Eval (Map FromJust (Eval (Filter IsJust '[Eval ((S Z) :+ col), Eval ((S Z) :- col)])))
+type instance Eval (GetAdjacentColumns col) = col ': Eval (Map FromJust (Eval (Filter IsJust '[Eval (Nat1 :+ col), Eval (Nat1 :- col)])))
 
 data HasRow :: Nat -> Position -> Exp Bool
 type instance Eval (HasRow x (At _ y)) = Eval ((x <=? y) :&&: ID (y <=? x))
@@ -257,10 +257,10 @@ data NReachableRight :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp [Pos
 type instance Eval (NReachableRight team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableRight n)
 
 data GetOneLeft :: Position -> Exp (Maybe Position)
-type instance Eval (GetOneLeft (At col row)) = Eval (Eval ((S Z) :- col) >>= ((CW Just) . ((Flip (CW2 At)) row)))
+type instance Eval (GetOneLeft (At col row)) = Eval (Eval (Nat1 :- col) >>= ((CW Just) . ((Flip (CW2 At)) row)))
 
 data GetOneRight :: Position -> Exp (Maybe Position)
-type instance Eval (GetOneRight (At col row)) = Eval (Eval ((S Z) :+ col) >>= ((CW Just) . ((Flip (CW2 At)) row)))
+type instance Eval (GetOneRight (At col row)) = Eval (Eval (Nat1 :+ col) >>= ((CW Just) . ((Flip (CW2 At)) row)))
 
 -- The pawn is the only piece whose attack rules differ from its' movement rules;
 -- so it requires a special case.
@@ -425,8 +425,8 @@ data GetLeftRightPositions :: Position -> Exp [Position]
 type instance Eval (GetLeftRightPositions pos) = Eval (FilterMap IsJust FromJust (Eval ('[GetOneLeft, GetOneRight] <*> '[ pos ])))
 
 data PawnMovedTwoLast :: Piece -> Exp Bool
-type instance Eval (PawnMovedTwoLast (MkPiece White Pawn info)) = Eval (((HasRow Nat4 . GetPosition) .&. (Equal (S Z) . GetMoveCount)) info)
-type instance Eval (PawnMovedTwoLast (MkPiece Black Pawn info)) = Eval (((HasRow Nat5 . GetPosition) .&. (Equal (S Z) . GetMoveCount)) info)
+type instance Eval (PawnMovedTwoLast (MkPiece White Pawn info)) = Eval (((HasRow Nat4 . GetPosition) .&. (Equal Nat1 . GetMoveCount)) info)
+type instance Eval (PawnMovedTwoLast (MkPiece Black Pawn info)) = Eval (((HasRow Nat5 . GetPosition) .&. (Equal Nat1 . GetMoveCount)) info)
 
 data PawnPostStart :: Piece -> BoardDecorator -> Exp [Position]
 type instance Eval (PawnPostStart pawn boardDec) = (Eval (PawnMove pawn boardDec 1)) ++ (Eval (PawnTakePositions pawn boardDec))
@@ -520,14 +520,19 @@ type instance Eval (MovePieceTo piece toPos (Dec board team pos kings))
 -- TODO: Handle castling (which should not increment the rook's move counter)
 -- Ensuring you don't move into check is handled by MovePiece
 -- TODO: Flow through MovePieceTo
+-- TODO: Type error if not king??
 data MoveKing :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (MoveKing king toPos boardDec) = Eval (MovePieceTo king toPos boardDec)
 
--- TODO: Allow players to choose what to promote their pawn to! Stop turning into queen automatically!
--- TODO: Handle en passant in "else" branch - need to remove other piece!
 -- TODO: Flow through MovePieceTo
+-- TODO: Type error if not pawn??
 data MovePawn :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (MovePawn (MkPiece Black Pawn info) (At col row) boardDec) =
-    Eval (If (Eval (row :==: Nat1)) (MovePieceTo (MkPiece Black Queen info) (At col row) boardDec) (MovePieceTo (MkPiece Black Pawn info) (At col row) boardDec))
-type instance Eval (MovePawn (MkPiece White Pawn info) (At col row) boardDec)
-    = Eval (If (Eval (row :==: Nat8)) (MovePieceTo (MkPiece White Queen info) (At col row) boardDec) (MovePieceTo (MkPiece White Pawn info) (At col row) boardDec))
+type instance Eval (MovePawn (MkPiece team Pawn info) toPos boardDec) =
+    Eval (If (Eval (toPos `In` (Eval (GetEnPassantPosition (GetPosition' info) boardDec))))
+            ((EnPassantTakeAt team toPos . MovePieceTo (MkPiece team Pawn info) toPos) boardDec)
+            (MovePieceTo (MkPiece team Pawn info) toPos boardDec))
+
+data EnPassantTakeAt :: Team -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (EnPassantTakeAt White pos boardDec) = Eval (ClearPieceAtDec (OneDown pos) boardDec)
+type instance Eval (EnPassantTakeAt Black pos boardDec) = Eval (ClearPieceAtDec (OneUp pos) boardDec)
+

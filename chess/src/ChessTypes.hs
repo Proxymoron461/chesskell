@@ -63,7 +63,10 @@ data GetMoveCount :: PieceInfo -> Exp Nat
 type instance Eval (GetMoveCount (Info x _ _)) = x
 
 data GetPosition :: PieceInfo -> Exp Position
-type instance Eval (GetPosition (Info _ x _)) = x
+type instance Eval (GetPosition info) = GetPosition' info
+
+type family GetPosition' (p :: PieceInfo) :: Position where
+   GetPosition' (Info _ x _) = x
 
 -- New datatype to hold the board, as well as some intermediate state, including:
 
@@ -307,10 +310,21 @@ type family ColToIndex (col :: Column) :: Nat where
     ColToIndex H = Nat7
 
 type family OneLeft (p :: Position) :: Position where
+   OneLeft (At A   row) = TL.TypeError (TL.Text ("Cannot move one left from:" ++ TypeShow (At A row)))
    OneLeft (At col row) = At (FromJust' (Eval (Nat1 :- col))) row
 
 type family OneRight (p :: Position) :: Position where
+   OneRight (At H   row) = TL.TypeError (TL.Text ("Cannot move one right from:" ++ TypeShow (At H row)))
    OneRight (At col row) = At (FromJust' (Eval (Nat1 :+ col))) row
+
+type family OneDown (p :: Position) :: Position where
+   OneDown (At col Nat1)    = TL.TypeError (TL.Text ("Cannot move one down from:" ++ TypeShow (At col Nat1)))
+   OneDown (At col (S row)) = At col row
+
+type family OneUp (p :: Position) :: Position where
+   OneUp (At col Nat8) = TL.TypeError (TL.Text ("Cannot move one up from:" ++ TypeShow (At col Nat8)))
+   OneUp (At col row)  = At col (S row)
+
 
 -----------------------------------------------------------------------------------------------------
 
