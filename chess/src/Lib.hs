@@ -320,9 +320,7 @@ type instance Eval (FindKing team boardDec) = Eval (FromMaybe (NoKingError team)
 
 -- TODO: Remove "Team" from input, since you can get it from board decorator??
 data IsKingInCheck :: Team -> BoardDecorator -> Exp Bool
--- type instance Eval (IsKingInCheck team boardDec) = Eval (Eval (GetKingPosition team boardDec) `In` Eval (GetUnderAttackPositions (Eval (OppositeTeam team)) boardDec))
-type instance Eval (IsKingInCheck team boardDec) = Eval (Any (IsKingAt team boardDec) (Eval (GetUnderAttackPositions (Eval (OppositeTeam team)) boardDec)))
--- type instance Eval (IsKingInCheck team boardDec) = False  -- Proves that this function is a major bottleneck
+type instance Eval (IsKingInCheck team boardDec) = Eval (Any (IsKingAt team boardDec) (Eval (GetUnderAttackPositions (OppositeTeam' team) boardDec)))
 
 -- This function just checks the spots a piece can move to; it does not handle moving itself.
 -- That is in the other function, named Move.
@@ -458,10 +456,9 @@ type instance Eval (IfPieceThenMove name fromPos toPos boardDec)
     = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos (IsPiece name))) (Move fromPos toPos boardDec) (TE' (TL.Text ("The piece at: " ++ TypeShow fromPos ++ " is not a: " ++ TypeShow name ++ "."))))
 
 -- Type family for moving a piece, and putting it through a series of checks first
--- TODO: Handle takes (i.e. moves that remove pieces from play)
--- TODO: Add some "after" checks as well as the existing "before" ones
 data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (Move fromPos toPos boardDec) = Eval ((MoveNoChecks fromPos toPos . DoChecks '[
+type instance Eval (Move fromPos toPos boardDec) = Eval ((DoChecks '[
+    CheckNoCheck (GetMovingTeam boardDec) ] . MoveNoChecks fromPos toPos . DoChecks '[
     CanMoveCheck fromPos toPos,
     NotSamePosCheck fromPos toPos,
     NotLastToMoveCheck fromPos,
@@ -480,12 +477,10 @@ type instance Eval (MoveNoChecks fromPos toPos boardDec)
 -- But the King can castle, and the Pawn can do en passant and turn into a Queen!
 -- Very complicated stuff.
 -- Checks King is not in check after move (takes care of 2 problems - can't move into check and can't leave King in check either)
--- TODO: Check that piece's team :==: OppositeTeam' (GetTeam (boardDec)), otherwise error
 data MovePiece :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
--- type instance Eval (MovePiece piece toPos boardDec) = Eval (Eval (MovePieceSwitch piece toPos boardDec) >>= CheckNoCheck (Eval (PieceTeam piece)))
-type instance Eval (MovePiece piece toPos boardDec)
-    = Eval ((CheckNoCheck (Eval (PieceTeam piece)) . MovePieceSwitch piece toPos) boardDec)
+type instance Eval (MovePiece piece toPos boardDec) = Eval (MovePieceSwitch piece toPos boardDec)
 
+-- Checks to be done BEFORE moving
 data CanMoveCheck :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (CanMoveCheck fromPos toPos boardDec)
     = Eval (If (Eval (CanMoveTo fromPos toPos boardDec))
@@ -510,8 +505,12 @@ type instance Eval (NotLastToMoveCheck fromPos boardDec)
         (TE' (TL.Text ("The same piece is not allowed to move twice in a row.")))
         (ID boardDec))
 
+-- Checks to be done AFTER moving
 data CheckNoCheck :: Team -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (CheckNoCheck team boardDec) = Eval (If (Eval (IsKingInCheck team boardDec)) (TE' (TL.Text "IsKingInCheck failed!")) (ID boardDec))
+type instance Eval (CheckNoCheck team boardDec) =
+    Eval (If (Eval (IsKingInCheck team boardDec))
+        (TE' (TL.Text ("The " ++ TypeShow team ++ " King is in check after a " ++ TypeShow team ++ " move. This is not allowed.")))
+        (ID boardDec))
 
 data DoChecks :: [ BoardDecorator -> Exp BoardDecorator ] -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (DoChecks '[]       boardDec) = boardDec
@@ -539,10 +538,11 @@ type instance Eval (MovePieceTo piece toPos (Dec board team pos kings))
 data MoveKing :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (MoveKing king toPos boardDec) = Eval (MovePieceTo king toPos boardDec)
 
--- TODO: Allow players to choose what to promote their pawn to!
--- TODO: Handle en passant in "else" branch
+-- TODO: Allow players to choose what to promote their pawn to! Stop turning into queen automatically!
+-- TODO: Handle en passant in "else" branch - need to remove other piece!
 -- TODO: Flow through MovePieceTo
 data MovePawn :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (MovePawn (MkPiece Black Pawn info) (At col row) boardDec) =
     Eval (If (Eval (row :==: Nat1)) (MovePieceTo (MkPiece Black Queen info) (At col row) boardDec) (MovePieceTo (MkPiece Black Pawn info) (At col row) boardDec))
-type instance Eval (MovePawn (MkPiece White Pawn info) (At col row) boardDec) = Eval (If (Eval (row :==: Nat8)) (MovePieceTo (MkPiece White Queen info) (At col row) boardDec) (MovePieceTo (MkPiece White Pawn info) (At col row) boardDec))
+type instance Eval (MovePawn (MkPiece White Pawn info) (At col row) boardDec)
+    = Eval (If (Eval (row :==: Nat8)) (MovePieceTo (MkPiece White Queen info) (At col row) boardDec) (MovePieceTo (MkPiece White Pawn info) (At col row) boardDec))
