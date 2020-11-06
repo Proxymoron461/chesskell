@@ -320,9 +320,19 @@ type family OneLeft (p :: Position) :: Position where
    OneLeft (At A   row) = TL.TypeError (TL.Text ("Cannot move one left from:" ++ TypeShow (At A row)))
    OneLeft (At col row) = At (FromJust' (Eval (Nat1 :- col))) row
 
+type family TwoLeft (p :: Position) :: Position where
+   TwoLeft (At A   row) = TL.TypeError (TL.Text ("Cannot move two left from:" ++ TypeShow (At A row)))
+   TwoLeft (At B   row) = TL.TypeError (TL.Text ("Cannot move two left from:" ++ TypeShow (At B row)))
+   TwoLeft (At col row) = At (FromJust' (Eval (Nat2 :- col))) row
+
 type family OneRight (p :: Position) :: Position where
    OneRight (At H   row) = TL.TypeError (TL.Text ("Cannot move one right from:" ++ TypeShow (At H row)))
    OneRight (At col row) = At (FromJust' (Eval (Nat1 :+ col))) row
+
+type family TwoRight (p :: Position) :: Position where
+   TwoRight (At H   row) = TL.TypeError (TL.Text ("Cannot move two right from:" ++ TypeShow (At H row)))
+   TwoRight (At G   row) = TL.TypeError (TL.Text ("Cannot move two right from:" ++ TypeShow (At G row)))
+   TwoRight (At col row) = At (FromJust' (Eval (Nat2 :+ col))) row
 
 type family OneDown (p :: Position) :: Position where
    OneDown (At col Nat1)    = TL.TypeError (TL.Text ("Cannot move one down from:" ++ TypeShow (At col Nat1)))
