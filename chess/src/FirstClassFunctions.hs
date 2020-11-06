@@ -137,16 +137,16 @@ data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
 type instance Eval (Bind f Nothing)  = Nothing
 type instance Eval (Bind f (Just x)) = Eval (f x)
 
-data (>>=) :: f a -> (a -> Exp (f b)) -> Exp (f b)
+data (>>=) :: m a -> (a -> Exp (m b)) -> Exp (m b)
 type instance Eval (x >>= f) = Eval (Bind f x)
 
 data Join :: m (m a) -> Exp (m a)
 type instance Eval (Join Nothing)  = Nothing
 type instance Eval (Join (Just x)) = x
 
--- Some new thing - surely it already exists
-data Flatten :: f (a -> Exp (f b)) -> f a -> Exp (f b)
-type instance Eval (Flatten f x) = Eval (Join (Eval (Apply f x)))
+data Sequence :: [m a] -> Exp (m [a])
+type instance Eval (Sequence (Nothing ': xs)) = Eval (Sequence xs)
+type instance Eval (Sequence (Just x  ': xs)) = Eval (Eval (Sequence xs) >>= ((CW Just) . (CW2 (:)) x))
 
 -- This delays the evaluation of the type error!
 -- (Thanks https://blog.poisson.chat/posts/2018-08-06-one-type-family.html#fnref4)
