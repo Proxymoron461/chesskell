@@ -338,11 +338,21 @@ type family KingMoveList (p :: Piece) (b :: BoardDecorator) :: [Position] where
 type family CanCastleCheck (b :: BoardDecorator) :: Bool where
     CanCastleCheck boardDec = False  -- TODO: Implement
 
-type family UnmovedRookPositions (t :: Team) (b :: BoardDecorator) :: [Position] where
-    UnmovedRookPositions team boardDec = Eval (Filter ((Flip (IsPieceAtWhichDec boardDec)) (PieceHasMoveCount Z)) (RookStartPositions team))
-
 type family HasKingMoved (t :: Team) (b :: BoardDecorator) :: Bool where
     HasKingMoved team boardDec = Eval (IsPieceAtWhichDec boardDec (GetKingPosition team boardDec) (PieceHasMoveCount Z))
+
+type family Fst' (x :: (a, b)) :: a where
+    Fst' '(x, _) = x
+
+type family Snd' (x :: (a, b)) :: b where
+    Snd' '(, y) = y
+
+type family HaveRooksMoved (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
+    HaveRooksMoved team boardDec = HaveRooksMovedHelper (RookStartPositions team) boardDec
+
+type family HaveRooksMovedHelper (r :: (Position, Position)) (b :: BoardDecorator) :: (Bool, Bool) where
+    HaveRooksMovedHelper '( left, right ) boardDec
+        = '( Eval (IsPieceAtWhichDec boardDec left (PieceHasMoveCount Z)), Eval (IsPieceAtWhichDec boardDec right (PieceHasMoveCount Z)) )
 
 -- data GetUnderAttackPositions :: Team -> BoardDecorator -> Exp [Position]
 -- Checks if any of a particular list of spaces is under attack
@@ -352,10 +362,11 @@ type instance Eval (AnySpaceInCheck xs boardDec) = Eval (Any ((Flip In) (Eval (G
 data AllSpacesFree :: [Position] -> BoardDecorator -> Exp Bool
 type instance Eval (AllSpacesFree xs boardDec) = Eval (All (Not . IsPieceAt boardDec) xs)
 
-type family RookStartPositions (t :: Team) :: [Position] where
-    RookStartPositions White = '[ At A Nat1, At H Nat1 ]
-    RookStartPositions Black = '[ At A Nat8, At H Nat8 ]
+type family RookStartPositions (t :: Team) :: (Position, Position) where
+    RookStartPositions White = '( At A Nat1, At H Nat1 )
+    RookStartPositions Black = '( At A Nat8, At H Nat8 )
 
+-- TODO: This!!
 type family GetCastlePositions (b :: BoardDecorator) :: [Position] where
     GetCastlePositions boardDec = TL.TypeError (TL.Text "Not implemented yet!")
 
