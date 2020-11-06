@@ -335,17 +335,22 @@ type family KingMoveList (p :: Piece) (b :: BoardDecorator) :: [Position] where
         = Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (Eval (GetPosition info)))))
 
 -- data PieceHasMoveCount :: Nat -> Piece -> Exp Bool
-type family CanCastleCheck (b :: BoardDecorator) :: Bool
+type family CanCastleCheck (b :: BoardDecorator) :: Bool where
     CanCastleCheck boardDec = False  -- TODO: Implement
 
 type family UnmovedRookPositions (t :: Team) (b :: BoardDecorator) :: [Position] where
-    UnmovedRookPositions team boardDec = Eval (Filter ((Flip (IsPieceAtWhich boardDec)) (PieceHasMoveCount Z)) (RookStartPositions team))
+    UnmovedRookPositions team boardDec = Eval (Filter ((Flip (IsPieceAtWhichDec boardDec)) (PieceHasMoveCount Z)) (RookStartPositions team))
 
 type family HasKingMoved (t :: Team) (b :: BoardDecorator) :: Bool where
     HasKingMoved team boardDec = Eval (IsPieceAtWhichDec boardDec (GetKingPosition team boardDec) (PieceHasMoveCount Z))
 
--- TODO: Check if all places between are free
--- TODO: Check if all places between are NOT in check
+-- data GetUnderAttackPositions :: Team -> BoardDecorator -> Exp [Position]
+-- Checks if any of a particular list of spaces is under attack
+data AnySpaceInCheck :: [Position] -> BoardDecorator -> Exp Bool
+type instance Eval (AnySpaceInCheck xs boardDec) = Eval (Any ((Flip In) (Eval (GetUnderAttackPositions (GetLastTeam boardDec) boardDec))) xs)
+
+data AllSpacesFree :: [Position] -> BoardDecorator -> Exp Bool
+type instance Eval (AllSpacesFree xs boardDec) = Eval (All (Not . IsPieceAt boardDec) xs)
 
 type family RookStartPositions (t :: Team) :: [Position] where
     RookStartPositions White = '[ At A Nat1, At H Nat1 ]
@@ -431,7 +436,7 @@ type instance Eval (PawnTakePositions (MkPiece White Pawn info) boardDec) = (Paw
 data GetEnPassantPosition :: Position -> BoardDecorator -> Exp [Position]
 type instance Eval (GetEnPassantPosition pos boardDec) =
     Eval (If (Eval ((GetLastPosition boardDec) `In` Eval (GetLeftRightPositions pos)))
-    (FromMaybe '[] (EnPassantPosition (OppositeTeam' (GetTeam boardDec)) . PiecePosition)
+    (FromMaybe '[] (EnPassantPosition (OppositeTeam' (GetLastTeam boardDec)) . PiecePosition)
         (Eval (GetPieceAtWhichDec boardDec (GetLastPosition boardDec) (IsPawn .&. PawnMovedTwoLast))))  -- then
     (ID '[]))  --else
 
@@ -469,7 +474,9 @@ type instance Eval (IfPieceThenMove name fromPos toPos boardDec)
 data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (Move fromPos toPos boardDec) = Eval ((DoChecks '[
     CheckNoCheck (GetMovingTeam boardDec) ] . MoveNoChecks fromPos toPos . DoChecks '[
+    NotTakingKingCheck toPos,
     CanMoveCheck fromPos toPos,
+    NotTakingOwnTeamCheck toPos,
     NotSamePosCheck fromPos toPos,
     NotLastToMoveCheck fromPos,
     TeamCheck fromPos ]) boardDec)
@@ -503,9 +510,21 @@ type instance Eval (NotSamePosCheck fromPos toPos boardDec)
         (TE' (TL.Text ("Moves from a position to that same position are not allowed.")))
         (ID boardDec))
 
+data NotTakingKingCheck :: Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (NotTakingKingCheck toPos boardDec)
+    = Eval (If (Eval (toPos `In` '[ GetKingPosition White boardDec, GetKingPosition Black boardDec ]))
+        (TE' (TL.Text "A piece is not allowed to take a King. (Kings can only be beaten by putting them in checkmate.)"))
+        (ID boardDec))
+
+data NotTakingOwnTeamCheck :: Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (NotTakingOwnTeamCheck toPos boardDec)
+    = Eval (If (Eval (IsPieceAtWhichDec boardDec toPos (HasTeam (GetMovingTeam boardDec))))
+        (TE' (TL.Text "A piece cannot take another piece on the same team!"))
+        (ID boardDec))
+
 data TeamCheck :: Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (TeamCheck fromPos boardDec)
-    = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos (HasTeam (OppositeTeam' (GetTeam boardDec)))))
+    = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos (HasTeam (OppositeTeam' (GetLastTeam boardDec)))))
         (ID boardDec)
         (TE' (TL.Text ("The same team cannot move twice in a row."))))
 
