@@ -359,6 +359,22 @@ type family RookStartPositions (t :: Team) :: [Position] where
 type family GetCastlePositions (b :: BoardDecorator) :: [Position] where
     GetCastlePositions boardDec = TL.TypeError (TL.Text "Not implemented yet!")
 
+data CastleSpacesToTest :: Team -> BoardDecorator -> Exp ([Position], [Position])
+type instance Eval (CastleSpacesToTest team boardDec)
+    = Eval (CastleSpacesToTestHelper (GetKingPosition team boardDec))
+
+data CastleSpacesToTestHelper :: Position -> Exp ([Position], [Position])
+type instance Eval (CastleSpacesToTestHelper pos)
+    = '(SpacesBetweenInc pos (TwoLeft pos), SpacesBetweenInc pos (TwoRight pos))
+
+-- :kind! Eval (((Flip (CW2 At)) Z) A) = At A Z
+type family SpacesBetween (x :: Position) (y :: Position) :: [Position] where
+    SpacesBetween (At col row1) (At col row2) = Eval (CW (At col) <$> Eval (RangeBetweenDTNat row1 row2))
+    SpacesBetween (At col1 row) (At col2 row) = Eval (((Flip (CW2 At)) row) <$> Eval (ColRangeBetween col1 col2))
+
+type family SpacesBetweenInc (x :: Position) (y :: Position) :: [Position] where
+    SpacesBetweenInc pos1 pos2 = pos1 ': SpacesBetween pos1 pos2
+
 -- First boolean argument determines the reach - the King check occurs if it is true,
 -- and it does not if it is False.
 data PieceCanReachKingCheck :: Bool -> Piece -> Position -> BoardDecorator -> Exp Bool
