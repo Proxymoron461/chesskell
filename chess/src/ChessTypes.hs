@@ -259,6 +259,10 @@ type family PromotePieceTo (name :: PieceName) (pos :: Position) (b :: BoardDeco
 data SetPieceAtDec :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
 type instance Eval (SetPieceAtDec x boardDec z) = SetBoard (Eval (SetPieceAt x (GetBoard boardDec) z)) boardDec
 
+data SetPieceAtDecClear :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
+type instance Eval (SetPieceAtDecClear piece boardDec pos)
+   = Eval (ClearPieceAtDec (Eval (PiecePosition piece)) (Eval (SetPieceAtDec piece boardDec pos)))
+
 data ClearPieceAt :: Position -> Board -> Exp Board
 type instance Eval (ClearPieceAt (At col row) board) = Eval (SetRow board row (Eval (PutAt Nothing (ColToIndex col) (Eval (FromJust (Eval (GetRow board row)))))))
 
