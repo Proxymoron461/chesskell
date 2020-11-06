@@ -329,14 +329,20 @@ type instance Eval (PieceAttackList (MkPiece team Rook info) boardDec)   = Eval 
 type instance Eval (PieceAttackList (MkPiece team Queen info) boardDec)  = Eval (AllReachableLineAndDiag team boardDec (Eval (GetPosition info)))
 type instance Eval (PieceAttackList (MkPiece team King info) boardDec)   = Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (Eval (GetPosition info)))))
 
--- TODO: Check for castling!
+-- Adds the castling positions to the King move list if applicable
 type family KingMoveList (p :: Piece) (b :: BoardDecorator) :: [Position] where
     KingMoveList (MkPiece team King info) boardDec
-        = Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (Eval (GetPosition info)))))
+        = (Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (Eval (GetPosition info)))))
+            ++ GetCastlePositions boardDec) 
 
 -- data PieceHasMoveCount :: Nat -> Piece -> Exp Bool
-type family CanCastleCheck (b :: BoardDecorator) :: Bool where
-    CanCastleCheck boardDec = False  -- TODO: Implement
+-- TODO: Put into helper to remove repeated GetMovingTeam??
+type family CanCastle (b :: BoardDecorator) :: Bool where
+    CanCastle boardDec = Eval (All ID '[
+        HasKingMoved (GetMovingTeam boardDec) boardDec,
+        Either' (HaveRooksMoved (GetMovingTeam boardDec) boardDec),
+        Eval (EitherPredicate (Eval (CastleSpacesToTest (GetMovingTeam boardDec) boardDec))
+            (AllSpacesFree boardDec .&. (Not . AnySpaceInCheck boardDec))) ])
 
 type family HasKingMoved (t :: Team) (b :: BoardDecorator) :: Bool where
     HasKingMoved team boardDec = Eval (IsPieceAtWhichDec boardDec (GetKingPosition team boardDec) (PieceHasMoveCount Z))
@@ -347,6 +353,20 @@ type family Fst' (x :: (a, b)) :: a where
 type family Snd' (x :: (a, b)) :: b where
     Snd' '(, y) = y
 
+type family Both' (x :: (Bool, Bool)) :: Bool where
+    Both' (True, True) = True
+    Both' _            = False
+
+type family Either' (x :: (Bool, Bool)) :: Bool where
+    Either' (False, False) = False
+    Either' _              = True
+
+data BothPredicate :: (a, b) -> (a -> Exp Bool) -> Exp Bool
+type instance Eval (BothPredicate '( x, y ) f) = Eval (Eval (f x) :&&: f y)
+
+data EitherPredicate :: (a, b) -> (a -> Exp Bool) -> Exp Bool
+type instance Eval (EitherPredicate '( x, y ) f) = Eval (Eval (f x) :||: f y)
+
 type family HaveRooksMoved (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
     HaveRooksMoved team boardDec = HaveRooksMovedHelper (RookStartPositions team) boardDec
 
@@ -356,19 +376,23 @@ type family HaveRooksMovedHelper (r :: (Position, Position)) (b :: BoardDecorato
 
 -- data GetUnderAttackPositions :: Team -> BoardDecorator -> Exp [Position]
 -- Checks if any of a particular list of spaces is under attack
-data AnySpaceInCheck :: [Position] -> BoardDecorator -> Exp Bool
-type instance Eval (AnySpaceInCheck xs boardDec) = Eval (Any ((Flip In) (Eval (GetUnderAttackPositions (GetLastTeam boardDec) boardDec))) xs)
+data AnySpaceInCheck :: BoardDecorator -> [Position] -> Exp Bool
+type instance Eval (AnySpaceInCheck boardDec xs) = Eval (Any ((Flip In) (Eval (GetUnderAttackPositions (GetLastTeam boardDec) boardDec))) xs)
 
-data AllSpacesFree :: [Position] -> BoardDecorator -> Exp Bool
-type instance Eval (AllSpacesFree xs boardDec) = Eval (All (Not . IsPieceAt boardDec) xs)
+data AllSpacesFree :: BoardDecorator -> [Position] -> Exp Bool
+type instance Eval (AllSpacesFree boardDec xs) = Eval (All (Not . IsPieceAt boardDec) xs)
 
 type family RookStartPositions (t :: Team) :: (Position, Position) where
     RookStartPositions White = '( At A Nat1, At H Nat1 )
     RookStartPositions Black = '( At A Nat8, At H Nat8 )
 
--- TODO: This!!
 type family GetCastlePositions (b :: BoardDecorator) :: [Position] where
-    GetCastlePositions boardDec = TL.TypeError (TL.Text "Not implemented yet!")
+    GetCastlePositions boardDec = Eval (If (CanCastle boardDec)
+        (CastleToPositions (GetKingPosition (GetMovingTeam boardDec)))
+        (ID '[]))
+
+data CastleToPositions :: Position -> Exp [Position]
+type instance Eval (CastleToPositions pos) = '[ TwoLeft pos, TwoRight pos ]
 
 data CastleSpacesToTest :: Team -> BoardDecorator -> Exp ([Position], [Position])
 type instance Eval (CastleSpacesToTest team boardDec)
@@ -463,7 +487,7 @@ type instance Eval (PawnTakePositions (MkPiece White Pawn info) boardDec) = (Paw
 data GetEnPassantPosition :: Position -> BoardDecorator -> Exp [Position]
 type instance Eval (GetEnPassantPosition pos boardDec) =
     Eval (If (Eval ((GetLastPosition boardDec) `In` Eval (GetLeftRightPositions pos)))
-    (FromMaybe '[] (EnPassantPosition (OppositeTeam' (GetLastTeam boardDec)) . PiecePosition)
+    (FromMaybe '[] (EnPassantPosition (GetMovingTeam boardDec) . PiecePosition)
         (Eval (GetPieceAtWhichDec boardDec (GetLastPosition boardDec) (IsPawn .&. PawnMovedTwoLast))))  -- then
     (ID '[]))  --else
 
@@ -551,7 +575,7 @@ type instance Eval (NotTakingOwnTeamCheck toPos boardDec)
 
 data TeamCheck :: Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (TeamCheck fromPos boardDec)
-    = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos (HasTeam (OppositeTeam' (GetLastTeam boardDec)))))
+    = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos (HasTeam (GetMovingTeam boardDec))))
         (ID boardDec)
         (TE' (TL.Text ("The same team cannot move twice in a row."))))
 
@@ -588,15 +612,30 @@ data MovePieceTo :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (MovePieceTo piece toPos (Dec board team pos kings))
     = Dec (Eval (SetPieceAt (Eval (IncrementMoves piece)) board toPos)) (Eval (PieceTeam piece)) toPos (UpdateKings kings piece toPos)
 
--- TODO: Handle castling (which should not increment the rook's move counter)
 -- Ensuring you don't move into check is handled by MovePiece
 -- TODO: Flow through MovePieceTo
--- TODO: Type error if not king??
 data MoveKing :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (MoveKing king toPos boardDec) = Eval (MovePieceTo king toPos boardDec)
+type instance Eval (MoveKing king toPos boardDec) = Eval ( If (toPos `In` GetCastlePositions boardDec)
+    (Eval ((CastleMoveRook toPos (RookStartPositions (GetMovingTeam boardDec)) . MovePieceTo king toPos) boardDec))
+    (MovePieceTo king toPos boardDec))
+
+data CastleMoveRook :: Position -> (Position, Position) -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (CastleMoveRook kingPos (leftRook, rightRook) boardDec)
+    = Eval (If (CloserToLeftRook kingPos)
+        (SetPieceAtDecClear )
+        ())
+
+type family CloserToLeftRook (x :: Position) :: Bool where
+    type instance CloserToLeftRook (At A _) = True
+    type instance CloserToLeftRook (At B _) = True
+    type instance CloserToLeftRook (At C _) = True
+    type instance CloserToLeftRook (At D _) = True
+    type instance CloserToLeftRook (At E _) = False
+    type instance CloserToLeftRook (At F _) = False
+    type instance CloserToLeftRook (At G _) = False
+    type instance CloserToLeftRook (At H _) = False
 
 -- TODO: Flow through MovePieceTo
--- TODO: Type error if not pawn??
 data MovePawn :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (MovePawn (MkPiece team Pawn info) toPos boardDec) =
     Eval (If (Eval (toPos `In` (Eval (GetEnPassantPosition (GetPosition' info) boardDec))))
