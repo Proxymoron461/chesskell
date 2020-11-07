@@ -75,9 +75,9 @@ put :: Proxy (b :: BoardDecorator) -> STeam team -> SPieceName name -> Spec (Pro
 put (dec :: Proxy b) (t :: STeam team) (p :: SPieceName name) cont = cont (Proxy @(CA b team name))
 
 at :: Proxy (CA (b :: BoardDecorator) (team :: Team) (name :: PieceName)) -> SPosition toPos
-      -> Spec (Proxy (SetPieceAtDec (MkPiece team name (Info Z toPos False)) b toPos))
+      -> Spec (Proxy (Eval (SetPieceAtDec (MkPiece team name (Info Z toPos False)) b toPos)))
 at (dec :: Proxy (CA b team name)) (p :: SPosition toPos) cont
-    = cont (Proxy @(SetPieceAtDec (MkPiece team name (Info Z toPos False)) b toPos))
+    = cont (Proxy @(Eval (SetPieceAtDec (MkPiece team name (Info Z toPos False)) b toPos)))
 
 -- TODO: Introduce a bunch of different EDSL endings that you need!
 endGetBoard :: Term (Proxy (a :: BoardDecorator)) (Proxy (GetBoard a))
