@@ -91,6 +91,9 @@ type family SetLastPosition (x :: Position) (y :: BoardDecorator) :: BoardDecora
 type family GetLastTeam (x :: BoardDecorator) :: Team where
    GetLastTeam (Dec _ t _ _) = t
 
+type family SetLastTeam (x :: BoardDecorator) (y :: Team) :: BoardDecorator where
+   SetLastTeam (Dec w _ y z) x = Dec w x y z
+
 type family GetMovingTeam (x :: BoardDecorator) :: Team where
    GetMovingTeam boardDec = OppositeTeam' (GetLastTeam boardDec)
 
