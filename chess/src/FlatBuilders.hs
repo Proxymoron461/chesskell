@@ -64,6 +64,25 @@ becomes :: Proxy (b :: BoardDecorator) -> SPieceName name
            -> Spec (Proxy (PromotePieceTo name (GetLastPosition b) b))
 becomes (dec :: Proxy b) (n :: SPieceName name) cont = cont (Proxy @(PromotePieceTo name (GetLastPosition b) b))
 
+-- data SetPieceAtDec :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
+data CreateArgs where
+    CA :: BoardDecorator -> Team -> PieceName -> Position -> CreateArgs
+
+create :: Spec (Proxy JustKingsDec)
+create cont = cont (Proxy @JustKingsDec)
+
+put :: Proxy (b :: BoardDecorator) -> STeam team -> SPieceName name -> Spec (Proxy (CA b team name))
+put (dec :: Proxy b) (t :: STeam team) (p :: SPieceName name) cont = cont (Proxy @(CA b team name))
+
+at :: Proxy (CA (b :: BoardDecorator) (team :: Team) (name :: PieceName)) -> SPosition toPos
+      -> Spec (Proxy (SetPieceAtDec (MkPiece team name (Info Z toPos False)) b toPos))
+at (dec :: Proxy (CA b team name)) (p :: SPosition toPos) cont
+    = cont (Proxy @(SetPieceAtDec (MkPiece team name (Info Z toPos False)) b toPos))
+
+-- TODO: Introduce a bunch of different EDSL endings that you need!
+endGetBoard :: Term (Proxy (a :: BoardDecorator)) (Proxy (GetBoard a))
+endGetBoard (Proxy :: Proxy (b :: BoardDecorator)) = Proxy @(GetBoard b)
+
 -- Having a go and seeing if it compiles!
 x = chess
     pawn _a2 to _a4
