@@ -29,7 +29,7 @@ anySpaceInCheckTest1 = Refl
 
 anySpaceInCheckTest2 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AnySpaceInCheck b '[ At C Nat5 ]))
 anySpaceInCheckTest2 (Proxy :: (Proxy (b :: BoardDecorator))) = Proxy @(Eval (AnySpaceInCheck b '[ At C Nat5 ]))
-aSICT2Board = create put _Wh _P at _c4 end
+aSICT2Board = create put _Wh _P at _c4 lastTeam _Wh end
 
 anySpaceInCheckTest3 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AnySpaceInCheck b '[ At B Nat5, At D Nat5 ]))
 anySpaceInCheckTest3 (Proxy :: (Proxy (b :: BoardDecorator))) = Proxy @(Eval (AnySpaceInCheck b '[ At B Nat5, At D Nat5 ]))
@@ -50,9 +50,9 @@ castleTestSuite = describe "Castle Tests" $ do
         describe "AnySpaceInCheck Tests" $ do
             it "1" $
                 shouldTypeCheck anySpaceInCheckTest1
-            it "2: A space in front of a Pawn should NOT be in check" $
+            it "2: A space above a White Pawn should NOT be in check" $
                 shouldTypeCheck $ fromProxyFalse (anySpaceInCheckTest2 aSICT2Board)
-            it "3: A space diagonally in front of a Pawn should be in check" $
+            it "3: The spaces diagonally above a White Pawn should be in check" $
                 shouldTypeCheck $ fromProxyTrue (anySpaceInCheckTest3 aSICT2Board)
     --     describe "AllSpacesFree Tests" $ do
     --         it blah
