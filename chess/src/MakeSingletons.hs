@@ -186,3 +186,15 @@ _Bishop = SBishop
 
 _Queen :: SPieceName ('Queen)
 _Queen = SQueen
+
+_Pawn :: SPieceName ('Pawn)
+_Pawn = SPawn
+
+_King :: SPieceName ('King)
+_King = SKing
+
+_W :: STeam ('White)
+_W = SWhite
+
+_B :: STeam ('Black)
+_B = SBlack
