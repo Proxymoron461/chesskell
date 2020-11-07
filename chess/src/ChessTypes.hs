@@ -103,6 +103,12 @@ type family UpdateKings (x :: (Position, Position)) (y :: Piece) (z :: Position)
    UpdateKings '(_, blackPos) (MkPiece White King _) toPos = '(toPos, blackPos)
    UpdateKings kings          _                      _     = kings
 
+type family GetKings (x :: BoardDecorator) :: (Position, Position) where
+   GetKings (Dec _ _ _ k) = k
+
+type family SetKings (x :: (Position, Position)) (y :: BoardDecorator) :: BoardDecorator where
+   SetKings '(whitePos, blackPos) (Dec w x y _) = Dec w x y '(whitePos, blackPos)
+
 -- TODO: Validity check??
 data SetPosition :: PieceInfo -> Position -> Exp PieceInfo
 type instance Eval (SetPosition (Info n _ x) pos) = Info n pos x
@@ -257,7 +263,8 @@ type family PromotePieceTo (name :: PieceName) (pos :: Position) (b :: BoardDeco
    PromotePieceTo _ (At col row) boardDec = TL.TypeError (TL.Text ("Pawns can only be promoted in rows 1 and 8, not row: " ++ TypeShow row))
 
 data SetPieceAtDec :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
-type instance Eval (SetPieceAtDec x boardDec z) = SetBoard (Eval (SetPieceAt x (GetBoard boardDec) z)) boardDec
+type instance Eval (SetPieceAtDec piece boardDec toPos)
+   = SetKings (UpdateKings (GetKings boardDec) piece toPos) (SetBoard (Eval (SetPieceAt piece (GetBoard boardDec) toPos)) boardDec)
 
 data SetPieceAtDecClear :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
 type instance Eval (SetPieceAtDecClear piece boardDec pos)
