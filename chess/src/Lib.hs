@@ -351,15 +351,15 @@ type family Fst' (x :: (a, b)) :: a where
     Fst' '(x, _) = x
 
 type family Snd' (x :: (a, b)) :: b where
-    Snd' '(, y) = y
+    Snd' '(_, y) = y
 
 type family Both' (x :: (Bool, Bool)) :: Bool where
-    Both' (True, True) = True
-    Both' _            = False
+    Both' '(True, True) = True
+    Both' _             = False
 
 type family Either' (x :: (Bool, Bool)) :: Bool where
-    Either' (False, False) = False
-    Either' _              = True
+    Either' '(False, False) = False
+    Either' _               = True
 
 data BothPredicate :: (a, b) -> (a -> Exp Bool) -> Exp Bool
 type instance Eval (BothPredicate '( x, y ) f) = Eval (Eval (f x) :&&: f y)
@@ -388,7 +388,7 @@ type family RookStartPositions (t :: Team) :: (Position, Position) where
 
 type family GetCastlePositions (b :: BoardDecorator) :: [Position] where
     GetCastlePositions boardDec = Eval (If (CanCastle boardDec)
-        (CastleToPositions (GetKingPosition (GetMovingTeam boardDec)))
+        (CastleToPositions (GetKingPosition (GetMovingTeam boardDec) boardDec))
         (ID '[]))
 
 data CastleToPositions :: Position -> Exp [Position]
@@ -615,25 +615,25 @@ type instance Eval (MovePieceTo piece toPos (Dec board team pos kings))
 -- Ensuring you don't move into check is handled by MovePiece
 -- TODO: Flow through MovePieceTo
 data MoveKing :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (MoveKing king toPos boardDec) = Eval ( If (toPos `In` GetCastlePositions boardDec)
-    (Eval ((CastleMoveRook toPos (RookStartPositions (GetMovingTeam boardDec)) . MovePieceTo king toPos) boardDec))
+type instance Eval (MoveKing king toPos boardDec) = Eval ( If (Eval (toPos `In` GetCastlePositions boardDec))
+    ((CastleMoveRook toPos (RookStartPositions (GetMovingTeam boardDec)) . MovePieceTo king toPos) boardDec)
     (MovePieceTo king toPos boardDec))
 
 data CastleMoveRook :: Position -> (Position, Position) -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (CastleMoveRook kingPos (leftRook, rightRook) boardDec)
+type instance Eval (CastleMoveRook kingPos '(leftRook, rightRook) boardDec)
     = Eval (If (CloserToLeftRook kingPos)
-        (SetPieceAtDecClear )
-        ())
+        (SetPieceAtDecClear (Eval ((FromJust . GetPieceAtDec boardDec) leftRook)) boardDec (OneRight kingPos))
+        (SetPieceAtDecClear (Eval ((FromJust . GetPieceAtDec boardDec) rightRook)) boardDec (OneLeft kingPos)))
 
 type family CloserToLeftRook (x :: Position) :: Bool where
-    type instance CloserToLeftRook (At A _) = True
-    type instance CloserToLeftRook (At B _) = True
-    type instance CloserToLeftRook (At C _) = True
-    type instance CloserToLeftRook (At D _) = True
-    type instance CloserToLeftRook (At E _) = False
-    type instance CloserToLeftRook (At F _) = False
-    type instance CloserToLeftRook (At G _) = False
-    type instance CloserToLeftRook (At H _) = False
+    CloserToLeftRook (At A _) = True
+    CloserToLeftRook (At B _) = True
+    CloserToLeftRook (At C _) = True
+    CloserToLeftRook (At D _) = True
+    CloserToLeftRook (At E _) = False
+    CloserToLeftRook (At F _) = False
+    CloserToLeftRook (At G _) = False
+    CloserToLeftRook (At H _) = False
 
 -- TODO: Flow through MovePieceTo
 data MovePawn :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
