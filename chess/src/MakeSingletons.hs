@@ -177,24 +177,32 @@ _h8 = SAt SH sNat8
 
 _Knight :: SPieceName ('Knight)
 _Knight = SKnight
+_N = _Knight
 
 _Rook :: SPieceName ('Rook)
 _Rook = SRook
+_R = _Rook
 
 _Bishop :: SPieceName ('Bishop)
 _Bishop = SBishop
+_B = _Bishop
 
 _Queen :: SPieceName ('Queen)
 _Queen = SQueen
+_Q = _Queen
 
 _Pawn :: SPieceName ('Pawn)
 _Pawn = SPawn
+_P = _Pawn
 
 _King :: SPieceName ('King)
 _King = SKing
+_K = _King
 
-_W :: STeam ('White)
-_W = SWhite
+white :: STeam ('White)
+white = SWhite
+_Wh = white
 
-_B :: STeam ('Black)
-_B = SBlack
+black :: STeam ('Black)
+black = SBlack
+_Bl = black
