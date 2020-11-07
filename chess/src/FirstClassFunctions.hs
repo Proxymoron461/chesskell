@@ -18,6 +18,9 @@ type family Eval (e :: Exp a) :: a
 -- Open type family for Show instances for types!
 type family TypeShow (x :: a) :: TL.Symbol
 
+type instance TypeShow '[] = "[]"
+type instance TypeShow (x ': xs) = TypeShow x ++ " : " ++ TypeShow xs
+
 -- Show instances for both custom Nat and Data.Type.Nat
 type instance TypeShow (n :: Nat) = TypeShowNat n
 type instance TypeShow (n :: TL.Nat) = TypeShowTLNat n
