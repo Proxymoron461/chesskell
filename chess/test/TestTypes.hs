@@ -1,12 +1,35 @@
 module TestTypes where
 
 import qualified GHC.TypeLits as TL (Nat)
+import Test.Hspec
+import Test.HUnit.Lang (Assertion, assertFailure)
+import Test.ShouldNotTypecheck (shouldNotTypecheck)
+import Control.DeepSeq (force, NFData)
+import Control.Exception (evaluate, try, TypeError(..))
+import Data.Type.Equality ((:~:)(..))
+import Data.Proxy(Proxy(..))
 
 import Lib
 import Vec
 import FirstClassFunctions
 import ChessTypes
+import FlatBuilders
 import Data.Type.Nat hiding (SNat(..))
+import Data.Proxy
+
+-- Custom shouldTypeCheck assertion
+shouldTypecheck :: NFData a => a -> Assertion
+shouldTypecheck a = do
+    result <- try (evaluate (force a))  -- Using Haskell’s do-notation
+    case result of
+        Right _ -> return ()  -- Test passes
+        Left (TypeError msg) -> assertFailure ("Term didn’t compile.")
+
+shouldTypeCheck :: NFData a => a -> Assertion
+shouldTypeCheck = shouldTypecheck
+
+shouldNotTypeCheck :: NFData a => a -> Assertion
+shouldNotTypeCheck = shouldNotTypecheck
 
 -- TEST TYPES
 -- TODO: Remove these and replace with EDSL stuff
@@ -41,7 +64,4 @@ type TestInfo = Info Z (At A Nat1) False
 type TestPieceList = '[MkPiece Black Pawn TestInfo, MkPiece White Pawn TestInfo, MkPiece White King TestInfo]
 
 type KingBoard = Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At A Nat1), '(MkPiece Black King TestInfo, At H Nat8) ] EmptyBoard)
-
--- TODO: Introduce a bunch of different EDSL ending that you need!
-endGetBoard :: Term (Proxy (b :: BoardDecorator)) (Proxy (c :: Board))
-endGetBoard (Proxy (b :: BoardDecorator)) = Proxy @(GetBoard b)
+type EmptyDec = Dec EmptyBoard Black (At A Nat1) '(At E Nat1, At E Nat8)
