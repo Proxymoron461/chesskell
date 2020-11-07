@@ -375,6 +375,16 @@ type family PieceRow (t :: Team) :: [Piece] where
 type EmptyRow   = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
 
+type JustKingsDec = Dec JustKings Black (At A Nat1) '(At E Nat1, At E Nat8)
+type JustKings = (Nothing :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1) False))) :-> Nothing :-> Nothing :<> Nothing)
+                 :-> EmptyRow
+                 :-> EmptyRow
+                 :-> EmptyRow
+                 :-> EmptyRow
+                 :-> EmptyRow
+                 :-> EmptyRow
+                 :<> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece Black King (Info Z (At E Nat8) False))) :-> Nothing :-> Nothing :<> Nothing)
+
 type StartDec = Dec StartBoard Black (At A Nat1) '(At E Nat1, At E Nat8)
 
 type StartBoard = ('Just
