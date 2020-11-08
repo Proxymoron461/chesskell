@@ -82,9 +82,17 @@ at (dec :: Proxy (CA b team name)) (p :: SPosition toPos) cont
 lastTeam :: Proxy (b :: BoardDecorator) -> STeam team -> Spec (Proxy (SetLastTeam b team))
 lastTeam (dec :: Proxy b) (t :: STeam team) cont
     = cont (Proxy @(SetLastTeam b team))
+lastteam = lastTeam
+
+lastMoved :: Proxy (b :: BoardDecorator) -> SPosition pos -> Spec (Proxy (SetLastPosition pos b))
+lastMoved (dec :: Proxy b) (t :: SPosition pos) cont
+    = cont (Proxy @(SetLastPosition pos b))
+
+lastmoved = lastMoved
 
 startMoves :: Conv (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 startMoves (dec :: Proxy b) cont = cont dec
+startmoves = startMoves
 
 -- TODO: Introduce a bunch of different EDSL endings that you need!
 endGetBoard :: Term (Proxy (a :: BoardDecorator)) (Proxy (GetBoard a))
