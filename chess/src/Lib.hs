@@ -372,7 +372,7 @@ type family HaveRooksMoved (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) whe
 
 type family HaveRooksMovedHelper (r :: (Position, Position)) (b :: BoardDecorator) :: (Bool, Bool) where
     HaveRooksMovedHelper '( left, right ) boardDec
-        = '( Eval (IsPieceAtWhichDec boardDec left (PieceHasMoveCount Z)), Eval (IsPieceAtWhichDec boardDec right (PieceHasMoveCount Z)) )
+        = '( Eval ((Not . IsPieceAtWhichDec boardDec left) (PieceHasMoveCount Z)), Eval ((Not . IsPieceAtWhichDec boardDec right) (PieceHasMoveCount Z)) )
 
 -- data GetUnderAttackPositions :: Team -> BoardDecorator -> Exp [Position]
 -- Checks if any of a particular list of spaces is under attack

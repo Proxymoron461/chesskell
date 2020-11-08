@@ -31,6 +31,12 @@ shouldTypeCheck = shouldTypecheck
 shouldNotTypeCheck :: NFData a => a -> Assertion
 shouldNotTypeCheck = shouldNotTypecheck
 
+fromProxyFalse :: Proxy False -> False :~: False
+fromProxyFalse (Proxy :: Proxy b) = Refl @(b)
+
+fromProxyTrue :: Proxy True -> True :~: True
+fromProxyTrue (Proxy :: Proxy b) = Refl @(b)
+
 -- TEST TYPES
 -- TODO: Remove these and replace with EDSL stuff
 -- NOTE: These boards are upside-down - the first row is the last one visually
