@@ -83,6 +83,9 @@ lastTeam :: Proxy (b :: BoardDecorator) -> STeam team -> Spec (Proxy (SetLastTea
 lastTeam (dec :: Proxy b) (t :: STeam team) cont
     = cont (Proxy @(SetLastTeam b team))
 
+startMoves :: Conv (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
+startMoves (dec :: Proxy b) cont = cont dec
+
 -- TODO: Introduce a bunch of different EDSL endings that you need!
 endGetBoard :: Term (Proxy (a :: BoardDecorator)) (Proxy (GetBoard a))
 endGetBoard (Proxy :: Proxy (b :: BoardDecorator)) = Proxy @(GetBoard b)
