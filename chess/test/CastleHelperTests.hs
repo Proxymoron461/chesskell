@@ -24,15 +24,15 @@ castleToPosTest2 :: True :~: Eval ('[At C Nat8, At G Nat8] :=:=: Eval (CastleToP
 castleToPosTest2 = Refl
 
 -- data AnySpaceInCheck :: BoardDecorator -> [Position] -> Exp Bool
-anySpaceInCheckTest1 :: False :~: Eval (AnySpaceInCheck JustKingsDec (SpacesBetweenInc (At A Nat5) (At H Nat5)))
+anySpaceInCheckTest1 :: False :~: Eval (AnySpaceInCheck White JustKingsDec (SpacesBetweenInc (At A Nat5) (At H Nat5)))
 anySpaceInCheckTest1 = Refl
 
-anySpaceInCheckTest2 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AnySpaceInCheck b '[ At C Nat5 ]))
-anySpaceInCheckTest2 (Proxy :: (Proxy (b :: BoardDecorator))) = Proxy @(Eval (AnySpaceInCheck b '[ At C Nat5 ]))
+anySpaceInCheckTest2 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AnySpaceInCheck (GetMovingTeam b) b '[ At C Nat5 ]))
+anySpaceInCheckTest2 (Proxy :: (Proxy (b :: BoardDecorator))) = Proxy @(Eval (AnySpaceInCheck (GetMovingTeam b) b '[ At C Nat5 ]))
 aSICT2Board = create put _Wh _P at _c4 lastTeam _Wh end
 
-anySpaceInCheckTest3 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AnySpaceInCheck b '[ At B Nat5, At D Nat5 ]))
-anySpaceInCheckTest3 (Proxy :: (Proxy (b :: BoardDecorator))) = Proxy @(Eval (AnySpaceInCheck b '[ At B Nat5, At D Nat5 ]))
+anySpaceInCheckTest3 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AnySpaceInCheck (GetMovingTeam b) b '[ At B Nat5, At D Nat5 ]))
+anySpaceInCheckTest3 (Proxy :: (Proxy (b :: BoardDecorator))) = Proxy @(Eval (AnySpaceInCheck (GetMovingTeam b) b '[ At B Nat5, At D Nat5 ]))
 
 allSpacesFreeTest1 :: True :~: Eval (AllSpacesFree JustKingsDec (SpacesBetweenInc (At A Nat5) (At H Nat5)))
 allSpacesFreeTest1 = Refl
@@ -127,12 +127,6 @@ haveRooksMovedTest5 (Proxy :: Proxy (b :: BoardDecorator))
 haveRooksMovedTest6 :: Proxy (b :: BoardDecorator) -> Proxy (Eval ('(True, True) :==: (HaveRooksMoved Black b)))
 haveRooksMovedTest6 (Proxy :: Proxy (b :: BoardDecorator))
     = Proxy @(Eval ('(True, True) :==: (HaveRooksMoved Black b)))
-
-fromProxyFalse :: Proxy False -> False :~: False
-fromProxyFalse (Proxy :: Proxy b) = Refl @(b)
-
-fromProxyTrue :: Proxy True -> True :~: True
-fromProxyTrue (Proxy :: Proxy b) = Refl @(b)
 
 castleHelperTestSuite = describe "Castle Helper Function Tests" $ do
         describe "CastleToPosition Tests" $ do
