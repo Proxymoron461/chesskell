@@ -34,6 +34,16 @@ aSICT2Board = create put _Wh _P at _c4 lastTeam _Wh end
 anySpaceInCheckTest3 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AnySpaceInCheck b '[ At B Nat5, At D Nat5 ]))
 anySpaceInCheckTest3 (Proxy :: (Proxy (b :: BoardDecorator))) = Proxy @(Eval (AnySpaceInCheck b '[ At B Nat5, At D Nat5 ]))
 
+allSpacesFreeTest1 :: True :~: Eval (AllSpacesFree JustKingsDec (SpacesBetweenInc (At A Nat5) (At H Nat5)))
+allSpacesFreeTest1 = Refl
+
+allSpacesFreeTest2 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AllSpacesFree b '[ At C Nat4, At D Nat4 ]))
+allSpacesFreeTest2 (Proxy :: (Proxy (b :: BoardDecorator)))
+   = Proxy @(Eval (AllSpacesFree b '[ At C Nat4, At D Nat4 ]))
+
+allSpacesFreeTest3 :: False :~: Eval (AllSpacesFree JustKingsDec (SpacesBetweenInc (At E Nat1) (At E Nat8)))
+allSpacesFreeTest3 = Refl
+
 fromProxyFalse :: Proxy False -> False :~: False
 fromProxyFalse (Proxy :: Proxy b) = Refl @(b)
 
@@ -54,8 +64,13 @@ castleTestSuite = describe "Castle Tests" $ do
                 shouldTypeCheck $ fromProxyFalse (anySpaceInCheckTest2 aSICT2Board)
             it "3: The spaces diagonally above a White Pawn should be in check" $
                 shouldTypeCheck $ fromProxyTrue (anySpaceInCheckTest3 aSICT2Board)
-    --     describe "AllSpacesFree Tests" $ do
-    --         it blah
+        describe "AllSpacesFree Tests" $ do
+            it "1: An empty row should be registered as free" $
+               shouldTypeCheck allSpacesFreeTest1
+            it "2: A position with a Pawn in should NOT be registered as free" $
+               shouldTypeCheck $ fromProxyFalse (allSpacesFreeTest2 aSICT2Board)
+            it "3: A position with a King in should NOT be registered as free" $
+               shouldTypecheck allSpacesFreeTest3
     --     describe "HasKingMoved Tests" $ do
     --         it blah
     --     describe "HaveRooksMoved Tests" $ do
