@@ -345,7 +345,7 @@ type family CanCastle (b :: BoardDecorator) :: Bool where
             (AllSpacesFree boardDec .&. (Not . AnySpaceInCheck boardDec))) ])
 
 type family HasKingMoved (t :: Team) (b :: BoardDecorator) :: Bool where
-    HasKingMoved team boardDec = Eval (IsPieceAtWhichDec boardDec (GetKingPosition team boardDec) (PieceHasMoveCount Z))
+    HasKingMoved team boardDec = Eval (IsPieceAtWhichDec boardDec (GetKingPosition team boardDec) (Not . PieceHasMoveCount Z))
 
 type family Fst' (x :: (a, b)) :: a where
     Fst' '(x, _) = x

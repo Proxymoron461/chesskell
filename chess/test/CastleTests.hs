@@ -44,6 +44,29 @@ allSpacesFreeTest2 (Proxy :: (Proxy (b :: BoardDecorator)))
 allSpacesFreeTest3 :: False :~: Eval (AllSpacesFree JustKingsDec (SpacesBetweenInc (At E Nat1) (At E Nat8)))
 allSpacesFreeTest3 = Refl
 
+hasKingMovedTest1 :: False :~: HasKingMoved White JustKingsDec
+hasKingMovedTest1 = Refl
+
+hasKingMovedTest2 :: False :~: HasKingMoved Black JustKingsDec
+hasKingMovedTest2 = Refl
+
+moveKingsBoard = create
+                     put _Wh _K at _e1
+                     put _Bl _K at _e8
+                     lastTeam _Bl
+                  startMoves
+                     king _e1 to _e2
+                     king _e8 to _e7
+                  end
+
+hasKingMovedTest3 :: Proxy (b :: BoardDecorator) -> Proxy (HasKingMoved White b)
+hasKingMovedTest3 (Proxy :: Proxy (b :: BoardDecorator))
+   = Proxy @(HasKingMoved White b)
+
+hasKingMovedTest4 :: Proxy (b :: BoardDecorator) -> Proxy (HasKingMoved Black b)
+hasKingMovedTest4 (Proxy :: Proxy (b :: BoardDecorator))
+   = Proxy @(HasKingMoved Black b)
+
 fromProxyFalse :: Proxy False -> False :~: False
 fromProxyFalse (Proxy :: Proxy b) = Refl @(b)
 
@@ -71,8 +94,15 @@ castleTestSuite = describe "Castle Tests" $ do
                shouldTypeCheck $ fromProxyFalse (allSpacesFreeTest2 aSICT2Board)
             it "3: A position with a King in should NOT be registered as free" $
                shouldTypecheck allSpacesFreeTest3
-    --     describe "HasKingMoved Tests" $ do
-    --         it blah
+        describe "HasKingMoved Tests" $ do
+            it "If the White King has not moved, HasKingMoved White should return False" $
+               shouldTypecheck hasKingMovedTest1
+            it "If the Black King has not moved, HasKingMoved Black should return False" $
+               shouldTypeCheck hasKingMovedTest2
+            it "If the White King has moved, HasKingMoved White should return True" $
+               shouldTypecheck $ fromProxyTrue (hasKingMovedTest3 moveKingsBoard)
+            it "If the Black King has moved, HasKingMoved Black should return True" $
+               shouldTypeCheck $ fromProxyTrue (hasKingMovedTest4 moveKingsBoard)
     --     describe "HaveRooksMoved Tests" $ do
     --         it blah
     -- describe "CanCastle Tests" $ do
