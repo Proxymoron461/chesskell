@@ -34,27 +34,15 @@ aSICT2Board = create put _Wh _P at _c4 lastTeam _Wh end
 anySpaceInCheckTest3 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AnySpaceInCheck (GetMovingTeam b) b '[ At B Nat5, At D Nat5 ]))
 anySpaceInCheckTest3 (Proxy :: (Proxy (b :: BoardDecorator))) = Proxy @(Eval (AnySpaceInCheck (GetMovingTeam b) b '[ At B Nat5, At D Nat5 ]))
 
-allSpacesFreeTest1 :: True :~: Eval (AllSpacesFreeOrKing White JustKingsDec (SpacesBetweenInc (At A Nat5) (At H Nat5)))
+allSpacesFreeTest1 :: True :~: Eval (AllSpacesFree JustKingsDec (SpacesBetweenInc (At A Nat5) (At H Nat5)))
 allSpacesFreeTest1 = Refl
 
-allSpacesFreeTest2 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AllSpacesFreeOrKing White b '[ At C Nat4, At D Nat4 ]))
+allSpacesFreeTest2 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AllSpacesFree b '[ At C Nat4, At D Nat4 ]))
 allSpacesFreeTest2 (Proxy :: (Proxy (b :: BoardDecorator)))
-    = Proxy @(Eval (AllSpacesFreeOrKing White b '[ At C Nat4, At D Nat4 ]))
+    = Proxy @(Eval (AllSpacesFree b '[ At C Nat4, At D Nat4 ]))
 
-allSpacesFreeTest3 :: True :~: Eval (AllSpacesFreeOrKing White JustKingsDec '[ At E Nat1 ])
+allSpacesFreeTest3 :: '(False, False) :~: '( Eval (AllSpacesFree JustKingsDec (SpacesBetweenInc (At E Nat1) (At E Nat8))), Eval (AllSpacesFree JustKingsDec (SpacesBetweenInc (At E Nat1) (At E Nat8))) )
 allSpacesFreeTest3 = Refl
-
-allSpacesFreeTest4 :: False :~: Eval (AllSpacesFreeOrKing Black JustKingsDec '[ At E Nat1 ])
-allSpacesFreeTest4 = Refl
-
-allSpacesFreeTest5 :: True :~: Eval (AllSpacesFreeOrKing Black JustKingsDec '[ At E Nat8 ])
-allSpacesFreeTest5 = Refl
-
-allSpacesFreeTest6 :: False :~: Eval (AllSpacesFreeOrKing White JustKingsDec '[ At E Nat8 ])
-allSpacesFreeTest6 = Refl
-
-allSpacesFreeTest7 :: '(False, False) :~: '( Eval (AllSpacesFreeOrKing White JustKingsDec (SpacesBetweenInc (At E Nat1) (At E Nat8))), Eval (AllSpacesFreeOrKing Black JustKingsDec (SpacesBetweenInc (At E Nat1) (At E Nat8))) )
-allSpacesFreeTest7 = Refl
 
 hasKingMovedTest1 :: False :~: HasKingMoved White JustKingsDec
 hasKingMovedTest1 = Refl
@@ -62,40 +50,17 @@ hasKingMovedTest1 = Refl
 hasKingMovedTest2 :: False :~: HasKingMoved Black JustKingsDec
 hasKingMovedTest2 = Refl
 
-moveKingsBoard = create
-                     put _Wh _K at _e1
-                     put _Bl _K at _e8
-                     lastTeam _Bl
-                  startMoves
-                     king _e1 to _e2
-                     king _e8 to _e7
-                  end
+hasKingMovedTest3 :: True :~: HasKingMoved White MoveKingsDec
+hasKingMovedTest3 = Refl
 
-hasKingMovedTest3 :: Proxy (b :: BoardDecorator) -> Proxy (HasKingMoved White b)
-hasKingMovedTest3 (Proxy :: Proxy (b :: BoardDecorator))
-    = Proxy @(HasKingMoved White b)
-
-hasKingMovedTest4 :: Proxy (b :: BoardDecorator) -> Proxy (HasKingMoved Black b)
-hasKingMovedTest4 (Proxy :: Proxy (b :: BoardDecorator))
-    = Proxy @(HasKingMoved Black b)
+hasKingMovedTest4 :: True :~: HasKingMoved Black MoveKingsDec
+hasKingMovedTest4 = Refl
 
 haveRooksMovedTest1 :: '(False, False) :~: HaveRooksMoved White StartDec
 haveRooksMovedTest1 = Refl
 
 haveRooksMovedTest2 :: '(False, False) :~: HaveRooksMoved Black StartDec
 haveRooksMovedTest2 = Refl
-
-leftWRookRightBRookMovedBoard = create
-                                    put _Wh _R at _a1
-                                    put _Wh _R at _h1
-                                    put _Bl _R at _a8
-                                    put _Bl _R at _h8
-                                    lastTeam _Bl
-                                    lastMoved _e4
-                                startMoves
-                                    rook _a1 to _a2
-                                    rook _h8 to _h7
-                                end
 
 bothWhiteRooksMovedBoard = create
                                put _Wh _R at _a1
@@ -124,13 +89,11 @@ rookBackToStartBoard = create
                         end
 
 
-haveRooksMovedTest3 :: Proxy (b :: BoardDecorator) -> Proxy (Eval ('(True, False) :==: (HaveRooksMoved White b)))
-haveRooksMovedTest3 (Proxy :: Proxy (b :: BoardDecorator))
-    = Proxy @(Eval ('(True, False) :==: (HaveRooksMoved White b)))
+haveRooksMovedTest3 :: '(True, False) :~: HaveRooksMoved White LeftWRookRightBRookDec
+haveRooksMovedTest3 = Refl
 
-haveRooksMovedTest4 :: Proxy (b :: BoardDecorator) -> Proxy (Eval ('(False, True) :==: (HaveRooksMoved Black b)))
-haveRooksMovedTest4 (Proxy :: Proxy (b :: BoardDecorator))
-    = Proxy @(Eval ('(False, True) :==: (HaveRooksMoved Black b)))
+haveRooksMovedTest4 :: '(False, True) :~: HaveRooksMoved Black LeftWRookRightBRookDec
+haveRooksMovedTest4 = Refl
 
 haveRooksMovedTest5 :: Proxy (b :: BoardDecorator) -> Proxy (Eval ('(True, True) :==: (HaveRooksMoved White b)))
 haveRooksMovedTest5 (Proxy :: Proxy (b :: BoardDecorator))
@@ -158,34 +121,26 @@ castleHelperTestSuite = describe "Castle Helper Function Tests" $ do
                shouldTypeCheck allSpacesFreeTest1
             it "2: A position with a Pawn in should NOT be registered as free" $
                shouldTypeCheck $ fromProxyFalse (allSpacesFreeTest2 aSICT2Board)
-            it "3: A position with a White King in should be registered as free for White" $
+            it "3: A list of positions, with both White King and Black King in, should not be registered as free" $
                shouldTypecheck allSpacesFreeTest3
-            it "4: A position with a White King in should NOT be registered as free for Black" $
-               shouldTypecheck allSpacesFreeTest4
-            it "5: A position with a Black King in should be registered as free for Black" $
-               shouldTypecheck allSpacesFreeTest5
-            it "6: A position with a Black King in should NOT be registered as free for White" $
-               shouldTypecheck allSpacesFreeTest6
-            it "7: A list of positions, with both White King and Black King in, should not be registered as free for either" $
-               shouldTypecheck allSpacesFreeTest7
         describe "HasKingMoved Tests" $ do
             it "1: If the White King has not moved, HasKingMoved White should return False" $
                shouldTypecheck hasKingMovedTest1
             it "2: If the Black King has not moved, HasKingMoved Black should return False" $
                shouldTypeCheck hasKingMovedTest2
             it "3: If the White King has moved, HasKingMoved White should return True" $
-               shouldTypecheck $ fromProxyTrue (hasKingMovedTest3 moveKingsBoard)
+               shouldTypecheck hasKingMovedTest3
             it "4: If the Black King has moved, HasKingMoved Black should return True" $
-               shouldTypeCheck $ fromProxyTrue (hasKingMovedTest4 moveKingsBoard)
+               shouldTypeCheck hasKingMovedTest4
         describe "HaveRooksMoved Tests" $ do
             it "1: If neither White Rook has moved, HaveRooksMoved White should return '(False, False)" $
                shouldTypeCheck haveRooksMovedTest1
             it "2: If neither Black Rook has moved, HaveRooksMoved Black should return '(False, False)" $
                shouldTypeCheck haveRooksMovedTest2
             it "3: If the left Rook has moved, but the right one hasn't, HaveRooksMoved should return '(True, False)" $
-               shouldTypeCheck $ fromProxyTrue (haveRooksMovedTest3 leftWRookRightBRookMovedBoard)
+               shouldTypeCheck haveRooksMovedTest3
             it "4: If the right Rook has moved, but the left one hasn't, HaveRooksMoved should return '(False, True)" $
-               shouldTypeCheck $ fromProxyTrue (haveRooksMovedTest4 leftWRookRightBRookMovedBoard)
+               shouldTypeCheck haveRooksMovedTest4
             it "5: If both Rooks have moved, HaveRooksMoved should return '(True, True)" $
                shouldTypeCheck $ fromProxyTrue (haveRooksMovedTest5 bothWhiteRooksMovedBoard)
             it "6: If the left rook moves back to its start position, and if the right rook is not present, then HaveRooksMoved should return '(True, True)" $
@@ -276,4 +231,237 @@ type OnlyRooksAndKings = 'Dec
                                                      ':-> 'VEnd))
           'Black
           ('At 'A Nat1)
+          '( 'At 'E Nat1, 'At 'E Nat8)
+
+-- moveKingsBoard = create
+--                      put _Wh _K at _e1
+--                      put _Bl _K at _e8
+--                      lastTeam _Bl
+--                   startMoves
+--                      king _e1 to _e2
+--                      king _e8 to _e7
+--                   end
+
+type MoveKingsDec = 'Dec
+          (('Nothing
+            ':-> ('Nothing
+                  ':-> ('Nothing
+                        ':-> ('Nothing
+                              ':-> ('Nothing
+                                    ':-> ('Nothing ':-> ('Nothing ':-> ('Nothing ':-> 'VEnd))))))))
+           ':-> (('Nothing
+                  ':-> ('Nothing
+                        ':-> ('Nothing
+                              ':-> ('Nothing
+                                    ':-> ('Just
+                                            ('MkPiece
+                                               'White
+                                               'King
+                                               ('Info
+                                                  (S Z)
+                                                  ('At 'E (S Nat1))
+                                                  'False))
+                                          ':-> ('Nothing
+                                                ':-> ('Nothing ':-> ('Nothing ':-> 'VEnd))))))))
+                 ':-> (('Nothing
+                        ':-> ('Nothing
+                              ':-> ('Nothing
+                                    ':-> ('Nothing
+                                          ':-> ('Nothing
+                                                ':-> ('Nothing
+                                                      ':-> ('Nothing
+                                                            ':-> ('Nothing ':-> 'VEnd))))))))
+                       ':-> (('Nothing
+                              ':-> ('Nothing
+                                    ':-> ('Nothing
+                                          ':-> ('Nothing
+                                                ':-> ('Nothing
+                                                      ':-> ('Nothing
+                                                            ':-> ('Nothing
+                                                                  ':-> ('Nothing ':-> 'VEnd))))))))
+                             ':-> (('Nothing
+                                    ':-> ('Nothing
+                                          ':-> ('Nothing
+                                                ':-> ('Nothing
+                                                      ':-> ('Nothing
+                                                            ':-> ('Nothing
+                                                                  ':-> ('Nothing
+                                                                        ':-> ('Nothing
+                                                                              ':-> 'VEnd))))))))
+                                   ':-> (('Nothing
+                                          ':-> ('Nothing
+                                                ':-> ('Nothing
+                                                      ':-> ('Nothing
+                                                            ':-> ('Nothing
+                                                                  ':-> ('Nothing
+                                                                        ':-> ('Nothing
+                                                                              ':-> ('Nothing
+                                                                                    ':-> 'VEnd))))))))
+                                         ':-> (('Nothing
+                                                ':-> ('Nothing
+                                                      ':-> ('Nothing
+                                                            ':-> ('Nothing
+                                                                  ':-> ('Just
+                                                                          ('MkPiece
+                                                                             'Black
+                                                                             'King
+                                                                             ('Info
+                                                                                (S
+                                                                                   Z)
+                                                                                ('At
+                                                                                   'E
+                                                                                   (S
+                                                                                      Nat6))
+                                                                                'False))
+                                                                        ':-> ('Nothing
+                                                                              ':-> ('Nothing
+                                                                                    ':-> ('Nothing
+                                                                                          ':-> 'VEnd))))))))
+                                               ':-> (('Nothing
+                                                      ':-> ('Nothing
+                                                            ':-> ('Nothing
+                                                                  ':-> ('Nothing
+                                                                        ':-> ('Nothing
+                                                                              ':-> ('Nothing
+                                                                                    ':-> ('Nothing
+                                                                                          ':-> ('Nothing
+                                                                                                ':-> 'VEnd))))))))
+                                                     ':-> 'VEnd))))))))
+          'Black
+          ('At 'E Nat7)
+          '( 'At 'E Nat2, 'At 'E Nat7)
+
+-- leftWRookRightBRookMovedBoard = create
+--                                     put _Wh _R at _a1
+--                                     put _Wh _R at _h1
+--                                     put _Bl _R at _a8
+--                                     put _Bl _R at _h8
+--                                     lastTeam _Bl
+--                                     lastMoved _e4
+--                                 startMoves
+--                                     rook _a1 to _a2
+--                                     rook _h8 to _h7
+--                                 end
+
+type LeftWRookRightBRookDec = 'Dec
+          (('Nothing
+            ':-> ('Nothing
+                  ':-> ('Nothing
+                        ':-> ('Nothing
+                              ':-> ('Just
+                                      ('MkPiece
+                                         'White
+                                         'King
+                                         ('Info Z ('At 'E Nat1) 'False))
+                                    ':-> ('Nothing
+                                          ':-> ('Nothing
+                                                ':-> ('Just
+                                                        ('MkPiece
+                                                           'White
+                                                           'Rook
+                                                           ('Info
+                                                              Z
+                                                              ('At
+                                                                 'H
+                                                                 (S Nat0))
+                                                              'False))
+                                                      ':-> 'VEnd))))))))
+           ':-> (('Just
+                    ('MkPiece
+                       'White
+                       'Rook
+                       ('Info
+                          (S Z)
+                          ('At 'A (S Nat1))
+                          'False))
+                  ':-> ('Nothing
+                        ':-> ('Nothing
+                              ':-> ('Nothing
+                                    ':-> ('Nothing
+                                          ':-> ('Nothing
+                                                ':-> ('Nothing ':-> ('Nothing ':-> 'VEnd))))))))
+                 ':-> (('Nothing
+                        ':-> ('Nothing
+                              ':-> ('Nothing
+                                    ':-> ('Nothing
+                                          ':-> ('Nothing
+                                                ':-> ('Nothing
+                                                      ':-> ('Nothing
+                                                            ':-> ('Nothing ':-> 'VEnd))))))))
+                       ':-> (('Nothing
+                              ':-> ('Nothing
+                                    ':-> ('Nothing
+                                          ':-> ('Nothing
+                                                ':-> ('Nothing
+                                                      ':-> ('Nothing
+                                                            ':-> ('Nothing
+                                                                  ':-> ('Nothing ':-> 'VEnd))))))))
+                             ':-> (('Nothing
+                                    ':-> ('Nothing
+                                          ':-> ('Nothing
+                                                ':-> ('Nothing
+                                                      ':-> ('Nothing
+                                                            ':-> ('Nothing
+                                                                  ':-> ('Nothing
+                                                                        ':-> ('Nothing
+                                                                              ':-> 'VEnd))))))))
+                                   ':-> (('Nothing
+                                          ':-> ('Nothing
+                                                ':-> ('Nothing
+                                                      ':-> ('Nothing
+                                                            ':-> ('Nothing
+                                                                  ':-> ('Nothing
+                                                                        ':-> ('Nothing
+                                                                              ':-> ('Nothing
+                                                                                    ':-> 'VEnd))))))))
+                                         ':-> (('Nothing
+                                                ':-> ('Nothing
+                                                      ':-> ('Nothing
+                                                            ':-> ('Nothing
+                                                                  ':-> ('Nothing
+                                                                        ':-> ('Nothing
+                                                                              ':-> ('Nothing
+                                                                                    ':-> ('Just
+                                                                                            ('MkPiece
+                                                                                               'Black
+                                                                                               'Rook
+                                                                                               ('Info
+                                                                                                  (S
+                                                                                                     Z)
+                                                                                                  ('At
+                                                                                                     'H
+                                                                                                     (S
+                                                                                                        Nat6))
+                                                                                                  'False))
+                                                                                          ':-> 'VEnd))))))))
+                                               ':-> (('Just
+                                                        ('MkPiece
+                                                           'Black
+                                                           'Rook
+                                                           ('Info
+                                                              Z
+                                                              ('At
+                                                                 'A
+                                                                 (S Nat7))
+                                                              'False))
+                                                      ':-> ('Nothing
+                                                            ':-> ('Nothing
+                                                                  ':-> ('Nothing
+                                                                        ':-> ('Just
+                                                                                ('MkPiece
+                                                                                   'Black
+                                                                                   'King
+                                                                                   ('Info
+                                                                                      Z
+                                                                                      ('At
+                                                                                         'E
+                                                                                         Nat8)
+                                                                                      'False))
+                                                                              ':-> ('Nothing
+                                                                                    ':-> ('Nothing
+                                                                                          ':-> ('Nothing
+                                                                                                ':-> 'VEnd))))))))
+                                                     ':-> 'VEnd))))))))
+          'Black
+          ('At 'H Nat7)
           '( 'At 'E Nat1, 'At 'E Nat8)

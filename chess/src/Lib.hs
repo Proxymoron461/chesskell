@@ -336,12 +336,20 @@ type family KingMoveList (p :: Piece) (b :: BoardDecorator) :: [Position] where
             ++ GetCastlePositions team boardDec) 
 
 -- data PieceHasMoveCount :: Nat -> Piece -> Exp Bool
--- TODO: Put into helper to remove repeated GetMovingTeam??
 type family CanCastle (t :: Team) (b :: BoardDecorator) :: Bool where
     CanCastle team boardDec = Eval (Not' (HasKingMoved team boardDec) :&&: 
-        ID (Either' (Eval (PairAnd (HaveRooksNotMoved team boardDec)
-            (Eval (PairPredicate (Eval (CastleSpacesToTest team boardDec))
-                (AllSpacesFreeOrKing team boardDec .&. (Not . AnySpaceInCheck team boardDec))))))))
+        ID (CanCastleToEitherRook team boardDec))
+
+type family CanCastleToEitherRook (t :: Team) (b :: BoardDecorator) :: Bool where
+    CanCastleToEitherRook team boardDec = Either' (Eval (PairAnd (HaveRooksNotMoved team boardDec)
+        (Eval (PairAnd
+            (Eval (PairPredicate (Eval (CastleSpacesToTest team boardDec)) (Not . AnySpaceInCheck team boardDec)))
+            (Eval (PairPredicate (BetweenKingAndRook team) (AllSpacesFree boardDec)))))))
+
+-- TODO: Replace with RangeBetweenExclusive or something like that??
+type family BetweenKingAndRook (t :: Team) :: ([Position], [Position]) where
+    BetweenKingAndRook White = '( SpacesBetweenInc (At D Nat1) (At B Nat1), '[ (At F Nat1), (At G Nat1) ])
+    BetweenKingAndRook Black = '( SpacesBetweenInc (At D Nat8) (At B Nat8), '[ (At F Nat8), (At G Nat8) ])
 
 type family HasKingMoved (t :: Team) (b :: BoardDecorator) :: Bool where
     HasKingMoved team boardDec = Eval (IsPieceAtWhichDec boardDec (GetKingPosition team boardDec) (Not . PieceHasMoveCount Z))
@@ -384,9 +392,8 @@ type family HaveRooksMovedHelper (r :: (Position, Position)) (b :: BoardDecorato
 data AnySpaceInCheck :: Team -> BoardDecorator -> [Position] -> Exp Bool
 type instance Eval (AnySpaceInCheck team boardDec xs) = Eval (Any ((Flip In) (Eval (GetUnderAttackPositions (OppositeTeam' team) boardDec))) xs)
 
-data AllSpacesFreeOrKing :: Team -> BoardDecorator -> [Position] -> Exp Bool
-type instance Eval (AllSpacesFreeOrKing team boardDec xs)
-    = Eval (All ((Not . IsPieceAt boardDec) .|. IsKingAt team boardDec) xs)
+data AllSpacesFree :: BoardDecorator -> [Position] -> Exp Bool
+type instance Eval (AllSpacesFree boardDec xs) = Eval (All (Not . IsPieceAt boardDec) xs)
 
 type family RookStartPositions (t :: Team) :: (Position, Position) where
     RookStartPositions White = '( At A Nat1, At H Nat1 )
