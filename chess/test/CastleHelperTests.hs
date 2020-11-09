@@ -34,15 +34,27 @@ aSICT2Board = create put _Wh _P at _c4 lastTeam _Wh end
 anySpaceInCheckTest3 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AnySpaceInCheck (GetMovingTeam b) b '[ At B Nat5, At D Nat5 ]))
 anySpaceInCheckTest3 (Proxy :: (Proxy (b :: BoardDecorator))) = Proxy @(Eval (AnySpaceInCheck (GetMovingTeam b) b '[ At B Nat5, At D Nat5 ]))
 
-allSpacesFreeTest1 :: True :~: Eval (AllSpacesFree JustKingsDec (SpacesBetweenInc (At A Nat5) (At H Nat5)))
+allSpacesFreeTest1 :: True :~: Eval (AllSpacesFreeOrKing White JustKingsDec (SpacesBetweenInc (At A Nat5) (At H Nat5)))
 allSpacesFreeTest1 = Refl
 
-allSpacesFreeTest2 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AllSpacesFree b '[ At C Nat4, At D Nat4 ]))
+allSpacesFreeTest2 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AllSpacesFreeOrKing White b '[ At C Nat4, At D Nat4 ]))
 allSpacesFreeTest2 (Proxy :: (Proxy (b :: BoardDecorator)))
-    = Proxy @(Eval (AllSpacesFree b '[ At C Nat4, At D Nat4 ]))
+    = Proxy @(Eval (AllSpacesFreeOrKing b '[ At C Nat4, At D Nat4 ]))
 
-allSpacesFreeTest3 :: False :~: Eval (AllSpacesFree JustKingsDec (SpacesBetweenInc (At E Nat1) (At E Nat8)))
+allSpacesFreeTest3 :: True :~: Eval (AllSpacesFreeOrKing White JustKingsDec '[ At E Nat1 ])
 allSpacesFreeTest3 = Refl
+
+allSpacesFreeTest4 :: False :~: Eval (AllSpacesFreeOrKing Black JustKingsDec '[ At E Nat1 ])
+allSpacesFreeTest4 = Refl
+
+allSpacesFreeTest5 :: True :~: Eval (AllSpacesFreeOrKing Black JustKingsDec '[ At E Nat8 ])
+allSpacesFreeTest5 = Refl
+
+allSpacesFreeTest6 :: False :~: Eval (AllSpacesFreeOrKing White JustKingsDec '[ At E Nat8 ])
+allSpacesFreeTest6 = Refl
+
+allSpacesFreeTest7 :: '(False, False) :~: '( Eval (AllSpacesFreeOrKing White JustKingsDec (SpacesBetweenInc (At E Nat1) (At E Nat8))), Eval (AllSpacesFreeOrKing Black JustKingsDec (SpacesBetweenInc (At E Nat1) (At E Nat8))) )
+allSpacesFreeTest7 = Refl
 
 hasKingMovedTest1 :: False :~: HasKingMoved White JustKingsDec
 hasKingMovedTest1 = Refl
@@ -146,8 +158,16 @@ castleHelperTestSuite = describe "Castle Helper Function Tests" $ do
                shouldTypeCheck allSpacesFreeTest1
             it "2: A position with a Pawn in should NOT be registered as free" $
                shouldTypeCheck $ fromProxyFalse (allSpacesFreeTest2 aSICT2Board)
-            it "3: A position with a King in should NOT be registered as free" $
+            it "3: A position with a White King in should be registered as free for White" $
                shouldTypecheck allSpacesFreeTest3
+            it "4: A position with a White King in should NOT be registered as free for Black" $
+               shouldTypecheck allSpacesFreeTest4
+            it "5: A position with a Black King in should be registered as free for Black" $
+               shouldTypecheck allSpacesFreeTest5
+            it "6: A position with a Black King in should NOT be registered as free for White" $
+               shouldTypecheck allSpacesFreeTest6
+            it "7: A list of positions, with both White King and Black King in, should not be registered as free for either" $
+               shouldTypecheck allSpacesFreeTest7
         describe "HasKingMoved Tests" $ do
             it "1: If the White King has not moved, HasKingMoved White should return False" $
                shouldTypecheck hasKingMovedTest1
