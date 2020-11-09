@@ -17,12 +17,6 @@ import MakeSingletons
 
 import TestTypes
 
-castleToPosTest1 :: True :~: Eval ('[At C Nat1, At G Nat1] :=:=: Eval (CastleToPositions (At E Nat1)))
-castleToPosTest1 = Refl
-
-castleToPosTest2 :: True :~: Eval ('[At C Nat8, At G Nat8] :=:=: Eval (CastleToPositions (At E Nat8)))
-castleToPosTest2 = Refl
-
 -- data AnySpaceInCheck :: BoardDecorator -> [Position] -> Exp Bool
 anySpaceInCheckTest1 :: False :~: Eval (AnySpaceInCheck White JustKingsDec (SpacesBetweenInc (At A Nat5) (At H Nat5)))
 anySpaceInCheckTest1 = Refl
@@ -104,11 +98,6 @@ haveRooksMovedTest6 (Proxy :: Proxy (b :: BoardDecorator))
     = Proxy @(Eval ('(True, True) :==: (HaveRooksMoved Black b)))
 
 castleHelperTestSuite = describe "Castle Helper Function Tests" $ do
-        describe "CastleToPosition Tests" $ do
-            it "1: The White King, from its starting position, should be able to castle to C1 and G1" $
-                shouldTypeCheck castleToPosTest1
-            it "2: The Black King, from its starting position, should be able to castle to C8 and G8" $
-                shouldTypeCheck castleToPosTest2
         describe "AnySpaceInCheck Tests" $ do
             it "1" $
                 shouldTypeCheck anySpaceInCheckTest1
