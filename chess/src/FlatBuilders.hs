@@ -98,12 +98,6 @@ startmoves = startMoves
 endGetBoard :: Term (Proxy (a :: BoardDecorator)) (Proxy (GetBoard a))
 endGetBoard (Proxy :: Proxy (b :: BoardDecorator)) = Proxy @(GetBoard b)
 
--- Having a go and seeing if it compiles!
-x = chess
-    pawn _a2 to _a4
-    pawn _a7 to _a6
-    end
-
 -- TODO: Code should deal with:
     -- Checkmate (compile or don't compile?)
     -- Draw (can only move into check)
