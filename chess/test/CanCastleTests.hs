@@ -18,19 +18,19 @@ import MakeSingletons
 import TestTypes
 import CastleHelperTests
 
-canCastleTest1 :: '(False, False) :~: '(CanCastle White StartDec, CanCastle Black StartDec)
+canCastleTest1 :: '( '(False, False), '(False, False) ) :~: '(CanCastle White StartDec, CanCastle Black StartDec)
 canCastleTest1 = Refl
 
-canCastleTest2 :: True :~: CanCastle White WhiteCanCastleDec
+canCastleTest2 :: '(True, True) :~: CanCastle White WhiteCanCastleDec
 canCastleTest2 = Refl
 
-canCastleTest3 :: False :~: CanCastle Black WhiteCanCastleDec
+canCastleTest3 :: '( False, False) :~: CanCastle Black WhiteCanCastleDec
 canCastleTest3 = Refl
 
-canCastleTest4 :: True :~: CanCastle Black BlackLeftCastleWhiteRightCastleDec
+canCastleTest4 :: '(True, False) :~: CanCastle Black BlackLeftCastleWhiteRightCastleDec
 canCastleTest4 = Refl
 
-canCastleTest5 :: True :~: CanCastle White BlackLeftCastleWhiteRightCastleDec
+canCastleTest5 :: '(False, True) :~: CanCastle White BlackLeftCastleWhiteRightCastleDec
 canCastleTest5 = Refl
 
 canCastleTestSuite = describe "CanCastle Tests" $ do

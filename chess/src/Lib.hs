@@ -339,12 +339,13 @@ type family KingMoveList (p :: Piece) (b :: BoardDecorator) :: [Position] where
             ++ GetCastlePositions team boardDec) 
 
 -- data PieceHasMoveCount :: Nat -> Piece -> Exp Bool
-type family CanCastle (t :: Team) (b :: BoardDecorator) :: Bool where
-    CanCastle team boardDec = Eval (Not' (HasKingMoved team boardDec) :&&: 
-        ID (CanCastleToEitherRook team boardDec))
+type family CanCastle (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
+    CanCastle team boardDec = Eval (If (Not' (HasKingMoved team boardDec))
+        (ID (CanCastleToEitherRook team boardDec))
+        (ID '(False, False)))
 
-type family CanCastleToEitherRook (t :: Team) (b :: BoardDecorator) :: Bool where
-    CanCastleToEitherRook team boardDec = Either' (Eval (PairAnd (HaveRooksNotMoved team boardDec)
+type family CanCastleToEitherRook (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
+    CanCastleToEitherRook team boardDec = (Eval (PairAnd (HaveRooksNotMoved team boardDec)
         (Eval (PairAnd
             (Eval (PairPredicate (Eval (CastleSpacesToTest team boardDec)) (Not . AnySpaceInCheck team boardDec)))
             (Eval (PairPredicate (BetweenKingAndRook team) (AllSpacesFree boardDec)))))))
@@ -403,12 +404,13 @@ type family RookStartPositions (t :: Team) :: (Position, Position) where
     RookStartPositions Black = '( At A Nat8, At H Nat8 )
 
 type family GetCastlePositions (t :: Team) (b :: BoardDecorator) :: [Position] where
-    GetCastlePositions team boardDec = Eval (If (CanCastle team boardDec)
-        (CastleToPositions (GetKingPosition team boardDec))
-        (ID '[]))
+    GetCastlePositions team boardDec = GetCastlePositionsHelper (CanCastle team boardDec) (GetKingPosition team boardDec)
 
-data CastleToPositions :: Position -> Exp [Position]
-type instance Eval (CastleToPositions pos) = '[ TwoLeft pos, TwoRight pos ]
+type family GetCastlePositionsHelper (x :: (Bool, Bool)) (p :: Position) :: [Position] where
+    GetCastlePositionsHelper '(False, False) kingPos = '[]
+    GetCastlePositionsHelper '(True,  False) kingPos = '[ TwoLeft kingPos ]
+    GetCastlePositionsHelper '(False, True)  kingPos = '[ TwoRight kingPos ]
+    GetCastlePositionsHelper '(True,  True)  kingPos = '[ TwoLeft kingPos, TwoRight kingPos ]
 
 data CastleSpacesToTest :: Team -> BoardDecorator -> Exp ([Position], [Position])
 type instance Eval (CastleSpacesToTest team boardDec)
