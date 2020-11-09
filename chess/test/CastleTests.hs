@@ -27,6 +27,12 @@ canCastleTest2 = Refl
 canCastleTest3 :: False :~: CanCastle Black WhiteCanCastleDec
 canCastleTest3 = Refl
 
+canCastleTest4 :: True :~: CanCastle Black BlackLeftCastleWhiteRightCastleDec
+canCastleTest4 = Refl
+
+canCastleTest5 :: True :~: CanCastle White BlackLeftCastleWhiteRightCastleDec
+canCastleTest5 = Refl
+
 castleTestSuite = describe "Castle Tests" $ do
     castleHelperTestSuite
     describe "CanCastle Tests" $ do
@@ -36,6 +42,10 @@ castleTestSuite = describe "Castle Tests" $ do
             shouldTypecheck canCastleTest2
         it "3: If there are pieces between the Black King and its' Rooks, Black cannot castle." $
             shouldTypecheck canCastleTest3
+        it "4: Even if Black can only castle to the left, CanCastle Black should return true." $
+            shouldTypecheck canCastleTest4
+        it "5: Even if White can only castle to the right, CanCastle White should return true." $
+            shouldTypecheck canCastleTest5
    --  describe "Castling tests" $ do
    --      it blah blah blah
 
@@ -88,6 +98,80 @@ type WhiteCanCastleDec = 'Dec
                                                                     ('At
                                                                        'B Nat8)
                                                                     'False)))
+                                                            :-> ('Nothing
+                                                                  :-> ('Nothing
+                                                                        :-> ('Just
+                                                                                ('MkPiece
+                                                                                   'Black
+                                                                                   'King
+                                                                                   ('Info
+                                                                                      Z
+                                                                                      ('At
+                                                                                         'E
+                                                                                         Nat8)
+                                                                                      'False)))
+                                                                              :-> ('Nothing
+                                                                                    :-> ('Just
+                                                                                            ('MkPiece
+                                                                                               'Black
+                                                                                               'Pawn
+                                                                                               ('Info
+                                                                                                  Z
+                                                                                                  ('At
+                                                                                                     'G
+                                                                                                     Nat8)
+                                                                                                  'False)))
+                                                                                          :<> ('Just
+                                                                                                  ('MkPiece
+                                                                                                     'Black
+                                                                                                     'Rook
+                                                                                                     ('Info
+                                                                                                        Z
+                                                                                                        ('At
+                                                                                                           'H
+                                                                                                           Nat8)
+                                                                                                        'False))))))))
+          'Black
+          ('At 'E Nat4)
+          '( 'At 'E Nat1, 'At 'E Nat8)
+
+type BlackLeftCastleWhiteRightCastleDec = 'Dec
+          ((('Just
+              ('MkPiece
+                 'White
+                 'Rook
+                 ('Info
+                    Z ('At 'A Nat1) 'False))) :-> ((Just (MkPiece White Pawn (Info Z (At A Nat2) False))) :-> ('Nothing :-> ('Nothing :-> ('Just
+                                      ('MkPiece
+                                         'White
+                                         'King
+                                         ('Info Z ('At 'E Nat1) 'False))) :-> ('Nothing :-> ('Nothing :<> ('Just
+                                                        ('MkPiece
+                                                           'White
+                                                           'Rook
+                                                           ('Info
+                                                              Z
+                                                              ('At
+                                                                 'H
+                                                                 Nat1)
+                                                              'False)))))))))
+           :-> EmptyRow
+                 :-> EmptyRow
+                       :-> EmptyRow
+                              :-> EmptyRow
+                                   :-> EmptyRow
+                                         :-> EmptyRow
+                                               :<> (('Just
+                                                        ('MkPiece
+                                                           'Black
+                                                           'Rook
+                                                           ('Info
+                                                              Z
+                                                              ('At
+                                                                 'A
+                                                                 Nat8)
+                                                              'False)))
+                                                      :-> Nothing
                                                             :-> ('Nothing
                                                                   :-> ('Nothing
                                                                         :-> ('Just
