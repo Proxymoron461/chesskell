@@ -39,7 +39,7 @@ allSpacesFreeTest1 = Refl
 
 allSpacesFreeTest2 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AllSpacesFreeOrKing White b '[ At C Nat4, At D Nat4 ]))
 allSpacesFreeTest2 (Proxy :: (Proxy (b :: BoardDecorator)))
-    = Proxy @(Eval (AllSpacesFreeOrKing b '[ At C Nat4, At D Nat4 ]))
+    = Proxy @(Eval (AllSpacesFreeOrKing White b '[ At C Nat4, At D Nat4 ]))
 
 allSpacesFreeTest3 :: True :~: Eval (AllSpacesFreeOrKing White JustKingsDec '[ At E Nat1 ])
 allSpacesFreeTest3 = Refl
