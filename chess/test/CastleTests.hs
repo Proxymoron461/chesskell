@@ -37,7 +37,7 @@ castleTestSuite = describe "Castle Tests" $ do
 -------------------------------------------------------------------------------------------------------
 
 type WhiteCanCastleDec = 'Dec
-          (('Just
+          ((('Just
               ('MkPiece
                  'White
                  'Rook
@@ -59,7 +59,7 @@ type WhiteCanCastleDec = 'Dec
            :-> EmptyRow
                  :-> EmptyRow
                        :-> EmptyRow
-                                 :-> EmptyRow
+                              :-> EmptyRow
                                    :-> EmptyRow
                                          :-> EmptyRow
                                                :<> (('Just
@@ -105,7 +105,7 @@ type WhiteCanCastleDec = 'Dec
                                                                                                      (S
                                                                                                         Nat7))
                                                                                                   'False)))
-                                                                                          :-> ('Just
+                                                                                          :<> ('Just
                                                                                                   ('MkPiece
                                                                                                      'Black
                                                                                                      'Rook
@@ -115,7 +115,7 @@ type WhiteCanCastleDec = 'Dec
                                                                                                            'H
                                                                                                            (S
                                                                                                               Nat7))
-                                                                                                        'False)))))))
+                                                                                                        'False))))))))
           'Black
           ('At 'E Nat4)
           '( 'At 'E Nat1, 'At 'E Nat8)
