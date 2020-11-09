@@ -252,6 +252,9 @@ type instance Eval (x :&&: y) = Eval (LazyAnd x y)
 data (.&.) :: (a -> Exp Bool) -> (a -> Exp Bool) -> a -> Exp Bool
 type instance Eval ((.&.) f g x) = Eval ((Eval (f x)) :&&: g x)
 
+data (.|.) :: (a -> Exp Bool) -> (a -> Exp Bool) -> a -> Exp Bool
+type instance Eval ((.|.) f g x) = Eval ((Eval (f x)) :||: g x)
+
 data Not :: Bool -> Exp Bool
 type instance Eval (Not True)  = False
 type instance Eval (Not False) = True
