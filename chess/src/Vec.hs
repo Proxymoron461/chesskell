@@ -19,11 +19,6 @@ data VecToList :: Vec n a -> Exp [a]
 type instance Eval (VecToList (x :-> xs)) = x ': Eval (VecToList xs)
 type instance Eval (VecToList VEnd)       = '[]
 
--- Membership checking for vectors
-type family Elem (x :: a) (ys :: Vec n a) :: Bool where
-    Elem x (y :-> rest) = Eval ((Eval (x :==: y)) :||: (ID (Elem x rest)))
-    Elem x VEnd         = 'False
-
 data AllVec :: (a -> Exp Bool) -> Vec n a -> Exp Bool
 type instance Eval (AllVec p VEnd)       = True
 type instance Eval (AllVec p (x :-> xs)) = Eval (Eval (p x) :&&: AllVec p xs)
