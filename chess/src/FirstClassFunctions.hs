@@ -256,6 +256,13 @@ data Not :: Bool -> Exp Bool
 type instance Eval (Not True)  = False
 type instance Eval (Not False) = True
 
+type family Not' (x :: Bool) :: Bool where
+    Not' True  = False
+    Not' False = True
+
+type family PairNot' (x :: (Bool, Bool)) :: (Bool, Bool) where
+    PairNot' '(x, y) = '(Not' x, Not' y)
+
 data Any :: (a -> Exp Bool) -> [a] -> Exp Bool
 type instance Eval (Any p '[])       = False
 type instance Eval (Any p (x ': xs)) = Eval (Eval (p x) :||: Any p xs)
