@@ -385,9 +385,8 @@ data AnySpaceInCheck :: Team -> BoardDecorator -> [Position] -> Exp Bool
 type instance Eval (AnySpaceInCheck team boardDec xs) = Eval (Any ((Flip In) (Eval (GetUnderAttackPositions (OppositeTeam' team) boardDec))) xs)
 
 data AllSpacesFreeOrKing :: Team -> BoardDecorator -> [Position] -> Exp Bool
-type instance Eval (AllSpacesFreeOrKing _ _ '[]) = True
-type instance Eval (AllSpacesFreeOrKing team boardDec (pos ': xs))
-    = Eval (Eval ((Not . IsPieceAt boardDec) pos) :||: IsKingAt team boardDec pos)
+type instance Eval (AllSpacesFreeOrKing team boardDec xs)
+    = Eval (All ((Not . IsPieceAt boardDec) .|. IsKingAt team boardDec) xs)
 
 type family RookStartPositions (t :: Team) :: (Position, Position) where
     RookStartPositions White = '( At A Nat1, At H Nat1 )
