@@ -276,6 +276,9 @@ type instance Eval (IsPieceAt boardDec pos) = Eval (IsJust (Eval (GetPieceAtDec 
 data IsKingAt :: Team -> BoardDecorator -> Position -> Exp Bool
 type instance Eval (IsKingAt team boardDec pos) = Eval (FromMaybe False (HasTeam team .&. IsKing) (Eval (GetPieceAtDec boardDec pos)))
 
+data IsRookAt :: Team -> BoardDecorator -> Position -> Exp Bool
+type instance Eval (IsRookAt team boardDec pos) = Eval (FromMaybe False (HasTeam team .&. IsRook) (Eval (GetPieceAtDec boardDec pos)))
+
 data IsQueenAt :: BoardDecorator -> Position -> Exp Bool
 type instance Eval (IsQueenAt boardDec pos) = Eval (FromMaybe False IsQueen (Eval (GetPieceAtDec boardDec pos)))
 
