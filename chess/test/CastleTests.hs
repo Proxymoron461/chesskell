@@ -21,14 +21,21 @@ import CastleHelperTests
 canCastleTest1 :: '(False, False) :~: '(CanCastle White StartDec, CanCastle Black StartDec)
 canCastleTest1 = Refl
 
-canCastleTest2 :: '(True, False) :~: '( CanCastle White WhiteCanCastleDec, CanCastle Black WhiteCanCastleDec )
+canCastleTest2 :: True :~: CanCastle White WhiteCanCastleDec
 canCastleTest2 = Refl
+
+canCastleTest3 :: False :~: CanCastle Black WhiteCanCastleDec
+canCastleTest3 = Refl
 
 castleTestSuite = describe "Castle Tests" $ do
     castleHelperTestSuite
     describe "CanCastle Tests" $ do
         it "1: In the starting board configuration for chess, neither Black nor White can castle." $
             shouldTypecheck canCastleTest1
+        it "2: If there are no pieces between the White King and its' Rooks, and none of them have moved, White can castle." $
+            shouldTypecheck canCastleTest2
+        it "3: If there are pieces between the Black King and its' Rooks, Black cannot castle." $
+            shouldTypecheck canCastleTest3
    --  describe "Castling tests" $ do
    --      it blah blah blah
 
@@ -102,8 +109,7 @@ type WhiteCanCastleDec = 'Dec
                                                                                                   Z
                                                                                                   ('At
                                                                                                      'G
-                                                                                                     (S
-                                                                                                        Nat7))
+                                                                                                     Nat8)
                                                                                                   'False)))
                                                                                           :<> ('Just
                                                                                                   ('MkPiece
@@ -113,8 +119,7 @@ type WhiteCanCastleDec = 'Dec
                                                                                                         Z
                                                                                                         ('At
                                                                                                            'H
-                                                                                                           (S
-                                                                                                              Nat7))
+                                                                                                           Nat8)
                                                                                                         'False))))))))
           'Black
           ('At 'E Nat4)
