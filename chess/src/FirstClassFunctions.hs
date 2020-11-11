@@ -18,8 +18,12 @@ type family Eval (e :: Exp a) :: a
 -- Open type family for Show instances for types!
 type family TypeShow (x :: a) :: TL.Symbol
 
-type instance TypeShow '[] = "[]"
-type instance TypeShow (x ': xs) = TypeShow x ++ " : " ++ TypeShow xs
+type instance TypeShow (xs :: [a]) = TypeShowList xs
+
+type family TypeShowList (xs :: [a]) :: TL.Symbol where
+    TypeShowList '[]       = ""
+    TypeShowList '[x]      = TypeShow x
+    TypeShowList (x ': xs) = TypeShow x ++ ", " ++ TypeShowList xs
 
 -- Show instances for both custom Nat and Data.Type.Nat
 type instance TypeShow (n :: Nat) = TypeShowNat n
@@ -151,11 +155,6 @@ data Sequence :: [m a] -> Exp (m [a])
 type instance Eval (Sequence (Nothing ': xs)) = Eval (Sequence xs)
 type instance Eval (Sequence (Just x  ': xs)) = Eval (Eval (Sequence xs) >>= ((CW Just) . (CW2 (:)) x))
 
--- This delays the evaluation of the type error!
--- (Thanks https://blog.poisson.chat/posts/2018-08-06-one-type-family.html#fnref4)
-data TE' :: TL.ErrorMessage -> Exp a
-type instance Eval (TE' msg) = TL.TypeError msg
-
 -- A quick way of checking if two types are equal!
 data IsTypeEqual :: a -> b -> Exp Bool
 type instance Eval (IsTypeEqual a b) = IsTypeEqualNonFCF a b
@@ -206,7 +205,6 @@ type instance Eval (FromJust x) = FromJust' x
 
 type family FromJust' (x :: Maybe a) :: a where
     FromJust' (Just x) = x
-    -- FromJust' (TL.TypeError e) = TL.TypeError e
 
 data ToJust :: a -> Exp (Maybe a)
 type instance Eval (ToJust x) = Just x
