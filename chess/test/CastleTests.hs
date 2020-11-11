@@ -173,4 +173,4 @@ type CastleDec = 'Dec
                                                      ':-> 'VEnd))))))))
           'White
           ('At 'A Nat1)
-          '( 'At 'E Nat1, 'At 'E Nat8)
+          '( 'At 'E Nat1, 'At 'E Nat8) Nat1

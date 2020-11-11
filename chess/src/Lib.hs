@@ -300,11 +300,11 @@ type instance Eval (GetRowUnderAttackPositions team boardDec row) = Eval (Foldr 
 data AddMovesToList :: Team -> BoardDecorator -> Maybe Piece -> [Position] -> Exp [Position]
 type instance Eval (AddMovesToList team boardDec maybePiece list) = Eval (FromMaybe '[] ((Flip PieceAttackList) boardDec) (Eval (If (Eval (MaybeIf (HasTeam team) maybePiece)) (ID maybePiece) (ID Nothing)))) ++ list
 
-type family NoKingError (team :: Team) where
-    NoKingError team = TL.TypeError (TL.Text ("There is no " ++ TypeShow team ++ " King on the boardDec!"))
+type family NoKingError (b :: BoardDecorator) (team :: Team) where
+    NoKingError boardDec team = TL.TypeError ((TL.Text ("There is no " ++ TypeShow team ++ " King on the board!")) TL.:$$: (TL.Text ("Error at move: " ++ TypeShow (GetNoOfMoves boardDec))))
 
 data FindKing :: Team -> BoardDecorator -> Exp Piece
-type instance Eval (FindKing team boardDec) = Eval (FromMaybe (NoKingError team) ID (Eval (GetPieceAtDec boardDec (GetKingPosition team boardDec))))
+type instance Eval (FindKing team boardDec) = Eval (FromMaybe (NoKingError boardDec team) ID (Eval (GetPieceAtDec boardDec (GetKingPosition team boardDec))))
 
 -- TODO: Remove "Team" from input, since you can get it from board decorator??
 data IsKingInCheck :: Team -> BoardDecorator -> Exp Bool
@@ -542,18 +542,22 @@ type instance Eval (MoveWithStateCheck name fromPos toPos boardDec)
 
 data IfPieceThenMove :: PieceName -> Position -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (IfPieceThenMove name fromPos toPos boardDec)
-    = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos (IsPiece name))) (Move fromPos toPos boardDec) (TE' (TL.Text ("The piece at: " ++ TypeShow fromPos ++ " is not a: " ++ TypeShow name ++ "."))))
+    = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos (IsPiece name)))
+        (Move fromPos toPos boardDec)
+        (If (Eval (IsPieceAt boardDec fromPos))
+            (TE' (TL.Text ("The piece at: " ++ TypeShow fromPos ++ " is not a " ++ TypeShow name ++ ".")))
+            (TE' (TL.Text ("There is no piece at: " ++ TypeShow fromPos ++ ".")))))
 
 -- Type family for moving a piece, and putting it through a series of checks first
 data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (Move fromPos toPos boardDec) = Eval ((DoChecks '[
-    CheckNoCheck (GetMovingTeam boardDec) ] . MoveNoChecks fromPos toPos . DoChecks '[
-    NotTakingKingCheck toPos,
-    CanMoveCheck fromPos toPos,
-    NotTakingOwnTeamCheck toPos,
-    NotSamePosCheck fromPos toPos,
-    NotLastToMoveCheck fromPos,
-    TeamCheck fromPos ]) boardDec)
+type instance Eval (Move fromPos toPos boardDec) = Eval ((
+    CheckNoCheck (GetMovingTeam boardDec) . MoveNoChecks fromPos toPos . 
+        NotTakingKingCheck toPos .
+        CanMoveCheck fromPos toPos .
+        NotTakingOwnTeamCheck toPos .
+        NotSamePosCheck fromPos toPos .
+        NotLastToMoveCheck fromPos .
+        TeamCheck fromPos) boardDec)
 
 data MoveNoChecks :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
 -- type instance Eval (MoveNoChecks fromPos toPos boardDec) = Eval (ClearPieceAtDec fromPos <$> (Eval (Eval (GetPieceAtDec boardDec fromPos) >>= (FlipToLast MovePiece) toPos boardDec)))
@@ -576,7 +580,8 @@ data CanMoveCheck :: Position -> Position -> BoardDecorator -> Exp BoardDecorato
 type instance Eval (CanMoveCheck fromPos toPos boardDec)
     = Eval (If (Eval (CanMoveTo fromPos toPos boardDec))
         (ID boardDec)
-        (TE' (TL.Text ("There is no valid move from: " ++ TypeShow fromPos ++ " to: " ++ TypeShow toPos))))
+        (TE' ((TL.Text ("There is no valid move from " ++ TypeShow fromPos ++ " to " ++ TypeShow toPos ++ ".")
+              TL.:$$: TL.Text ("The " ++ TypeShow (Eval ((PieceType . FromJust . GetPieceAtDec boardDec) fromPos)) ++ " at " ++ TypeShow fromPos ++ " can move to: " ++ TypeShow (Eval (PieceMoveList (FromJust' (Eval (GetPieceAtDec boardDec fromPos))) boardDec)))))))
 
 data NotSamePosCheck :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (NotSamePosCheck fromPos toPos boardDec)
@@ -632,8 +637,8 @@ type instance Eval (MovePieceSwitch piece toPos boardDec) = Eval (Switch '[
 -- and sets that piece as the last piece having moved.
 -- NOTE: This is the function that correctly sets the BoardDecorator.
 data MovePieceTo :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (MovePieceTo piece toPos (Dec board team pos kings))
-    = Dec (Eval (SetPieceAt (Eval (IncrementMoves piece)) board toPos)) (Eval (PieceTeam piece)) toPos (UpdateKings kings piece toPos)
+type instance Eval (MovePieceTo piece toPos (Dec board team pos kings moves))
+    = Dec (Eval (SetPieceAt (Eval (IncrementMoves piece)) board toPos)) (Eval (PieceTeam piece)) toPos (UpdateKings kings piece toPos) (S moves)
 
 -- Ensuring you don't move into check is handled by MovePiece
 -- TODO: Flow through MovePieceTo

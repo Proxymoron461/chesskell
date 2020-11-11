@@ -220,7 +220,7 @@ type OnlyRooksAndKings = 'Dec
                                                      ':-> 'VEnd))
           'Black
           ('At 'A Nat1)
-          '( 'At 'E Nat1, 'At 'E Nat8)
+          '( 'At 'E Nat1, 'At 'E Nat8) nat1
 
 -- moveKingsBoard = create
 --                      put _Wh _K at _e1
@@ -318,7 +318,7 @@ type MoveKingsDec = 'Dec
                                                      ':-> 'VEnd))))))))
           'Black
           ('At 'E Nat7)
-          '( 'At 'E Nat2, 'At 'E Nat7)
+          '( 'At 'E Nat2, 'At 'E Nat7) nat1
 
 -- leftWRookRightBRookMovedBoard = create
 --                                     put _Wh _R at _a1
@@ -453,4 +453,4 @@ type LeftWRookRightBRookDec = 'Dec
                                                      ':-> 'VEnd))))))))
           'Black
           ('At 'H Nat7)
-          '( 'At 'E Nat1, 'At 'E Nat8)
+          '( 'At 'E Nat1, 'At 'E Nat8) Nat1

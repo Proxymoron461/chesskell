@@ -9,6 +9,11 @@ import Data.Type.Nat hiding (SNat(..))
 type Row = Vec Eight (Maybe Piece)
 type Grid8x8 = Vec Eight Row
 
+-- This delays the evaluation of the type error!
+-- (Thanks https://blog.poisson.chat/posts/2018-08-06-one-type-family.html#fnref4)
+data TE' :: TL.ErrorMessage -> Exp a
+type instance Eval (TE' msg) = TL.TypeError (msg TL.:$$: (TL.Text ("Error at move: todo")))
+
 -- TODO: Dimensions of board in kind??
 type Board = Grid8x8
 
@@ -53,6 +58,13 @@ data PieceName = Pawn
                | King
                | Queen
 
+type instance TypeShow Pawn   = "Pawn"
+type instance TypeShow Bishop = "Bishop"
+type instance TypeShow Knight = "Knight"
+type instance TypeShow Rook   = "Rook"
+type instance TypeShow Queen  = "Queen"
+type instance TypeShow King   = "King"
+
 -- Holds the number of moves they've made, plus their current position.
 -- While their position is implicit from where they are in the board, it's
 -- helpful!
@@ -74,32 +86,32 @@ type family GetPosition' (p :: PieceInfo) :: Position where
 -- New datatype to hold the board, as well as some intermediate state, including:
 
 data BoardDecorator where
-    Dec :: Board -> Team -> Position -> (Position, Position) -> BoardDecorator
+    Dec :: Board -> Team -> Position -> (Position, Position) -> Nat -> BoardDecorator
 
 type family GetBoard (x :: BoardDecorator) :: Board where
-    GetBoard (Dec b _ _ _) = b
+    GetBoard (Dec b _ _ _ _) = b
 
 type family SetBoard (b :: Board) (x :: BoardDecorator) :: BoardDecorator where
-   SetBoard b (Dec _ w x y) = Dec b w x y
+   SetBoard b (Dec _ w x y z) = Dec b w x y z
 
 type family GetLastPosition (x :: BoardDecorator) :: Position where
-    GetLastPosition (Dec _ _ p _) = p
+    GetLastPosition (Dec _ _ p _ _) = p
 
 type family SetLastPosition (x :: Position) (y :: BoardDecorator) :: BoardDecorator where
-   SetLastPosition pos (Dec w x p y) = Dec w x pos y
+   SetLastPosition pos (Dec w x p y z) = Dec w x pos y z
 
 type family GetLastTeam (x :: BoardDecorator) :: Team where
-   GetLastTeam (Dec _ t _ _) = t
+   GetLastTeam (Dec _ t _ _ _) = t
 
 type family SetLastTeam (x :: BoardDecorator) (y :: Team) :: BoardDecorator where
-   SetLastTeam (Dec w _ y z) x = Dec w x y z
+   SetLastTeam (Dec w _ y z a) x = Dec w x y z a
 
 type family GetMovingTeam (x :: BoardDecorator) :: Team where
    GetMovingTeam boardDec = OppositeTeam' (GetLastTeam boardDec)
 
 type family GetKingPosition (t :: Team) (x :: BoardDecorator) :: Position where
-   GetKingPosition White (Dec _ _ _ '(white, _)) = white
-   GetKingPosition Black (Dec _ _ _ '(_, black)) = black
+   GetKingPosition White (Dec _ _ _ '(white, _) _) = white
+   GetKingPosition Black (Dec _ _ _ '(_, black) _) = black
 
 type family UpdateKings (x :: (Position, Position)) (y :: Piece) (z :: Position) :: (Position, Position) where
    UpdateKings '(whitePos, _) (MkPiece Black King _) toPos = '(whitePos, toPos)
@@ -107,10 +119,14 @@ type family UpdateKings (x :: (Position, Position)) (y :: Piece) (z :: Position)
    UpdateKings kings          _                      _     = kings
 
 type family GetKings (x :: BoardDecorator) :: (Position, Position) where
-   GetKings (Dec _ _ _ k) = k
+   GetKings (Dec _ _ _ k _) = k
 
 type family SetKings (x :: (Position, Position)) (y :: BoardDecorator) :: BoardDecorator where
-   SetKings '(whitePos, blackPos) (Dec w x y _) = Dec w x y '(whitePos, blackPos)
+   SetKings '(whitePos, blackPos) (Dec w x y _ z) = Dec w x y '(whitePos, blackPos) Z
+
+-- Should always start at Nat1
+type family GetNoOfMoves (x :: BoardDecorator) :: Nat where
+   GetNoOfMoves (Dec _ _ _ _ x) = x
 
 -- TODO: Validity check??
 data SetPosition :: PieceInfo -> Position -> Exp PieceInfo
@@ -253,8 +269,8 @@ data SetPieceAtSwapped :: Piece -> Position -> Board -> Exp Board
 type instance Eval (SetPieceAtSwapped piece pos board) = Eval (SetPieceAt piece board pos)
 
 type family PromotePieceTo (name :: PieceName) (pos :: Position) (b :: BoardDecorator) :: BoardDecorator where
-   PromotePieceTo Pawn _ boardDec   = TL.TypeError (TL.Text "A Pawn cannot be promoted to a Pawn.")
-   PromotePieceTo King _ boardDec   = TL.TypeError (TL.Text "A Pawn cannot be promoted to a King.")
+   PromotePieceTo Pawn _ boardDec   = TL.TypeError ((TL.Text "A Pawn cannot be promoted to a Pawn.") TL.:$$: (TL.Text ("Error at move: " ++ TypeShow (GetNoOfMoves boardDec))))
+   PromotePieceTo King _ boardDec   = TL.TypeError ((TL.Text "A Pawn cannot be promoted to a King.") TL.:$$: (TL.Text ("Error at move: " ++ TypeShow (GetNoOfMoves boardDec))))
    PromotePieceTo name (At col Nat8) boardDec
       = Eval (If (Eval (IsPieceAtWhichDec boardDec (At col Nat8) (IsPawn .&. HasTeam White)))
             (ID (SetBoard (Eval (ApplyFuncAt (PromoteTo name) (GetBoard boardDec) (At col Nat8))) boardDec))
@@ -263,7 +279,7 @@ type family PromotePieceTo (name :: PieceName) (pos :: Position) (b :: BoardDeco
       = Eval (If (Eval (IsPieceAtWhichDec boardDec (At col Nat1) (IsPawn .&. HasTeam Black)))
             (ID (SetBoard (Eval (ApplyFuncAt (PromoteTo name) (GetBoard boardDec) (At col Nat1))) boardDec))
             (TE' (TL.Text ("The only promotable pieces in row 1 are Black Pawns."))))
-   PromotePieceTo _ (At col row) boardDec = TL.TypeError (TL.Text ("Pawns can only be promoted in rows 1 and 8, not row: " ++ TypeShow row))
+   PromotePieceTo _ (At col row) boardDec = TL.TypeError ((TL.Text ("Pawns can only be promoted in rows 1 and 8, not row: " ++ TypeShow row)) TL.:$$: (TL.Text ("Error at move: " ++ TypeShow (GetNoOfMoves boardDec))))
 
 data SetPieceAtDec :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
 type instance Eval (SetPieceAtDec piece boardDec toPos)
@@ -385,7 +401,7 @@ type family PieceRow (t :: Team) :: [Piece] where
 type EmptyRow   = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
 
-type JustKingsDec = Dec JustKings Black (At A Nat1) '(At E Nat1, At E Nat8)
+type JustKingsDec = Dec JustKings Black (At A Nat1) '(At E Nat1, At E Nat8) Nat1
 type JustKings = (Nothing :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1) False))) :-> Nothing :-> Nothing :<> Nothing)
                  :-> EmptyRow
                  :-> EmptyRow
@@ -395,7 +411,7 @@ type JustKings = (Nothing :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece
                  :-> EmptyRow
                  :<> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece Black King (Info Z (At E Nat8) False))) :-> Nothing :-> Nothing :<> Nothing)
 
-type StartDec = Dec StartBoard Black (At A Nat1) '(At E Nat1, At E Nat8)
+type StartDec = Dec StartBoard Black (At A Nat1) '(At E Nat1, At E Nat8) Nat1
 
 type StartBoard = ('Just
      ('MkPiece

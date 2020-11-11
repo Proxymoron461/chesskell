@@ -131,7 +131,7 @@ type WhiteCanCastleDec = 'Dec
                                                                                                         'False))))))))
           'Black
           ('At 'E Nat4)
-          '( 'At 'E Nat1, 'At 'E Nat8)
+          '( 'At 'E Nat1, 'At 'E Nat8) Nat1
 
 type BlackLeftCastleWhiteRightCastleDec = 'Dec
           ((('Just
@@ -205,4 +205,4 @@ type BlackLeftCastleWhiteRightCastleDec = 'Dec
                                                                                                         'False))))))))
           'Black
           ('At 'E Nat4)
-          '( 'At 'E Nat1, 'At 'E Nat8)
+          '( 'At 'E Nat1, 'At 'E Nat8) Nat1

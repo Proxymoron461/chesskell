@@ -70,4 +70,4 @@ type TestInfo = Info Z (At A Nat1) False
 type TestPieceList = '[MkPiece Black Pawn TestInfo, MkPiece White Pawn TestInfo, MkPiece White King TestInfo]
 
 type KingBoard = Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At A Nat1), '(MkPiece Black King TestInfo, At H Nat8) ] EmptyBoard)
-type EmptyDec = Dec EmptyBoard Black (At A Nat1) '(At E Nat1, At E Nat8)
+type EmptyDec = Dec EmptyBoard Black (At A Nat1) '(At E Nat1, At E Nat8) Nat1
