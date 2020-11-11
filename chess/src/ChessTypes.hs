@@ -12,7 +12,7 @@ type Grid8x8 = Vec Eight Row
 -- This delays the evaluation of the type error!
 -- (Thanks https://blog.poisson.chat/posts/2018-08-06-one-type-family.html#fnref4)
 data TE' :: TL.ErrorMessage -> Exp a
-type instance Eval (TE' msg) = TL.TypeError (msg TL.:$$: (TL.Text ("Error at move: todo")))
+type instance Eval (TE' msg) = TL.TypeError msg
 
 -- TODO: Dimensions of board in kind??
 type Board = Grid8x8
