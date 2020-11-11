@@ -25,7 +25,6 @@ type Term t r = t -> r
 -- type Spec t = forall m. (t -> m) -> m
 chess :: Spec (Proxy StartDec)
 chess cont = cont (Proxy @StartDec)
--- chess cont = cont (Proxy :: Proxy (Dec StartBoard Black))
 
 data MoveArgs where
     MA :: BoardDecorator -> Position -> PieceName -> Position -> MoveArgs
