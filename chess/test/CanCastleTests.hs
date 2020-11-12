@@ -18,34 +18,48 @@ import MakeSingletons
 import TestTypes
 import CastleHelperTests
 
-canCastleTest1 :: '( '(False, False), '(False, False) ) :~: '(CanCastle White StartDec, CanCastle Black StartDec)
-canCastleTest1 = Refl
+canCastleTestRefl1 :: '( '(False, False), '(False, False) ) :~: '(CanCastle White StartDec, CanCastle Black StartDec)
+canCastleTestRefl1 = Refl
 
-canCastleTest2 :: '(True, True) :~: CanCastle White WhiteCanCastleDec
-canCastleTest2 = Refl
+canCastleTestRefl2 :: '(True, True) :~: CanCastle White WhiteCanCastleDec
+canCastleTestRefl2 = Refl
 
-canCastleTest3 :: '( False, False) :~: CanCastle Black WhiteCanCastleDec
-canCastleTest3 = Refl
+canCastleTestRefl3 :: '( False, False) :~: CanCastle Black WhiteCanCastleDec
+canCastleTestRefl3 = Refl
 
-canCastleTest4 :: '(True, False) :~: CanCastle Black BlackLeftCastleWhiteRightCastleDec
-canCastleTest4 = Refl
+canCastleTestRefl4 :: '(True, False) :~: CanCastle Black BlackLeftCastleWhiteRightCastleDec
+canCastleTestRefl4 = Refl
 
-canCastleTest5 :: '(False, True) :~: CanCastle White BlackLeftCastleWhiteRightCastleDec
-canCastleTest5 = Refl
+canCastleTestRefl5 :: '(False, True) :~: CanCastle White BlackLeftCastleWhiteRightCastleDec
+canCastleTestRefl5 = Refl
 
+canCastleTest1 :: Test.Hspec.Spec
+canCastleTest1 = it "1: In the starting board configuration for chess, neither Black nor White can castle." $
+   shouldTypecheck canCastleTestRefl1
+
+canCastleTest2 :: Test.Hspec.Spec
+canCastleTest2 = it "2: If there are no pieces between the White King and its' Rooks, and none of them have moved, White can castle." $
+   shouldTypecheck canCastleTestRefl2
+
+canCastleTest3 :: Test.Hspec.Spec
+canCastleTest3 = it "3: If there are pieces between the Black King and its' Rooks, Black cannot castle." $
+   shouldTypecheck canCastleTestRefl3
+
+canCastleTest4 :: Test.Hspec.Spec
+canCastleTest4 = it "4: Even if Black can only castle to the left, CanCastle Black should return true." $
+   shouldTypecheck canCastleTestRefl4
+
+canCastleTest5 :: Test.Hspec.Spec
+canCastleTest5 = it "5: Even if White can only castle to the right, CanCastle White should return true." $
+   shouldTypecheck canCastleTestRefl5
+
+canCastleTestSuite :: Test.Hspec.Spec
 canCastleTestSuite = describe "CanCastle Tests" $ do
-        it "1: In the starting board configuration for chess, neither Black nor White can castle." $
-            shouldTypecheck canCastleTest1
-        it "2: If there are no pieces between the White King and its' Rooks, and none of them have moved, White can castle." $
-            shouldTypecheck canCastleTest2
-        it "3: If there are pieces between the Black King and its' Rooks, Black cannot castle." $
-            shouldTypecheck canCastleTest3
-        it "4: Even if Black can only castle to the left, CanCastle Black should return true." $
-            shouldTypecheck canCastleTest4
-        it "5: Even if White can only castle to the right, CanCastle White should return true." $
-            shouldTypecheck canCastleTest5
-   --  describe "Castling tests" $ do
-   --      it blah blah blah
+   canCastleTest1
+   canCastleTest2
+   canCastleTest3
+   canCastleTest4
+   canCastleTest5
 
 -------------------------------------------------------------------------------------------------------
 -- MESSY DECLARATIONS

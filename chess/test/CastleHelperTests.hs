@@ -56,31 +56,31 @@ haveRooksMovedTest1 = Refl
 haveRooksMovedTest2 :: '(False, False) :~: HaveRooksMoved Black StartDec
 haveRooksMovedTest2 = Refl
 
-bothWhiteRooksMovedBoard = create
-                               put _Wh _R at _a1
-                               put _Wh _R at _h1
-                               put _Bl _P at _h7
-                               lastTeam _Bl
-                               lastMoved _e4  -- Set random position, to avoid nasty type errors
-                           startMoves
-                               rook _a1 to _a2
-                               pawn _h7 to _h6
-                               rook _h1 to _h2
-                           end
+-- bothWhiteRooksMovedBoard = create
+--                                put _Wh _R at _a1
+--                                put _Wh _R at _h1
+--                                put _Bl _P at _h7
+--                                lastTeam _Bl
+--                                lastMoved _e4  -- Set random position, to avoid nasty type errors
+--                            startMoves
+--                                rook _a1 to _a2
+--                                pawn _h7 to _h6
+--                                rook _h1 to _h2
+--                            end
 
-rookBackToStartBoard = create
-                           put _Bl _R at _a8
-                           put _Bl _R at _h8
-                           put _Wh _P at _a2
-                           lastTeam _Wh
-                           lastMoved _e4  -- Set random position to avoid nasty type errors
-                        startMoves
-                           rook _a8 to _a7
-                           pawn _a2 to _a3
-                           rook _a7 to _a8
-                           pawn _a3 to _a4
-                           rook _h8 to _h7
-                        end
+-- rookBackToStartBoard = create
+--                            put _Bl _R at _a8
+--                            put _Bl _R at _h8
+--                            put _Wh _P at _a2
+--                            lastTeam _Wh
+--                            lastMoved _e4  -- Set random position to avoid nasty type errors
+--                         startMoves
+--                            rook _a8 to _a7
+--                            pawn _a2 to _a3
+--                            rook _a7 to _a8
+--                            pawn _a3 to _a4
+--                            rook _h8 to _h7
+--                         end
 
 
 haveRooksMovedTest3 :: '(True, False) :~: HaveRooksMoved White LeftWRookRightBRookDec
@@ -97,43 +97,104 @@ haveRooksMovedTest6 :: Proxy (b :: BoardDecorator) -> Proxy (Eval ('(True, True)
 haveRooksMovedTest6 (Proxy :: Proxy (b :: BoardDecorator))
     = Proxy @(Eval ('(True, True) :==: (HaveRooksMoved Black b)))
 
+a1 :: Test.Hspec.Spec
+a1 = it "1" $
+      shouldTypeCheck anySpaceInCheckTest1
+
+a2 :: Test.Hspec.Spec
+a2 = it "2: A space above a White Pawn should NOT be in check" $
+      shouldTypeCheck $ fromProxyFalse (anySpaceInCheckTest2 aSICT2Board)
+
+a3 :: Test.Hspec.Spec
+a3 = it "3: The spaces diagonally above a White Pawn should be in check" $
+      shouldTypeCheck $ fromProxyTrue (anySpaceInCheckTest3 aSICT2Board) 
+
+alpha :: Test.Hspec.Spec
+alpha = describe "AnySpaceInCheck Tests" $ do
+      a1 
+      a2 
+      a3 
+
+b1 :: Test.Hspec.Spec
+b1 = it "1: An empty row should be registered as free" $
+      shouldTypeCheck allSpacesFreeTest1
+
+b2 :: Test.Hspec.Spec
+b2 = it "2: A position with a Pawn in should NOT be registered as free" $
+      shouldTypeCheck $ fromProxyFalse (allSpacesFreeTest2 aSICT2Board)
+
+b3 :: Test.Hspec.Spec 
+b3 = it "3: A list of positions, with both White King and Black King in, should not be registered as free" $
+      shouldTypecheck allSpacesFreeTest3
+
+beta :: Test.Hspec.Spec
+beta = describe "AllSpacesFree Tests" $ do
+      b1 
+      b2 
+      b3 
+
+g1 :: Test.Hspec.Spec
+g1 = it "1: If the White King has not moved, HasKingMoved White should return False" $
+      shouldTypecheck hasKingMovedTest1
+
+g2 :: Test.Hspec.Spec
+g2 = it "2: If the Black King has not moved, HasKingMoved Black should return False" $
+      shouldTypeCheck hasKingMovedTest2
+
+g3 :: Test.Hspec.Spec
+g3 = it "3: If the White King has moved, HasKingMoved White should return True" $
+      shouldTypecheck hasKingMovedTest3
+
+g4 :: Test.Hspec.Spec
+g4 = it "4: If the Black King has moved, HasKingMoved Black should return True" $
+      shouldTypeCheck hasKingMovedTest4
+
+gamma :: Test.Hspec.Spec
+gamma = describe "HasKingMoved Tests" $ do
+      g1 
+      g2 
+      g3 
+      g4 
+
+d1 :: Test.Hspec.Spec
+d1 = it "1: If neither White Rook has moved, HaveRooksMoved White should return '(False, False)" $
+      shouldTypeCheck haveRooksMovedTest1
+
+d2 :: Test.Hspec.Spec
+d2 = it "2: If neither Black Rook has moved, HaveRooksMoved Black should return '(False, False)" $
+      shouldTypeCheck haveRooksMovedTest2
+
+d3 :: Test.Hspec.Spec
+d3 = it "3: If the left Rook has moved, but the right one hasn't, HaveRooksMoved should return '(True, False)" $
+      shouldTypeCheck haveRooksMovedTest3
+
+d4 :: Test.Hspec.Spec
+d4 = it "4: If the right Rook has moved, but the left one hasn't, HaveRooksMoved should return '(False, True)" $
+      shouldTypeCheck haveRooksMovedTest4
+
+-- d5 :: Test.Hspec.Spec
+-- d5 = it "5: If both Rooks have moved, HaveRooksMoved should return '(True, True)" $
+--       shouldTypeCheck $ fromProxyTrue (haveRooksMovedTest5 bothWhiteRooksMovedBoard)
+
+-- d6 :: Test.Hspec.Spec
+-- d6 = it "6: If the left rook moves back to its start position, and if the right rook is not present, then HaveRooksMoved should return '(True, True)" $
+--       shouldTypeCheck $ fromProxyTrue (haveRooksMovedTest6 rookBackToStartBoard)
+
+delta :: Test.Hspec.Spec
+delta = describe "HaveRooksMoved Tests" $ do
+      d1 
+      d2
+      d3
+      d4
+      -- d5
+      -- d6    
+      
+castleHelperTestSuite :: Test.Hspec.Spec
 castleHelperTestSuite = describe "Castle Helper Function Tests" $ do
-        describe "AnySpaceInCheck Tests" $ do
-            it "1" $
-                shouldTypeCheck anySpaceInCheckTest1
-            it "2: A space above a White Pawn should NOT be in check" $
-                shouldTypeCheck $ fromProxyFalse (anySpaceInCheckTest2 aSICT2Board)
-            it "3: The spaces diagonally above a White Pawn should be in check" $
-                shouldTypeCheck $ fromProxyTrue (anySpaceInCheckTest3 aSICT2Board)
-        describe "AllSpacesFree Tests" $ do
-            it "1: An empty row should be registered as free" $
-               shouldTypeCheck allSpacesFreeTest1
-            it "2: A position with a Pawn in should NOT be registered as free" $
-               shouldTypeCheck $ fromProxyFalse (allSpacesFreeTest2 aSICT2Board)
-            it "3: A list of positions, with both White King and Black King in, should not be registered as free" $
-               shouldTypecheck allSpacesFreeTest3
-        describe "HasKingMoved Tests" $ do
-            it "1: If the White King has not moved, HasKingMoved White should return False" $
-               shouldTypecheck hasKingMovedTest1
-            it "2: If the Black King has not moved, HasKingMoved Black should return False" $
-               shouldTypeCheck hasKingMovedTest2
-            it "3: If the White King has moved, HasKingMoved White should return True" $
-               shouldTypecheck hasKingMovedTest3
-            it "4: If the Black King has moved, HasKingMoved Black should return True" $
-               shouldTypeCheck hasKingMovedTest4
-        describe "HaveRooksMoved Tests" $ do
-            it "1: If neither White Rook has moved, HaveRooksMoved White should return '(False, False)" $
-               shouldTypeCheck haveRooksMovedTest1
-            it "2: If neither Black Rook has moved, HaveRooksMoved Black should return '(False, False)" $
-               shouldTypeCheck haveRooksMovedTest2
-            it "3: If the left Rook has moved, but the right one hasn't, HaveRooksMoved should return '(True, False)" $
-               shouldTypeCheck haveRooksMovedTest3
-            it "4: If the right Rook has moved, but the left one hasn't, HaveRooksMoved should return '(False, True)" $
-               shouldTypeCheck haveRooksMovedTest4
-            it "5: If both Rooks have moved, HaveRooksMoved should return '(True, True)" $
-               shouldTypeCheck $ fromProxyTrue (haveRooksMovedTest5 bothWhiteRooksMovedBoard)
-            it "6: If the left rook moves back to its start position, and if the right rook is not present, then HaveRooksMoved should return '(True, True)" $
-               shouldTypeCheck $ fromProxyTrue (haveRooksMovedTest6 rookBackToStartBoard)
+      alpha 
+      beta
+      gamma
+      delta
 
 -------------------------------------------------------------------------------------------------------
 -- MESSY DECLARATIONS
@@ -220,7 +281,7 @@ type OnlyRooksAndKings = 'Dec
                                                      ':-> 'VEnd))
           'Black
           ('At 'A Nat1)
-          '( 'At 'E Nat1, 'At 'E Nat8) nat1
+          '( 'At 'E Nat1, 'At 'E Nat8) Nat1
 
 -- moveKingsBoard = create
 --                      put _Wh _K at _e1
@@ -318,7 +379,7 @@ type MoveKingsDec = 'Dec
                                                      ':-> 'VEnd))))))))
           'Black
           ('At 'E Nat7)
-          '( 'At 'E Nat2, 'At 'E Nat7) nat1
+          '( 'At 'E Nat2, 'At 'E Nat7) Nat1
 
 -- leftWRookRightBRookMovedBoard = create
 --                                     put _Wh _R at _a1
