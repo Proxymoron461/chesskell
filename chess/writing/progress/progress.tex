@@ -4,6 +4,11 @@
 \usepackage{listings}
 \usepackage{charter}
 
+\lstset{
+    language=haskell,
+    basicstyle=\small\ttfamily
+}
+
 \title{Chesskell: Embedding a Two-Player Game in Haskell's type system}
 \subtitle{3rd Year Project Progress Report}
 \author{Toby Bailey}
@@ -22,7 +27,7 @@ In 2020, video games are more popular than ever. In the US alone, an ESA report\
 
 As programming languages have evolved, many have begun to address errors at compile time. Features like optional types are being introduced to languages such as Java and C\#, and languages like Rust have pioneered ways of safely handling dynamic allocation through the use of owner types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many language compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions. However, the most common programming language used for game development is C++\cite{gamepp}, despite its' lack of automatic memory management and allowing unsafe pointer arithmetic. C++ is chosen for its' speed, but as computers (and gaming consoles) get more powerful, speed becomes less important than developer productivity. Research into bringing more type-safety into game programming environments is rare, and is the niche this project attempts to fill.
 
-Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values\cite{yorgey2012giving}, using \emph{type families} that emulate functions at the type-level. These computations run at compile time, before an executable of the source code is generated, allowing programmers to transform logic errors into type errors\cite{twt}. As man
+Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values\cite{yorgey2012giving}, using \emph{type families} that emulate functions at the type-level. These computations run at compile time, before an executable of the source code is generated, allowing programmers to transform logic errors into type errors\cite{twt}.
 
 The aim of this project is to demonstrate a proof-of-concept; that it is possible to model Chess at the type-level, and that compiled programs comply with the rules.
 
@@ -30,17 +35,169 @@ The aim of this project is to demonstrate a proof-of-concept; that it is possibl
 
 The project, nicknamed Chesskell, has the main aim of modelling the classic board game Chess in Haskell's type system. This type-level model will be interacted with via a Haskell-embedded Domain-Specific Language (DSL), for describing games of chess. This Embedded DSL (EDSL) will be modelled on Algebraic Notation, a method of writing down the moves associated with a particular match of chess.
 
-There are many publicly available chess engines for Haskell, including a Haskell wiki article teaching the programming about Haskell using chess as an example\footnote{\url{https://wiki.haskell.org/Learning_Haskell_with_Chess}}. However, we are not aware of any type-level chess implementations in Haskell.
+% In Haskell, values have types, and types have kinds. Types of kind \lstinline{*} (or \lstinline{Type}) have term-level values; \lstinline{Int} has kind \lstinline{*} because it has the inhabitants \lstinline{0}, \lstinline{1}, \lstinline{2}, etc. The \lstinline{-XDataKinds} extension allows the programmer to define other kinds\cite{yorgey2012giving}, but these kinds do not have any term-level values. We explain this with a more concrete example below, when relevant. Chesskell makes heavy use of these programmer-defined kinds.
 
-There have been allusions to type-level chess implementations through solving the N-queens problem in dependently typed languages, such as Idris\cite{idrisnqueens}\footnote{\url{https://github.com/ExNexu/nqueens-idris}}. The N-queens problem makes use of some chess rules, including the Queen's attack positions (a straight line in any direction); but as the end goal is not to successfully model a game of chess, it is not a full type-level chess engine.
+% TODO: A nice diagram??
 
-Despite the apparent lack of work on Chess at the type level specifically, there has been work on type-level EDSLs in other domains. Mezzo\cite{mezzo} is an EDSL for music composition, which checks if the created piece of music conforms to some musical ruleset before compilation of the program. The spirit of Chesskell is similar to Mezzo, even if the application domain differs.
+\section{Related Work}
+
+There are many publicly available chess engines and chess-related programs written in Haskell\footnote{\url{https://github.com/mlang/chessIO}}\footnote{\url{https://github.com/nionita/Barbarossa}}, including a Haskell wiki article teaching the programming about Haskell using chess as an example\footnote{\url{https://wiki.haskell.org/Learning_Haskell_with_Chess}}. Many of these are chess engines, which take in a board state and output the move (or set of moves) which are strongest, and so therefore performs move checking at the value-level to ensure that the moves that it outputs are valid. Chesskell differs from these in function, in that the end software will not output a list of strong moves; it will simply take in the moves performed, and state whether they are valid chess moves or not. We are not aware of any such type-level chess implementations in Haskell.
+
+There have been allusions to chess at the type-level through solving the N-queens problem in dependently typed languages, such as Idris\cite{idrisnqueens}\footnote{\url{https://github.com/ExNexu/nqueens-idris}}. The N-queens problem makes use of some chess rules, including the Queen's attack positions (a straight line in any direction); but as the end goal is not to successfully model a game of chess, it is not a full type-level chess implementation.
+
+Despite the apparent lack of work on Chess at the type level specifically, there has been work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. Mezzo\cite{mezzo} is an EDSL for music composition, which checks if the created piece of music conforms to some musical ruleset before compilation of the program. WASH/CGI\cite{washcgi} is an EDSL for type-safe server-side web scripting, which ensures thread-safe server operations and valid XHTML generation.
+
+\section{Project Functional Requirements}
+
+\begin{enumerate}
+    \item The system will contain a type-level model of chess, which will:
+          \begin{enumerate}
+              \item Support all rules within the FIDE official chess rules.
+              \item Have an internal representation of the board, the pieces, and other information relevant to the state of play.
+              \item Be able to detect when a rule of chess has been broken, and give out a compile-time error to explain which rule was broken and how.
+          \end{enumerate}
+    \item This type-level system will run on the Glasgow Haskell Compiler.
+    \item This type-level system will be accessible via an Embedded Domain-Specific Language, which will:
+          \begin{enumerate}
+              \item Describe a game of chess, move by move.
+              \item Be written in Haskell source files, and be valid Haskell according to the Haskell grammar.
+              \item Be type-checked by the type-level model, and will cause errors if the game described breaks the established rules of chess.
+          \end{enumerate}
+\end{enumerate}
 
 \section{Current Progress}
 
-\subsection{Chess Types}
+\subsection{Chess Types Overview}
+
+The software has a full representation of a game of chess at the type-level, explained in more depth below. As the game is checked move by move, the only representation required is the board at the time of checking; containing all pieces on that board.
+
+The most important types are the board, and the individual pieces on it. Both of these types are composed of other types, making them \emph{composite types}; the board is comprised of pieces, and the pieces contain that piece's team, name, and position.
+
+\subsubsection{Team and PieceName}
+
+Both of these types are simple algebraic data types, with all inhabitants defined in code. The team defines whether a piece is black or white, and the piece's name states which chess piece it is; a pawn, a rook, and so on.
+
+The declarations below, combined with the \lstinline{-XDataKinds} extension, create two things. The first is a value-level representation of \lstinline{Team} and \lstinline{Piecename}, where \lstinline{Black} is a value of type \lstinline{Team}. The second is a \emph{type-level} representation, where \lstinline{'Black} is a type and \lstinline{Team} is a kind\footnote{Note that \lstinline{'Black} has no term-level values, since it does not have kind \lstinline{*}}.
+
+% For values that have been promoted to types, a ' may be prefixed (as with \lstinline{'Black}) above. However, this prefix is optional, since GHC can, in most cases, tell whether something is a value or a type from context. Where unclear, this report will use the prefix to distinguish types from values.
+
+\begin{lstlisting}
+    data Team = Black | White
+    data PieceName = Pawn
+               | Bishop
+               | Knight
+               | Rook
+               | King
+               | Queen
+\end{lstlisting}
+
+\subsubsection{Position}
+
+The type for holding a piece's position makes use of two more types, one for columns and the other for rows. In chess, columns are labelled with letters and rows are labelled with numbers; "a1" is the top-left of the board, and "h8" is the bottom-right. The column type is another simple algebraic data type with inhabitants listed. The row type is a type-level implementation of Peano natural numbers.
+
+% The below definition makes use of \emph{Generalised Algebraic Data Type} syntax, or GADT syntax for short. This is an extension to Haskell, allowing programmers to define more complex data types by describing the types of its' type constructors. This is clear below: \lstinline{Z} is a value of type \lstinline{Nat}, while \lstinline{S} is a function that takes in a \lstinline{Nat} and returns another \lstinline{Nat}.
+
+\begin{lstlisting}
+    data Column = A | B | C | D | E | F | G | H
+    data Nat where
+        Z :: Nat
+        S :: Nat -> Nat
+\end{lstlisting}
+
+The Position type itself is a \emph{product type}, a type whose cardinality\footnote{A type's cardinality is the number of inhabitants it has.} is equal to the product of the types it takes in. Since \lstinline{Position} takes in a type of cardinality 8 (\lstinline{Column}) and a type of infinite cardinality (\lstinline{Nat}), it has infinite cardinality, even though only 64 of them are valid chess positions.
+
+% TODO: Chess board diagram??
+
+\begin{lstlisting}
+    data Position where
+        At :: Column -> Nat -> Position
+\end{lstlisting}
+
+\subsubsection{The Pieces}
+
+Each piece contains information relevant for the rule check: that piece's team, name, and an information type. The information type contains a \lstinline{Nat} and a \lstinline{Position}, to represent the number of moves that piece has taken, and its current position on the board. Recording the number of moves the piece has taken is important for several rules in chess, including castling and \textit{En Passant}. As such, it's included in the \lstinline{PieceInfo} type.
+
+\begin{lstlisting}
+    -- Pieceinfo type, containing general information
+    data PieceInfo where
+        Info :: Nat -> Position -> Bool -> PieceInfo
+
+    -- Piece type, containing the most important information for a piece
+    data Piece where
+        MkPiece :: Team -> PieceName -> PieceInfo -> Piece
+\end{lstlisting}
+
+\subsubsection{The Board}
+
+At the type level, the most common way of storing n elements is with the built-in list type (similar to the value-level). However, a singly-linked list has issues; how can we ensure that the chess board is the appropriate size without a length check each move? This would take at least 64 operations, since the length must be computed recursively; as well as 7 addition operations to put together the list lengths.
+
+Performing such a check each move would be wasteful. Instead, length-indexed vectors are used. Nat values are used to specify the length of a vector, and it would generate a type error if the vector was any other length. As with most things in Haskell, they are defined recursively; an empty vector has length 0, and you express a vector of length (n + 1) by pushing an element to the front of a vector of length n.
+
+\begin{lstlisting}
+    data Vec (n :: Nat) (a :: Type) where
+        VEnd   :: Vec Z a
+        (:->)  :: a -> Vec n a -> Vec (S n) a
+\end{lstlisting}
+
+For example, a vector of 3 boolean types has the type \lstinline{Vec (S (S (S Z))) Bool}. The board can be expressed using these vectors---a vector of 8 vectors of 8 pieces. (\lstinline{Maybe Piece}s are used instead, since a board square does not necessary contain a piece.)
+
+\begin{lstlisting}
+    type Eight = (S (S (S (S (S (S (S (S Z))))))))
+    type Row   = Vec Eight (Maybe Piece)
+    type Board = Vec Eight Row
+\end{lstlisting}
+
+Although this is the main board type, it is augmented with a \lstinline{BoardDecorator}, so named because the intention is to be similar to the decorator design pattern\cite{decorator} (with the exception that subclassing and superclassing are not features of Haskell). \lstinline{BoardDecorator} should be used instead of \lstinline{Board}, since it provides additional information:
+
+\begin{itemize}
+    \item The last team to move;
+    \item The last position moved to;
+    \item The White and Black king positions, stored as a tuple;
+    \item The number of moves in the game thus far.
+\end{itemize}
+
+This information prevents repeated passes over the \lstinline{Board} which existed in previous versions of the program, to find the last piece to move as well as king positions. While there is the overhead that the \lstinline{BoardDecorator} must be updated at each move, the code is much conceptually clearer with the use of the additional information.
+
+\begin{lstlisting}
+data BoardDecorator where
+    Dec :: Board -> Team -> Position -> (Position, Position)
+        -> Nat -> BoardDecorator
+\end{lstlisting}
 
 \subsection{Checking Chess Rules}
+
+All of the rule-checking is done via type families that take in the \lstinline{BoardDecorator} and output either a correct result, or a type-level error.
+
+\subsubsection{Type families in Haskell}
+
+Although Haskell allows type-level computation via type families, 
+
+% TODO: Talk about First-Class Families and reference!
+
+\subsubsection{Move Lists}
+
+\subsubsection{Moving the Pieces}
+
+The core movement function, aptly named \lstinline{Move}, performs a series of checks on the board state, moves the piece, and then performs further checks. The actual movement code is omitted here for brevity; but all moves except for pawn promotion are complete.
+
+\begin{lstlisting}
+-- MoveNoChecks moves the piece depending on its' type,
+-- handling any relevant side effects
+data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (Move fromPos toPos boardDec) = Eval ((
+    CheckNoCheck (GetMovingTeam boardDec) . -- Post-move checks
+    MoveNoChecks fromPos toPos .            -- Move the piece
+        NotTakingKingCheck toPos .          -- Pre-move checks
+        CanMoveCheck fromPos toPos .
+        NotTakingOwnTeamCheck toPos .
+        NotSamePosCheck fromPos toPos .
+        NotLastToMoveCheck fromPos .
+        TeamCheck fromPos) boardDec)
+\end{lstlisting}
+
+One of the potential difficulties of the project was handling movement side-effects, such as taking pieces and castling. 
+
+% TODO: More text!
 
 \subsection{EDSL}
 
