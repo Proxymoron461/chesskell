@@ -1,0 +1,91 @@
+\documentclass[12pt, a4paper]{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[hidelinks]{hyperref}
+\usepackage{listings}
+\usepackage{charter}
+
+\title{Chesskell: Embedding a Two-Player Game in Haskell's type system}
+\subtitle{3rd Year Project Progress Report}
+\author{Toby Bailey}
+\date{\today}
+
+\begin{document}
+
+\begin{titlepage}
+    \maketitle
+    \tableofcontents
+\end{titlepage}
+
+\section{Introduction}
+
+In 2020, video games are more popular than ever. In the US alone, an ESA report\footnote{\url{https://www.theesa.com/wp-content/uploads/2020/07/Final-Edited-2020-ESA_Essential_facts.pdf}} estimates that there are more than 214 million individuals who play games. Considering this, it's surprising how many games are released with major bugs in their software---some of which end up being so notable that news and footage of them appear on mainstream media\footnote{\url{https://www.bbc.co.uk/news/technology-50156033}}.
+
+As programming languages have evolved, many have begun to address errors at compile time. Features like optional types are being introduced to languages such as Java and C\#, and languages like Rust have pioneered ways of safely handling dynamic allocation through the use of owner types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many language compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions. However, the most common programming language used for game development is C++\cite{gamepp}, despite its' lack of automatic memory management and allowing unsafe pointer arithmetic. C++ is chosen for its' speed, but as computers (and gaming consoles) get more powerful, speed becomes less important than developer productivity. Research into bringing more type-safety into game programming environments is rare, and is the niche this project attempts to fill.
+
+Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values\cite{yorgey2012giving}, using \emph{type families} that emulate functions at the type-level. These computations run at compile time, before an executable of the source code is generated, allowing programmers to transform logic errors into type errors\cite{twt}. As man
+
+The aim of this project is to demonstrate a proof-of-concept; that it is possible to model Chess at the type-level, and that compiled programs comply with the rules.
+
+\section{Background}
+
+The project, nicknamed Chesskell, has the main aim of modelling the classic board game Chess in Haskell's type system. This type-level model will be interacted with via a Haskell-embedded Domain-Specific Language (DSL), for describing games of chess. This Embedded DSL (EDSL) will be modelled on Algebraic Notation, a method of writing down the moves associated with a particular match of chess.
+
+There are many publicly available chess engines for Haskell, including a Haskell wiki article teaching the programming about Haskell using chess as an example\footnote{\url{https://wiki.haskell.org/Learning_Haskell_with_Chess}}. However, we are not aware of any type-level chess implementations in Haskell.
+
+There have been allusions to type-level chess implementations through solving the N-queens problem in dependently typed languages, such as Idris\cite{idrisnqueens}\footnote{\url{https://github.com/ExNexu/nqueens-idris}}. The N-queens problem makes use of some chess rules, including the Queen's attack positions (a straight line in any direction); but as the end goal is not to successfully model a game of chess, it is not a full type-level chess engine.
+
+Despite the apparent lack of work on Chess at the type level specifically, there has been work on type-level EDSLs in other domains. Mezzo\cite{mezzo} is an EDSL for music composition, which checks if the created piece of music conforms to some musical ruleset before compilation of the program. The spirit of Chesskell is similar to Mezzo, even if the application domain differs.
+
+\section{Current Progress}
+
+\subsection{Chess Types}
+
+\subsection{Checking Chess Rules}
+
+\subsection{EDSL}
+
+\subsection{Testing}
+
+% TODO:
+
+\section{Next Steps}
+
+% todo:
+
+\subsection{Revised Timetable/Plan}
+
+\subsubsection{Weeks 9-10: 30th November to 13th December}
+
+This space is set for testing of the (near-complete) system against a curated data set, and fixing any potential problems that arise. The test will involve piping the data set to the type-level model via the EDSL, and as such will be integration and system testing, with unit testing taking place during development.
+
+\subsubsection{Weeks 11-14: 14th December 2020 to 10th January 2021}
+
+This is the first section of allocated empty space; should some of the risks in the below section materialise, this is when the project may be caught up on. Should the project be going well, then this extra time will be spent either starting early on the dissertation, or adding extensions to the project to further explore the modelling of games at the type-level.
+
+\subsubsection{Weeks 15-18: 11th January to 7th February}
+
+Writing the dissertation is planned for this stretch of time; it will be planned out, section by section, with any relevant graphs, figures, and citations gathered.
+
+The module CS324 Computer Graphics has a coursework due on the 20th January; as such, planning the dissertation could take longer than expected. However, since a month is set aside for just planning, delays are unlikely.
+
+\subsubsection{Weeks 19-22: 8th February to 7th March}
+
+Once the previous detailed planning stage is complete, writing shall begin; with a detailed enough plan, this section should not take longer than a month. An initial draft will be completed by the 7th of March.
+
+The project itself will be evaluated during this period, examined for any subtle bugs, and the code will be finalised and completed. Work on the project presentation should also start in earnest, writing out a script.
+
+\subsubsection{Weeks 23-24: 8th March to 21st March}
+
+These two weeks are more empty space; set aside to act as a buffer for delays in dissertation writing. The project presentation is expected on the 19th March; so this empty space will ideally be spent completing the presentation and rehearsing it.
+
+\subsubsection{Weeks 25-29: 22nd March to 25th April}
+
+Drafting, re-drafting, and refining the dissertation (with the help of the supervisor) will take place during this time. This is the final stretch, and will be spent ensuring that the final piece of writing is as good as it can be.
+
+Revision for examinations is key during this period; however, since the dissertation should be complete and this period is for evaluation and not the main bulk of writing, there should be ample time.
+
+\bibliographystyle{ieeetr}
+
+\bibliography{progress}
+
+\end{document}
