@@ -170,11 +170,42 @@ All of the rule-checking is done via type families that take in the \lstinline{B
 
 \subsubsection{Type families in Haskell}
 
-Although Haskell allows type-level computation via type families, 
+Although Haskell allows type-level computation via type families, these type families must be fully saturated. That is, they can't be partially applied like normal Haskell functions can. However, Li-yao Xia's work on First Class Families\footnote{\url{https://github.com/Lysxia/first-class-families}} defines a kind of type-level interpreter, allowing similar behaviour to partial application.
 
-% TODO: Talk about First-Class Families and reference!
+This means that the board can be mapped over, performing computation on the pieces therein without writing a new function for each map. Incrementing a piece's move count, or changing the name of a piece, is much easier with First Class Families than it would otherwise be with regular type families.
 
 \subsubsection{Move Lists}
+
+Each piece, depending on its team and name, can move to a certain number of spaces. For instance, a King can move a single space in any direction. The \lstinline{PieceMoveList} type family formalises this, returning a list of spaces that a piece can move to (given a piece and board decorator).
+
+\begin{lstlisting}
+data PieceMoveList :: Piece -> BoardDecorator -> Exp [Position]
+-- If it's the pawn's first move, move two spaces, otherwise move one
+type instance Eval (PieceMoveList (MkPiece team Pawn info) boardDec)
+    = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece team Pawn info) boardDec) (PawnPostStart (MkPiece team Pawn info) boardDec))
+
+-- Bishops move diagonally
+type instance Eval (PieceMoveList (MkPiece team Bishop info) boardDec)
+    = Eval (AllReachableDiag team boardDec (Eval (GetPosition info)))
+
+-- Knights move in an L-shape
+type instance Eval (PieceMoveList (MkPiece team Knight info) boardDec)
+    = Eval (AllReachableGivenList team boardDec (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
+
+-- Rooks move in straight lines
+type instance Eval (PieceMoveList (MkPiece team Rook info) boardDec)
+    = Eval (AllReachableStraightLine team boardDec (Eval (GetPosition info)))
+
+-- Queens can move in any direction
+type instance Eval (PieceMoveList (MkPiece team Queen info) boardDec)
+    = Eval (AllReachableLineAndDiag team boardDec (Eval (GetPosition info)))
+
+-- Kings can move a single space in any direction
+type instance Eval (PieceMoveList (MkPiece team King info) boardDec)
+    = KingMoveList (MkPiece team King info) boardDec
+\end{lstlisting}
+
+There is another function, \lstinline{PieceAttackList}, which is similar to \lstinline{PieceMoveList} but gives the list of spaces that a piece can attack. This is different from a piece's move list in a handful of cases (for instance, pieces can attack the opposite team's King, but cannot move to its position and take it).
 
 \subsubsection{Moving the Pieces}
 
@@ -195,11 +226,36 @@ type instance Eval (Move fromPos toPos boardDec) = Eval ((
         TeamCheck fromPos) boardDec)
 \end{lstlisting}
 
-One of the potential difficulties of the project was handling movement side-effects, such as taking pieces and castling. 
-
-% TODO: More text!
-
 \subsection{EDSL}
+
+\subsubsection{Proxies and Singletons}
+
+Value-level information is not naturally available to Haskell's type-level facilities, due to type erasure. As such, there are various methods to pass such information up to the type level.
+
+Proxy types are parameterised with kind-polymorphic type variable. A \lstinline{Proxy} value can have type \lstinline{Proxy Int} or \lstinline{Proxy 'Black}, for example. Proxies are used to make runtime board decorator information available at the type level in Chesskell.
+
+Singleton types mimic dependent types in that % TODO:
+
+\subsubsection{EDSL Implementation}
+
+% TODO: Cite dissertation or haskell symposium paper??
+
+The EDSL is implemented through a Continuation Passing Style\cite{cps} scheme, with inspiration taken from the Flat Builders pattern developed by Dmitrij Szamozvancev\cite{mezzo}. The core idea is that a value is transformed via a series of continuation functions, until the final continuation function returns a value.
+
+\begin{lstlisting}
+-- Starts with a value of type t, gets a continuation
+-- of type (t -> m), and applies it to the value
+type Spec t = forall m. (t -> m) -> m
+
+-- Converts a value of type s into a value of type t,
+-- passing that t-value into a continuation
+type Conv s t = s -> Spec t
+
+-- Ends the continuation stream
+type Term t r = t -> r
+\end{lstlisting}
+
+The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are passed, transforming that value, until the chess game ends (or until a rule is broken). The core continuations defined are named after the pieces, such as \lstinline{pawn} and \lstinline{king}. Each of them takes in...
 
 \subsection{Testing}
 
