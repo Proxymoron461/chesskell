@@ -18,7 +18,10 @@
     breakatwhitespace=true,
     breaklines=true,
     keepspaces=true,
-    captionpos=b
+    captionpos=b,
+    frame=tlbr,    % Margin at all 4 sides
+    framesep=4pt,  % Margin size
+    framerule=0pt
 }
 
 \title{Chesskell: Embedding a Two-Player Game in Haskell's type system}
@@ -37,9 +40,11 @@
 
 In 2020, video games are more popular than ever. In the US alone, an ESA report\footnote{\url{https://www.theesa.com/wp-content/uploads/2020/07/Final-Edited-2020-ESA_Essential_facts.pdf}} estimates that there are more than 214 million individuals who play games. Considering this, it's surprising how many games are released with major bugs in their software---some of which end up being so notable that news and footage of them appear on mainstream media\footnote{\url{https://www.bbc.co.uk/news/technology-50156033}}.
 
-As programming languages have evolved, many have begun to address errors at compile time. Features like optional types are being introduced to languages such as Java and C\#, and languages like Rust have pioneered ways of safely handling dynamic allocation through the use of owner types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many language compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions. However, the most common programming language used for game development is C++\cite{gamepp}, despite its' lack of automatic memory management and allowing unsafe pointer arithmetic. C++ is chosen for its' speed, but as computers (and gaming consoles) get more powerful, speed becomes less important than developer productivity. Research into bringing more type-safety into game programming environments is rare, and is the niche this project attempts to fill.
+As programming languages have evolved, many have begun to address errors at compile time. Features like optional types are being introduced to languages such as Java and C\#, and languages like Rust have pioneered ways of safely handling dynamic allocation through the use of owner types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many language compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions.
 
-Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values\cite{yorgey2012giving}, using \emph{type families} that emulate functions at the type-level. These computations run at compile time, before an executable of the source code is generated, allowing programmers to transform logic errors into type errors\cite{twt}.
+However, the most common programming language used for game development is C++\cite{gamepp}, despite its' lack of safety and allowance of direct pointer arithmetic. C++ is chosen for its' speed, but as computers (and gaming consoles) get more powerful, runtime speed becomes less important than developer productivity. Research into bringing more type-safety into game programming environments is rare, and is the niche this project attempts to fill.
+
+Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values\cite{yorgey2012giving}, using \emph{type families}\cite{opentfs}\cite{closedtfs} that emulate functions at the type-level. These computations run at compile time, before an executable of the source code is generated, allowing programmers to transform logic errors into type errors\cite{twt}.
 
 The aim of this project is to demonstrate a proof-of-concept; that it is possible to model Chess at the type-level, and that compiled programs comply with the rules.
 
@@ -51,13 +56,13 @@ The project, nicknamed Chesskell, has the main aim of modelling the classic boar
 
 % TODO: A nice diagram??
 
-\section{Related Work}
+\subsection{Related Work}
 
-There are many publicly available chess engines and chess-related programs written in Haskell\footnote{\url{https://github.com/mlang/chessIO}}\footnote{\url{https://github.com/nionita/Barbarossa}}, including a Haskell wiki article teaching the programming about Haskell using chess as an example\footnote{\url{https://wiki.haskell.org/Learning_Haskell_with_Chess}}. Many of these are chess engines, which take in a board state and output the move (or set of moves) which are strongest, and so therefore performs move checking at the value-level to ensure that the moves that it outputs are valid. Chesskell differs from these in function, in that the end software will not output a list of strong moves; it will simply take in the moves performed, and state whether they are valid chess moves or not. We are not aware of any such type-level chess implementations in Haskell.
+There are many publicly available chess-related programs written in Haskell\footnote{\url{https://github.com/mlang/chessIO}}\footnote{\url{https://github.com/nionita/Barbarossa}}. Many of these are chess engines, which take in a board state and output the move(s) which are strongest, and so therefore performs move checking at the value-level to ensure that the moves that it outputs are valid. Chesskell differs from these in function, in that the end software will not output a list of strong moves; it will simply take in the moves performed, and state whether they are valid chess moves or not. We are not aware of any such type-level chess implementations in Haskell.
 
-There have been allusions to chess at the type-level through solving the N-queens problem in dependently typed languages, such as Idris\cite{idrisnqueens}\footnote{\url{https://github.com/ExNexu/nqueens-idris}}. The N-queens problem makes use of some chess rules, including the Queen's attack positions (a straight line in any direction); but as the end goal is not to successfully model a game of chess, it is not a full type-level chess implementation.
+There have been allusions to chess at the type-level through solving the N-queens problem in dependently typed languages, such as Idris\footnote{\url{https://github.com/ExNexu/nqueens-idris}}\cite{idrisnqueens}. The N-queens problem makes use of some chess rules, including the Queen's attack positions (a straight line in any direction); but as the end goal is not to successfully model a game of chess, it is not a full type-level chess implementation.
 
-Despite the apparent lack of work on Chess at the type level specifically, there has been work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. \cite{mezzohaskellsymposium} is an EDSL for music composition, which checks if the created piece of music conforms to some musical ruleset before compilation of the program. WASH/CGI\cite{washcgi} is an EDSL for type-safe server-side web scripting, which ensures thread-safe server operations and valid XHTML generation.
+Despite the apparent lack of work on Chess at the type level specifically, there is work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. Mezzo\cite{mezzohaskellsymposium} is an EDSL for music composition, which checks if the created piece of music conforms to some musical ruleset before compilation of the program. WASH/CGI\cite{washcgi} is an EDSL for type-safe server-side web scripting, which ensures thread-safe server operations and valid XHTML generation.
 
 \section{Project Functional Requirements}
 
@@ -81,7 +86,7 @@ Despite the apparent lack of work on Chess at the type level specifically, there
 
 \subsection{Chess Types Overview}
 
-The software has a full representation of a game of chess at the type-level, explained in more depth below. As the game is checked move by move, the only representation required is the board at the time of checking; containing all pieces on that board.
+The software has a full representation of a game of chess at the type-level, as we explain below. As the game is checked move by move, the only representation required is the board at the time of checking; containing all pieces on that board.
 
 The most important types are the board, and the individual pieces on it. Both of these types are composed of other types, making them \emph{composite types}; the board is comprised of pieces, and the pieces contain that piece's team, name, and position.
 
@@ -111,7 +116,7 @@ The type for holding a piece's position makes use of two more types, one for col
 
 \begin{lstlisting}
 data Column = A | B | C | D | E | F | G | H
-data Nat where
+data Nat where  -- Used for rows
     Z :: Nat
     S :: Nat -> Nat
 \end{lstlisting}
@@ -127,23 +132,25 @@ data Position where
 
 \subsubsection{The Pieces}
 
-Each piece contains information relevant for the rule check: that piece's team, name, and an information type. The information type contains a \lstinline{Nat} and a \lstinline{Position}, to represent the number of moves that piece has taken, and its current position on the board. Recording the number of moves the piece has taken is important for several rules in chess, including castling and \textit{En Passant}. As such, it's included in the \lstinline{PieceInfo} type.
+Each piece contains information relevant for rule checking: that piece's team, name, and an information type. The information type contains a \lstinline{Nat} and a \lstinline{Position}, to represent the number of moves that piece has taken, and its current position on the board. Recording the number of moves the piece has taken is important for several rules in chess, including castling and \textit{En Passant}. As such, it's included in the \lstinline{PieceInfo} type.
+
+The \lstinline{PieceInfo} type was created separate from the plain \lstinline{Piece} type so that if any further information needed adding, it could be with minimal issues (though no such additional information was required).
 
 \begin{lstlisting}
 -- Pieceinfo type, containing general information
 data PieceInfo where
-    Info :: Nat -> Position -> Bool -> PieceInfo
+    Info :: Nat -> Position -> PieceInfo
 
--- Piece type, containing the most important information for a piece
+-- Piece type, containing the key information for a piece
 data Piece where
     MkPiece :: Team -> PieceName -> PieceInfo -> Piece
 \end{lstlisting}
 
 \subsubsection{The Board}
 
-At the type level, the most common way of storing n elements is with the built-in list type (similar to the value-level). However, a singly-linked list has issues; how can we ensure that the chess board is the appropriate size without a length check each move? This would take at least 64 operations, since the length must be computed recursively; as well as 7 addition operations to put together the list lengths.
+At the type level, the most common way of storing n elements is with the built-in list type (similar to the value-level). However, a singly-linked list has issues; how can we ensure that the chess board is the appropriate size without a length check each move? This would take at least 56 additions, since the length must be computed recursively; as well as 7 more addition operations to put together the list lengths.
 
-Performing such a check each move would be wasteful. Instead, length-indexed vectors are used. Nat values are used to specify the length of a vector, and it would generate a type error if the vector was any other length. As with most things in Haskell, they are defined recursively; an empty vector has length 0, and you express a vector of length (n + 1) by pushing an element to the front of a vector of length n.
+Performing such a check each move would be wasteful. Instead, length-indexed vectors are used. \lstinline{Nat} values are used to specify the length of a vector, resulting in a type error if the vector is any other length. As with most things in Haskell, they are defined recursively; an empty vector has length 0, and you express a vector of length (n + 1) by pushing an element to the front of a vector of length n.
 
 \begin{lstlisting}
 data Vec (n :: Nat) (a :: Type) where
@@ -151,7 +158,7 @@ data Vec (n :: Nat) (a :: Type) where
     (:->)  :: a -> Vec n a -> Vec (S n) a
 \end{lstlisting}
 
-For example, a vector of 3 boolean types has the type \lstinline{Vec (S (S (S Z))) Bool}. The board can be expressed using these vectors---a vector of 8 vectors of 8 pieces. (\lstinline{Maybe Piece} is used instead, since a board square does not necessary contain a piece.)
+For example, a vector of 3 boolean types has the type: \lstinline{Vec (S (S (S Z))) Bool}. The board can be expressed using these vectors---a vector of 8 vectors of 8 pieces. (\lstinline{Maybe Piece} is used instead, since a board square does not necessary contain a piece.)
 
 \begin{lstlisting}
 type Eight = (S (S (S (S (S (S (S (S Z))))))))
@@ -168,22 +175,27 @@ Although this is the main board type, it is augmented with a \lstinline{BoardDec
     \item The number of moves in the game thus far.
 \end{itemize}
 
-This information prevents repeated passes over the \lstinline{Board} which existed in previous versions of the program, to find the last piece to move as well as king positions. While there is the overhead that the \lstinline{BoardDecorator} must be updated at each move, the code is much conceptually clearer with the use of the additional information.
+This information prevents repeated passes over the \lstinline{Board} which existed in previous versions of the program, to find the king positions. While there is the overhead that the \lstinline{BoardDecorator} must be updated at each move, the code is much conceptually clearer with the use of the decorator.
 
 \begin{lstlisting}
 data BoardDecorator where
-    Dec :: Board -> Team -> Position -> (Position, Position) -> Nat -> BoardDecorator
+    Dec :: Board             -- Chess board
+    -> Team                  -- Last team moved
+    -> Position              -- Last position moved to
+    -> (Position, Position)  -- King positions
+    -> Nat                   -- No. of moves so far
+    -> BoardDecorator
 \end{lstlisting}
 
 \subsection{Checking Chess Rules}
 
-All of the rule-checking is done via type families that take in the \lstinline{BoardDecorator} and output either a correct result, or a type-level error.
+All of the rule-checking is performed by type families that take in the \lstinline{BoardDecorator} and output either a correct result, or a type error. Rule-checking occurs during movement, since the chess game effectively hangs while players do not move.
 
 \subsubsection{Type families in Haskell}
 
 Although Haskell allows type-level computation via type families, these type families must be fully saturated. That is, they can't be partially applied like normal Haskell functions can. However, Li-yao Xia's work on First Class Families\footnote{\url{https://github.com/Lysxia/first-class-families}} defines a kind of type-level interpreter, allowing similar behaviour to partial application.
 
-This means that the board can be mapped over, performing computation on the pieces therein without writing a new function for each map. Incrementing a piece's move count, or changing the name of a piece, is much easier with First Class Families than it would otherwise be with regular type families.
+This means that the board can be mapped over, performing computation on the pieces therein without writing a new function for each map. Incrementing a piece's move count, or changing the name of a piece, is therefore much easier with First Class Families than it would otherwise be with regular type families.
 
 \subsubsection{Move Lists}
 
@@ -191,7 +203,7 @@ Each piece, depending on its team and name, can move to a certain number of spac
 
 \begin{lstlisting}
 data PieceMoveList :: Piece -> BoardDecorator -> Exp [Position]
--- If it's the pawn's first move, move two spaces, otherwise move one
+-- If it's the pawn's first move (i.e. it has a move count of 0), allow it to move two spaces, otherwise move one
 type instance Eval (PieceMoveList (MkPiece team Pawn info) boardDec) = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece team Pawn info) boardDec) (PawnPostStart (MkPiece team Pawn info) boardDec))
 
 -- Bishops move diagonally
@@ -235,11 +247,11 @@ type instance Eval (Move fromPos toPos boardDec) = Eval ((
 
 \subsubsection{Proxies and Singletons}
 
-Value-level information is not naturally available to Haskell's type-level facilities, due to type erasure. As such, there are various methods to pass such information up to the type level.
+Type-level information is not naturally available to Haskell's term-level facilities, due to type erasure. As such, there are various methods to simulate computation with types at runtime.
 
-Proxy types are parameterised with kind-polymorphic type variable\cite{yorgey2012giving}. A \lstinline{Proxy} value can have type \lstinline{Proxy Int} or \lstinline{Proxy 'Black}, for example. Proxies are used to make runtime board decorator information available at the type level in Chesskell.
+Proxy types are parameterised with kind-polymorphic type variables\cite{yorgey2012giving}. A \lstinline{Proxy} value can have type \lstinline{Proxy Int} or \lstinline{Proxy 'Black}, for example. Proxies are used to make runtime board decorator information available at the type level in Chesskell.
 
-Singleton types mimic dependent types\cite{singletons}; each type has a single, unambiguous value. This value can be used to pass around type information at the value level (and the corresponding type can be used to pass around value information at the type level). Chesskell uses singletons to perform computation with positions and piece names.
+Singleton types mimic dependent types\cite{singletons}; each type has a single, unambiguous value, and vice versa. This value can be used to pass around type information at the term-level. Chesskell uses singletons to perform computation with positions and piece names.
 
 \subsubsection{EDSL Implementation}
 
@@ -256,7 +268,9 @@ type Conv s t = s -> Spec t
 type Term t r = t -> r
 \end{lstlisting}
 
-The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are passed, transforming that value, until the chess game ends (or until a rule is broken). The core continuations defined are named after the pieces, such as \lstinline{pawn} and \lstinline{king}. Each of them takes in an \lstinline{SPosition}, a singleton version of \lstinline{Position}. A new datatype, \lstinline{MoveArgs}, is defined in order to simplify the process of passing information between the continuations.
+Type-level computations within the EDSL are achieved through \emph{type applications}\cite{typeapplication}, which allow the programmer to specify the exact type of a kind-polymorphic type variable. Using a combination of singletons, proxies, kind signatures, and type applications, the value-level Haskell code for the EDSL can have specific type variables and involve type family application. Essentially, the term-level EDSL can involve type-level rule checking.
+
+The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are passed, transforming that value, until the chess game ends (or a rule is broken). The core continuations defined are named after the pieces, such as \lstinline{pawn} and \lstinline{king}. Each of them takes in an \lstinline{SPosition}, a singleton version of \lstinline{Position}. A new datatype, \lstinline{MoveArgs}, is defined in order to simplify the process of passing information between the continuations.
 
 \begin{lstlisting}
 -- StartDec is a board decorator holding all the information for the start of a chess game
@@ -266,16 +280,22 @@ chess cont = cont (Proxy @StartDec)
 data MoveArgs where
     MA :: BoardDecorator -> Position -> PieceName -> Position -> MoveArgs
 
+-- Passes a created MoveArgs type constructor to the continuation
 pawn :: Proxy (b :: BoardDecorator) -> SPosition fromPos -> Spec (Proxy (MA b fromPos 'Pawn))
 pawn (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b fromPos Pawn))
 \end{lstlisting}
 
-The next continuation, \lstinline{to}, takes in another \lstinline{SPosition}, performs the move computation, puts the resulting board decorator into a \lstinline{Proxy} type, and passes that \lstinline{Proxy} into the continuation given. The final relevant definition is of \lstinline{end}, which ends the chess game (and the continuation stream).
+The next continuation, \lstinline{to}, takes in another \lstinline{SPosition}, performs the move computation, puts the resulting board decorator into a \lstinline{Proxy} type, and passes that \lstinline{Proxy} into the continuation given.
 
 \begin{lstlisting}
+-- Moves a piece from one position to another
 to :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) -> SPosition toPos -> Spec (Proxy (Eval (MoveWithStateCheck n fromPos toPos b)))
 to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: SPosition toPos) cont = cont (Proxy @(Eval (MoveWithStateCheck n fromPos toPos b)))
+\end{lstlisting}
 
+The final relevant definition is of \lstinline{end}, which ends the chess game (and the continuation stream).
+
+\begin{lstlisting}
 end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
 \end{lstlisting}
@@ -293,7 +313,7 @@ game = chess
        end
 \end{lstlisting}
 
-However, should Black attempt to move after checkmate, an error will be logged, since no moves by Blac will be valid:
+However, should Black attempt to move after checkmate, an error will be logged, since no moves by Black will be valid:
 
 \begin{lstlisting}
 -- Below results in a type error:
@@ -329,50 +349,81 @@ game = chess
 
 \subsubsection{EDSL Board Creation}
 
-There are additional statements than the above, to help create an initial chess board for easy testing. A short example is below:
+There are additional statements to help create an initial chess board for easy testing. A short example is below:
 
 \begin{lstlisting}
--- A simple example board created, 
-example   = create                 -- create chess board
-                put _Wh _R at _a8  -- Set a white rook at a8
-                put _Wh _R at _h1
-                put _Bl _P at _h7  -- Set a black rook at h7
-                lastTeam _Bl       -- Set black as last team moved
-            startMoves             -- Begin chess game
-                rook _a8 to _a2
-                pawn _h7 to _h6
-                rook _h1 to _h2
-            end
+-- A simple example board created for testing castling code
+example
+  = create                 -- create chess board
+        put _Wh _R at _a8  -- Set a white rook at a8
+        put _Wh _R at _h1
+        put _Bl _P at _h7  -- Set a black rook at h7
+        lastTeam _Bl       -- Set black as last team moved
+    startMoves             -- Begin chess game
+        rook _a8 to _a2
+        pawn _h7 to _h6
+        rook _h1 to _h2
+    end
+\end{lstlisting}
+
+\subsubsection{Pawn Promotion}
+
+The EDSL function \lstinline{becomes} handles Pawn promotion, transforming a Pawn into another piece after it has moved. Since the whole chess game is expressed in continuation-passing style, \lstinline{becomes} simply edits a Pawn's \lstinline{PieceName} in place.
+
+\begin{lstlisting}
+game = chess
+           -- ...
+           pawn _a7 to _a8 becomes _Queen
+           -- ...
+       end
+\end{lstlisting}
+
+This can be combined with the board creation statements to create a simple game which compiles:
+
+\begin{lstlisting}
+game = create
+           put _Wh _P at _a7
+       startMoves
+           pawn _a7 to _a8 becomes _Queen
+       end
+\end{lstlisting}
+
+However, the below code will also compile, when it should not, since according to the FIDE 2018 Laws of Chess\footnote{\url{https://handbook.fide.com/chapter/E012018}}, promotion is not optional, and must occur.
+
+\begin{lstlisting}
+game = create
+            put _Wh _P at _a7
+        startMoves
+            pawn _a7 to _a8  -- No promotion - type error
+        end
 \end{lstlisting}
 
 \subsubsection{EDSL Issues}
 
-Early versions of the EDSL crashed GHC, due to the initial definition of \lstinline{chess}, whereby \lstinline{StartDec} was not manually created by the programmer, but pieced together through a series of type family applications:
+Early versions of the EDSL crashed GHC, due to the initial definition of \lstinline{chess}; the programmer did not manually create \lstinline{StartDec}, but pieced it together through a series of type family applications:
 
 \begin{lstlisting}
 chess :: Spec (Proxy StartDec)
 chess cont = cont (Proxy :: Proxy StartDec)
 \end{lstlisting}
 
-GHC would run out of memory to allocate, and would usually crash. This behaviour is unusual, and so we filed a GHC bug report\footnote{\url{https://gitlab.haskell.org/ghc/ghc/-/issues/18902}}. As a work-around until the bug is fixed, \lstinline{StartDec} was manually written out in full in the source Haskell file.
+GHC would run out of memory to allocate, and would either crash or hang for multiple minutes. This behaviour is unusual, and so we filed a GHC bug report\footnote{\url{https://gitlab.haskell.org/ghc/ghc/-/issues/18902}}. As a work-around until the bug is fixed, \lstinline{StartDec} was manually written out in full in the source Haskell file.
 
-Additionally, adding the move number to the type error\footnote{e.g. \lstinline{Error at move 1: Pawn cannot move to...}} causes a spike in memory usage and compile time; not as excessive as above, as GHC does not crash, but still double or triple what it should be. The move number will only be re-added to the error if this problem can be fixed or worked around, since it would hamper the testing of a large number of games.
+Additionally, adding the move number to the type error\footnote{e.g. \lstinline{Error at move 1: Pawn cannot move to...}} causes a spike in compile time; not as excessive as above, as GHC does not crash, but still doubling or tripling compile time. The move number will only be re-added to the error if this problem can be fixed or worked around, since it would greatly slow the testing of a large number of games.
 
 \subsection{Testing}
 
-The test suite is a mixture of \lstinline{HSpec} tests\cite{hspec} and module declarations. The original plan was to have all tests be HSpec behaviour tests; many of these HSpec tests make use of the type-level testing facilities laid out in other works\cite{mezzo}. However, running the test suite causes excessive memory usage, exceeding 27 GB in some cases.
+The test suite is a mixture of HSpec behaviour-driven tests\cite{hspec} and module declarations. The original plan was to have all tests be HSpec tests; many of these HSpec tests make use of the type-level testing facilities laid out in other works\cite{mezzo}. However, running the test suite causes excessive memory usage, exceeding 27 GB in some cases.
 
-Work on a solution is ongoing, but for now, many tests for the EDSL's new features are expressed as high-level declarations in a Haskell module, and seeing whether they compile or not (and if not, what error they throw). This will hopefully only be temporary, but it should suffice as a rudimentary method of integration testing.
+Work on a solution is ongoing, but for now, many tests for the EDSL's new features are expressed as high-level declarations in a Haskell module. The tests are run by seeing whether these declarations compile or not (and if not, what error they throw). This will hopefully only be temporary, but it should suffice as a rudimentary (if slow) method of integration testing.
 
 \section{Next Steps}
 
-As the project's main feature set is nearly complete, the remaining time will be spent testing, evaluating, and improving the project. Full-length chess games will be expressed in the EDSL, to determine if the program compiles correct chess games; and the subtle errors will be introduced to those games, to test that incorrect games fail to compile. A comprehensive integration testing plan/suite will be drawn up before the end of the year.
+As the project's main feature set is nearly complete, the remaining time will be spent testing, evaluating, and improving the project. Full-length chess games will be expressed in the EDSL, to determine if the program compiles correct chess games; and the subtle errors will be introduced to those games, to test that incorrect games fail to compile. Of course, the code itself is only part of the project; work on the dissertation should begin early next term/year.
 
 \subsection{Chess Rules}
 
-At the moment, the only chess rule missed out is \emph{mandatory promotion}. Promotion is currently optional, meaning a Pawn can reach the opposite end of the board and remain a pawn. However, according to the FIDE 2018 Laws of Chess\footnote{\url{https://handbook.fide.com/chapter/E012018}} promotion is not optional, and must occur.
-
-The current implementation of promotion does not involve the \lstinline{Move} function, but since the pawn must be promoted at the end of its' move, the \lstinline{Move} function needs to include this functionality.
+At the moment, the only incomplete chess rule is \emph{mandatory promotion}. Promotion in the EDSL is optional, meaning a Pawn can reach the opposite end of the board and remain a Pawn. The current implementation of promotion does not involve the \lstinline{Move} function, but since the pawn must be promoted at the end of its' move, the \lstinline{Move} function needs to include this functionality.
 
 \subsection{EDSL}
 
@@ -380,7 +431,7 @@ The only major addition to the EDSL is mandatory promotion, as we explain above.
 
 \subsection{Performance}
 
-The current memory usage of the EDSL is acceptable, but only short (<10 moves) chess games have been described and tested thus far. Memory usage and compile time are likely to rise with the length of the chess game, and so memory usage optimisations may become necessary as testing continues.
+The current memory usage and compile time of the EDSL is acceptable, but only short ($<$10 moves) chess games have been described and tested thus far. Memory usage and compile time are likely to rise both with the length of the chess game, and the number of games tested. Memory usage optimisations may become necessary as testing continues.
 
 \subsection{Revised Timetable/Plan}
 
@@ -418,9 +469,7 @@ Revision for examinations is key during this period; however, since the disserta
 
 \subsection{Resources}
 
-Developing this program requires a computer (and Operating System) which can run the latest version of GHC (8.10.2, at the time of writing). GHC runs on most Linux distributions, as well as Windows and MacOS. In other words, it runs on almost all consumer-grade PCs, and so development is unlikely to be a problem. The development environment will be the same as the "production" environment; it is a tool designed for those involved in the compilation process.
-
-There are many Chess rulesets, casual or otherwise. The project will use the FIDE official ruleset, because it gives comprehensive, detailed rules that are widely used\footnote{It also includes rules for the players themselves, but these meta-rules are beyond the scope of the project.}.
+Developing this program requires a computer (and Operating System) which can run the latest version of GHC (8.10.2, at the time of writing). GHC runs on most Linux distributions, as well as Windows and MacOS. In other words, it runs on almost all consumer-grade PCs, and so suitable development and testing hardware is plenty.
 
 \subsection{Risks}
 
@@ -430,7 +479,7 @@ There are, of course, other risks not directly associated with the project; in 2
 
 \subsection{Legal, Professional, and Ethical Considerations}
 
-As this project is undertaken alone, with no involvement from third parties (aside from the project supervisor), there are no additional legal, professional, or ethical considerations to consider. There will be no personal data processing, and no pre-existing Haskell type-level Chess implementation to plagiarise.
+As this project is undertaken alone, with no involvement from third parties (aside from the project supervisor), there are no additional legal, professional, or ethical considerations to consider. The program contains no personal data processing, and such processing will not be introduced.
 
 \bibliographystyle{ieeetr}
 
