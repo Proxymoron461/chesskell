@@ -400,18 +400,26 @@ game = create
 
 \subsubsection{EDSL Issues}
 
-Early versions of the EDSL crashed GHC, due to the initial definition of \lstinline{chess}; the programmer did not manually create \lstinline{StartDec}, but pieced it together through a series of type family applications:
+GHC had issues compiling early versions of the EDSL, due to the initial definition of \lstinline{chess}; the programmer did not manually create \lstinline{StartDec}, but pieced it together through a series of type family applications:
 
 \begin{lstlisting}
 -- Create StartDec with expensive type family computations
 type StartDec = MakeDecorator (...)
+\end{lstlisting}
 
--- Early definition of chess
+\lstinline{StartDec} was then used when setting up the chess game, and two definitions of \lstinline{chess} were attempted; one using a type application, and the other using a type signature.
+
+\begin{lstlisting}
+-- Early definition of chess with type application
+chess :: Spec (Proxy StartDec)
+chess cont = cont (Proxy @StartDec)
+
+-- Version of chess with type signature
 chess :: Spec (Proxy StartDec)
 chess cont = cont (Proxy :: Proxy StartDec)
 \end{lstlisting}
 
-GHC would run out of memory to allocate, and would either crash or hang for multiple minutes. This behaviour is unusual, so we filed a GHC bug report\footnote{\url{https://gitlab.haskell.org/ghc/ghc/-/issues/18902}}. As a work-around until the bug is fixed, \lstinline{StartDec} was manually written out in full in the source Haskell file.
+The version of \lstinline{chess} that used a type application would compile without issues, but would cause lengthy pauses a runtime when used. Conversely, when compiling the type signature version, GHC would display obscene memory usage, and would either crash or hang for multiple minutes. This behaviour is unusual, so we filed a GHC bug report\footnote{\url{https://gitlab.haskell.org/ghc/ghc/-/issues/18902}}. As a work-around until the bug is fixed, \lstinline{StartDec} was manually written out in full in the source Haskell file, allowing either definition to be compiled and used with no issues.
 
 Additionally, adding the move number to the type error\footnote{e.g. \lstinline{Error at move 1: Pawn cannot move to...}} causes a spike in compile time; not as excessive as above, as GHC does not crash, but still doubling or tripling compile time. The move number will only be re-added to the error if this problem can be fixed or worked around, since it would greatly slow the testing of a large number of games.
 
