@@ -148,7 +148,7 @@ data Piece where
 
 \subsubsection{The Board}
 
-At the type level, the most common way of storing n elements is with the built-in list type (similar to the value-level). However, a singly-linked list has issues; how can we ensure that the chess board is the appropriate size without a length check each move? This would take at least 56 additions, since the length must be computed recursively; as well as 7 more addition operations to put together the list lengths.
+At the type level, the most common way of storing n elements is with the built-in list type (similar to the value-level). However, a singly-linked list has issues; how can we ensure that the chess board is the appropriate size (an 8x8 grid) without a length check each move? This would take at least 56 additions, since the length must be computed recursively; as well as 7 more addition operations to put together the list lengths.
 
 Performing such a check each move would be wasteful. Instead, length-indexed vectors are used. \lstinline{Nat} values are used to specify the length of a vector, resulting in a type error if the vector is any other length. As with most things in Haskell, they are defined recursively; an empty vector has length 0, and you express a vector of length (n + 1) by pushing an element to the front of a vector of length n.
 
@@ -368,7 +368,7 @@ example
 
 \subsubsection{Pawn Promotion}
 
-The EDSL function \lstinline{becomes} handles Pawn promotion, transforming a Pawn into another piece after it has moved. Since the whole chess game is expressed in continuation-passing style, \lstinline{becomes} simply edits a Pawn's \lstinline{PieceName} in place.
+The EDSL function \lstinline{becomes} handles Pawn promotion, transforming a Pawn into another piece after it has moved to the opposite side of the board. Since the whole chess game is expressed in continuation-passing style, \lstinline{becomes} simply edits a Pawn's \lstinline{PieceName} in place.
 
 \begin{lstlisting}
 game = chess
@@ -378,7 +378,7 @@ game = chess
        end
 \end{lstlisting}
 
-This can be combined with the board creation statements to create a simple game which compiles:
+This can be combined with the board creation functionality to create a simple game which compiles:
 
 \begin{lstlisting}
 game = create
@@ -394,7 +394,7 @@ However, the below code will also compile, when it should not, since according t
 game = create
             put _Wh _P at _a7
         startMoves
-            pawn _a7 to _a8  -- No promotion - type error
+            pawn _a7 to _a8  -- No promotion - should have type error
         end
 \end{lstlisting}
 
@@ -403,19 +403,25 @@ game = create
 Early versions of the EDSL crashed GHC, due to the initial definition of \lstinline{chess}; the programmer did not manually create \lstinline{StartDec}, but pieced it together through a series of type family applications:
 
 \begin{lstlisting}
+-- Create StartDec with expensive type family computations
+type StartDec = MakeDecorator (...)
+
+-- Early definition of chess
 chess :: Spec (Proxy StartDec)
 chess cont = cont (Proxy :: Proxy StartDec)
 \end{lstlisting}
 
-GHC would run out of memory to allocate, and would either crash or hang for multiple minutes. This behaviour is unusual, and so we filed a GHC bug report\footnote{\url{https://gitlab.haskell.org/ghc/ghc/-/issues/18902}}. As a work-around until the bug is fixed, \lstinline{StartDec} was manually written out in full in the source Haskell file.
+GHC would run out of memory to allocate, and would either crash or hang for multiple minutes. This behaviour is unusual, so we filed a GHC bug report\footnote{\url{https://gitlab.haskell.org/ghc/ghc/-/issues/18902}}. As a work-around until the bug is fixed, \lstinline{StartDec} was manually written out in full in the source Haskell file.
 
 Additionally, adding the move number to the type error\footnote{e.g. \lstinline{Error at move 1: Pawn cannot move to...}} causes a spike in compile time; not as excessive as above, as GHC does not crash, but still doubling or tripling compile time. The move number will only be re-added to the error if this problem can be fixed or worked around, since it would greatly slow the testing of a large number of games.
 
 \subsection{Testing}
 
-The test suite is a mixture of HSpec behaviour-driven tests\cite{hspec} and module declarations. The original plan was to have all tests be HSpec tests; many of these HSpec tests make use of the type-level testing facilities laid out in other works\cite{mezzo}. However, running the test suite causes excessive memory usage, exceeding 27 GB in some cases.
+The test suite is a mixture of HSpec behaviour-driven tests\cite{hspec} and module declarations, where the HSpec tests cover many of the declared type families (such as \lstinline{Move} and \lstinline{PieceMoveList}).
 
-Work on a solution is ongoing, but for now, many tests for the EDSL's new features are expressed as high-level declarations in a Haskell module. The tests are run by seeing whether these declarations compile or not (and if not, what error they throw). This will hopefully only be temporary, but it should suffice as a rudimentary (if slow) method of integration testing.
+The original plan was to have all tests be HSpec tests; many of these HSpec tests make use of the type-level testing facilities laid out in other works\cite{mezzo}. However, running the test suite on EDSL statements, as well as some of the expensive type families (such as those involving castling) causes excessive memory usage, exceeding 27 GB in some cases.
+
+Work on a solution is ongoing, but for now, EDSL tests are expressed as high-level declarations in a Haskell module. The tests are run by seeing whether these declarations compile or not (and if not, what error they throw). This will hopefully only be temporary, but it should suffice as a rudimentary (if slow) method of integration testing.
 
 \section{Next Steps}
 
