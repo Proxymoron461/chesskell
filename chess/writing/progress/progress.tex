@@ -10,7 +10,7 @@
 \definecolor{keywords}{rgb}{0.0, 0.0, 0.64}
 
 \lstset{
-    language=Haskell,
+    language=haskell,
     basicstyle=\small\ttfamily,
     backgroundcolor=\color{background},
     keywordstyle=\color{keywords}\bfseries,
@@ -237,7 +237,7 @@ type instance Eval (Move fromPos toPos boardDec) = Eval ((
 
 Value-level information is not naturally available to Haskell's type-level facilities, due to type erasure. As such, there are various methods to pass such information up to the type level.
 
-Proxy types are parameterised with kind-polymorphic type variable. A \lstinline{Proxy} value can have type \lstinline{Proxy Int} or \lstinline{Proxy 'Black}, for example. Proxies are used to make runtime board decorator information available at the type level in Chesskell.
+Proxy types are parameterised with kind-polymorphic type variable\cite{yorgey2012giving}. A \lstinline{Proxy} value can have type \lstinline{Proxy Int} or \lstinline{Proxy 'Black}, for example. Proxies are used to make runtime board decorator information available at the type level in Chesskell.
 
 Singleton types mimic dependent types\cite{singletons}; each type has a single, unambiguous value. This value can be used to pass around type information at the value level (and the corresponding type can be used to pass around value information at the type level). Chesskell uses singletons to perform computation with positions and piece names.
 
@@ -259,11 +259,72 @@ type Term t r = t -> r
 The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are passed, transforming that value, until the chess game ends (or until a rule is broken). The core continuations defined are named after the pieces, such as \lstinline{pawn} and \lstinline{king}. Each of them takes in an \lstinline{SPosition}, a singleton version of \lstinline{Position}. A new datatype, \lstinline{MoveArgs}, is defined in order to simplify the process of passing information between the continuations.
 
 \begin{lstlisting}
+-- StartDec is a board decorator holding all the information for the start of a chess game
+chess :: Spec (Proxy StartDec)
+chess cont = cont (Proxy @StartDec)
+
 data MoveArgs where
     MA :: BoardDecorator -> Position -> PieceName -> Position -> MoveArgs
 
 pawn :: Proxy (b :: BoardDecorator) -> SPosition fromPos -> Spec (Proxy (MA b fromPos 'Pawn))
 pawn (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b fromPos Pawn))
+\end{lstlisting}
+
+The next continuation, \lstinline{to}, takes in another \lstinline{SPosition}, performs the move computation, puts the resulting board decorator into a \lstinline{Proxy} type, and passes that \lstinline{Proxy} into the continuation given. The final relevant definition is of \lstinline{end}, which ends the chess game (and the continuation stream).
+
+\begin{lstlisting}
+to :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) -> SPosition toPos -> Spec (Proxy (Eval (MoveWithStateCheck n fromPos toPos b)))
+to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: SPosition toPos) cont = cont (Proxy @(Eval (MoveWithStateCheck n fromPos toPos b)))
+
+end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
+end = id
+\end{lstlisting}
+
+Using the above continuations, we can lay out a chess game, move by move. Consider a short game, involving a 3-move checkmate by White. The game can be laid out as below in the EDSL, and will compile successfully:
+
+\begin{lstlisting}
+-- Describes a game with a checkmate by White in 3 moves
+game = chess
+           pawn _e2 to _e4   -- White begins
+           pawn _f7 to _f5   -- Black move
+           queen _d1 to _f3
+           pawn _g7 to _g5
+           queen _f3 to _h5  -- Checkmate!
+       end
+\end{lstlisting}
+
+However, should Black attempt to move after checkmate, an error will be logged, since no moves by Blac will be valid:
+
+\begin{lstlisting}
+-- Below results in a type error:
+    -- * The Black King is in check after a Black move. This is not allowed.
+    -- * When checking the inferred type
+    --     game :: Data.Proxy.Proxy (TypeError ...)
+game = chess
+           pawn _e2 to _e4   -- White begins
+           pawn _f7 to _f5   -- Black move
+           queen _d1 to _f3
+           pawn _g7 to _g5
+           queen _f3 to _h5  -- Checkmate!
+           pawn _g5 to _g4   -- Invalid move by black - Black King is in checkmate
+       end
+\end{lstlisting}
+
+Or, should White attempt an impossible move in the middle of the game, such as moving a Queen through another piece, a different type error will occur:
+
+\begin{lstlisting}
+-- Below results in a type error:
+    -- * There is no valid move from D1 to D3.
+    -- The Queen at D1 can move to: E2, F3, G4, H5
+    -- * When checking the inferred type
+    -- game :: Data.Proxy.Proxy (...)
+game = chess
+           pawn _e2 to _e4   -- White begins
+           pawn _f7 to _f5   -- Black move
+           queen _d1 to _d3  -- White Queen moves through a Pawn - not allowed
+           pawn _g7 to _g5
+           queen _f3 to _h5  -- Checkmate!
+       end
 \end{lstlisting}
 
 \subsection{Testing}
