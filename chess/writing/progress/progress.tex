@@ -40,7 +40,7 @@
 
 In 2020, video games are more popular than ever. In the US alone, an ESA report\footnote{\url{https://www.theesa.com/wp-content/uploads/2020/07/Final-Edited-2020-ESA_Essential_facts.pdf}} estimates that there are more than 214 million individuals who play games. Considering this, it's surprising how many games are released with major bugs in their software---some of which end up being so notable that news and footage of them appear on mainstream media\footnote{\url{https://www.bbc.co.uk/news/technology-50156033}}.
 
-As programming languages have evolved, many have begun to address errors at compile time. Features like optional types are being introduced to languages such as Java and C\#, and languages like Rust have pioneered ways of safely handling dynamic allocation through the use of owner types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many language compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions.
+As programming languages have evolved, many have begun to address more errors at compile time. Features like optional types are being introduced to languages such as Java and C\#, and languages like Rust have pioneered ways of safely handling dynamic allocation through the use of owner types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many language compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions.
 
 However, the most common programming language used for game development is C++\cite{gamepp}, despite its' lack of safety and allowance of direct pointer arithmetic. C++ is chosen for its' speed, but as computers (and gaming consoles) get more powerful, runtime speed becomes less important than developer productivity. Research into bringing more type-safety into game programming environments is rare, and is the niche this project attempts to fill.
 
@@ -94,7 +94,7 @@ The most important types are the board, and the individual pieces on it. Both of
 
 Both of these types are simple algebraic data types, with all inhabitants defined in code. The team defines whether a piece is black or white, and the piece's name states which chess piece it is; a pawn, a rook, and so on.
 
-The declarations below, combined with the \lstinline{-XDataKinds} extension, create two things. The first is a value-level representation of \lstinline{Team} and \lstinline{Piecename}, where \lstinline{Black} is a value of type \lstinline{Team}. The second is a \emph{type-level} representation, where \lstinline{'Black} is a type and \lstinline{Team} is a kind\footnote{Note that \lstinline{'Black} has no term-level values, since it does not have kind \lstinline{*}}.
+The declarations below, combined with the \lstinline{-XDataKinds} extension, create two things. The first is a value-level representation of \lstinline{Team} and \lstinline{Piecename}, where \lstinline{Black} is a value of type \lstinline{Team}. The second is a \emph{type-level} representation, where \lstinline{'Black} is a type of kind \lstinline{Team}\footnote{Note that \lstinline{'Black} has no term-level values, since it does not have kind \lstinline{*}}.
 
 % For values that have been promoted to types, a ' may be prefixed (as with \lstinline{'Black}) above. However, this prefix is optional, since GHC can, in most cases, tell whether something is a value or a type from context. Where unclear, this report will use the prefix to distinguish types from values.
 
@@ -132,12 +132,12 @@ data Position where
 
 \subsubsection{The Pieces}
 
-Each piece contains information relevant for rule checking: that piece's team, name, and an information type. The information type contains a \lstinline{Nat} and a \lstinline{Position}, to represent the number of moves that piece has taken, and its current position on the board. Recording the number of moves the piece has taken is important for several rules in chess, including castling and \textit{En Passant}. As such, its included in the \lstinline{PieceInfo} type.
+Each piece contains information relevant for rule checking: that piece's team, name, and an information type. The information type contains a \lstinline{Nat} and a \lstinline{Position}, to represent the number of moves that piece has taken, and its current position on the board. Recording the number of moves the piece has taken is important for several rules in chess, including castling and \textit{En Passant}. As such, it is included in the \lstinline{PieceInfo} type.
 
-The \lstinline{PieceInfo} type was created separate from the plain \lstinline{Piece} type so that if any further information needed adding, it could be with minimal issues (though no such additional information was required).
+The \lstinline{PieceInfo} type was created separate from the plain \lstinline{Piece} type so that if any further information was needed, it could be added without breaking existing \lstinline{Piece} pattern-match definitions (though no such additional information was required).
 
 \begin{lstlisting}
--- Pieceinfo type, containing general information
+-- Piece info type, containing general information
 data PieceInfo where
     Info :: Nat -> Position -> PieceInfo
 
@@ -148,9 +148,9 @@ data Piece where
 
 \subsubsection{The Board}
 
-At the type level, the most common way of storing n elements is with the built-in list type (similar to the value-level). However, a singly-linked list has issues; how can we ensure that the chess board is the appropriate size (an 8x8 grid) without a length check each move? This would take at least 56 additions, since the length is computed recursively; as well as 7 more addition operations to put together the list lengths.
+At the type level, the most common way of storing n elements is with the built-in list type (similar to the value-level). However, a singly-linked list has issues; how can we ensure that the chess board is the appropriate size (an 8x8 grid) without a length check each move? This would take at least 56 additions, since list length is computed recursively; as well as 7 more addition operations to put together the list lengths.
 
-Performing such a check each move would be wasteful. Instead, length-indexed vectors are used. \lstinline{Nat} values are used to specify the length of a vector, resulting in a type error if the vector is any other length. As with most things in Haskell, we use recursive definitions; an empty vector has length 0, and you express a vector of length (n + 1) by pushing an element to the front of a vector of length n.
+Performing such a check each move would be wasteful. Instead, length-indexed vectors are used. \lstinline{Nat} values specify the length of a vector, resulting in a type error if the vector is any other length. As with most things in Haskell, we use recursive definitions; an empty vector has length 0, and you express a vector of length (n + 1) by pushing an element to the front of a vector of length n.
 
 \begin{lstlisting}
 data Vec (n :: Nat) (a :: Type) where
@@ -158,7 +158,7 @@ data Vec (n :: Nat) (a :: Type) where
     (:->)  :: a -> Vec n a -> Vec (S n) a
 \end{lstlisting}
 
-For example, a vector of 3 boolean types has the type: \lstinline{Vec (S (S (S Z))) Bool}. The board can be expressed using these vectors---a vector of 8 vectors of 8 pieces. (\lstinline{Maybe Piece} is used instead, since a board square does not necessary contain a piece.)
+For example, a vector of 3 boolean types has the type: \lstinline{Vec (S (S (S Z))) Bool}. The board can be expressed using these vectors---a vector of 8 vectors of 8 pieces. (We use \lstinline{Maybe Piece} instead, since a board square does not necessary contain a piece.)
 
 \begin{lstlisting}
 type Eight = (S (S (S (S (S (S (S (S Z))))))))
@@ -166,7 +166,7 @@ type Row   = Vec Eight (Maybe Piece)  -- Row of eight Maybe Pieces
 type Board = Vec Eight Row            -- Grid of eight rows
 \end{lstlisting}
 
-Although this is the main board type, it is augmented with a \lstinline{BoardDecorator}, so named because the intention is to be similar to the decorator design pattern\cite{decorator} (with the exception that subclassing and superclassing are not features of Haskell). \lstinline{BoardDecorator} should be used instead of \lstinline{Board}, since it provides additional information:
+Although this is the main board type, it is augmented with a \lstinline{BoardDecorator}, so named because the intention is similar to the decorator design pattern\cite{decorator} (with the exception that subclassing and superclassing are not features of Haskell). \lstinline{BoardDecorator} should be used instead of \lstinline{Board}, since it provides additional information:
 
 \begin{itemize}
     \item The last team to move;
@@ -189,11 +189,11 @@ data BoardDecorator where
 
 \subsection{Checking Chess Rules}
 
-All of the rule-checking is performed by type families that take in the \lstinline{BoardDecorator} and output either a correct result, or a type error. Rule-checking occurs during movement, since the chess game effectively hangs while players do not move.
+We perform all rule-checking with type families that take in the \lstinline{BoardDecorator} (among other arguments) and output either a correct result, or a type error. Rule-checking occurs during movement, since the chess game effectively hangs while players do not move.
 
 \subsubsection{Type families in Haskell}
 
-Although Haskell allows type-level computation via type families, these type families must be fully saturated. That is, they can't be partially applied like normal Haskell functions can. However, Li-yao Xia's work on First Class Families\footnote{\url{https://github.com/Lysxia/first-class-families}} defines a kind of type-level interpreter, allowing similar behaviour to partial application.
+Although Haskell allows type-level computation via type families, these type families can't be partially applied like normal Haskell functions can. However, Li-yao Xia's work on First Class Families\footnote{\url{https://github.com/Lysxia/first-class-families}} defines a kind of type-level interpreter, allowing similar behaviour to partial application.
 
 This means that the board is mappable, performing computation on the pieces therein without writing a new function for each map. Incrementing a piece's move count, or changing the name of a piece, is therefore much easier with First Class Families than it would otherwise be with regular type families.
 
@@ -251,7 +251,7 @@ Type-level information is not naturally available to Haskell's term-level facili
 
 Proxy types are parameterised with kind-polymorphic type variables\cite{yorgey2012giving}. A \lstinline{Proxy} value can have type \lstinline{Proxy Int} or \lstinline{Proxy 'Black}, for example. Proxies are used to make runtime board decorator information available at the type level in Chesskell.
 
-Singleton types mimic dependent types\cite{singletons}; each type has a single, unambiguous value, and vice versa. This value can be used to pass around type information at the term-level. Chesskell uses singletons to perform computation with positions and piece names.
+Singleton types mimic dependent types\cite{singletons}; each type has a single, unambiguous value, and vice versa. We use this value to pass around type information at the term-level. Chesskell uses singletons to perform computation with positions and piece names.
 
 \subsubsection{EDSL Implementation}
 
@@ -270,7 +270,7 @@ type Term t r = t -> r
 
 Type-level computations within the EDSL are achieved through \emph{type applications}\cite{typeapplication}, which allow the programmer to specify the exact type of a kind-polymorphic type variable. Using a combination of singletons, proxies, kind signatures, and type applications, the value-level Haskell code for the EDSL can have specific type variables and involve type family application. Essentially, the term-level EDSL can involve type-level rule checking.
 
-The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are passed, transforming that value, until the chess game ends (or a rule is broken). The core continuations are named after the pieces, such as \lstinline{pawn} and \lstinline{king}. Each of them takes in an \lstinline{SPosition}, a singleton version of \lstinline{Position}. We define a new datatype, \lstinline{MoveArgs}, in order to simplify the process of passing information between the continuations.
+The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are applied, transforming that value, until the chess game ends (or a rule is broken). The core continuations are named after the pieces, such as \lstinline{pawn} and \lstinline{king}. Each of them takes in an \lstinline{SPosition}, a singleton version of \lstinline{Position}. We define a new datatype, \lstinline{MoveArgs}, in order to simplify the process of passing information between the continuations.
 
 \begin{lstlisting}
 -- StartDec is a board decorator holding all the information for the start of a chess game
@@ -316,7 +316,7 @@ game = chess
 However, should Black attempt to move after checkmate, an error will be logged, since no moves by Black will be valid:
 
 \begin{lstlisting}
--- Below results in a type error:
+-- Below results in the following type error:
     -- * The Black King is in check after a Black move. This is not allowed.
     -- * When checking the inferred type
     --     game :: Data.Proxy.Proxy (TypeError ...)
@@ -333,7 +333,7 @@ game = chess
 Or, should White attempt an impossible move in the middle of the game, such as moving a Queen through another piece, a different type error will occur:
 
 \begin{lstlisting}
--- Below results in a type error:
+-- Below results in the following type error:
     -- * There is no valid move from D1 to D3.
     -- The Queen at D1 can move to: E2, F3, G4, H5
     -- * When checking the inferred type
@@ -419,7 +419,7 @@ chess :: Spec (Proxy StartDec)
 chess cont = cont (Proxy :: Proxy StartDec)
 \end{lstlisting}
 
-The version of \lstinline{chess} that used a type application would compile without issues, but would cause lengthy pauses a runtime when used. Conversely, when compiling the type signature version, GHC would display obscene memory usage, and would either crash or hang for multiple minutes. This behaviour is unusual, so we filed a GHC bug report\footnote{\url{https://gitlab.haskell.org/ghc/ghc/-/issues/18902}}. As a work-around until the bug is fixed, \lstinline{StartDec} is manually written out in full in the source Haskell file, allowing compilationa nd usage of either definition with no issues.
+The version of \lstinline{chess} that used a type application would compile without issues, but would cause lengthy pauses at runtime when used. Conversely, when compiling the type signature version, GHC would consume high amounts of memory, and would either crash or hang for multiple minutes. This behaviour is unusual, so we filed a GHC bug report\footnote{\url{https://gitlab.haskell.org/ghc/ghc/-/issues/18902}}. As a work-around until the bug is fixed, \lstinline{StartDec} is manually written out in full in the source Haskell file, allowing compilation and usage of either definition with no issues.
 
 Additionally, adding the move number to the type error\footnote{e.g. \lstinline{Error at move 1: Pawn cannot move to...}} causes a spike in compile time; not as excessive as above, as GHC does not crash, but still doubling or tripling compile time. The move number will only be re-added to the error if this problem can be fixed or worked around, since it would greatly slow the testing of a large number of games.
 
