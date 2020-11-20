@@ -151,12 +151,12 @@ data Vec (n :: Nat) (a :: Type) where
     (:->)  :: a -> Vec n a -> Vec (S n) a
 \end{lstlisting}
 
-For example, a vector of 3 boolean types has the type \lstinline{Vec (S (S (S Z))) Bool}. The board can be expressed using these vectors---a vector of 8 vectors of 8 pieces. (\lstinline{Maybe Piece}s are used instead, since a board square does not necessary contain a piece.)
+For example, a vector of 3 boolean types has the type \lstinline{Vec (S (S (S Z))) Bool}. The board can be expressed using these vectors---a vector of 8 vectors of 8 pieces. (\lstinline{Maybe Piece} is used instead, since a board square does not necessary contain a piece.)
 
 \begin{lstlisting}
 type Eight = (S (S (S (S (S (S (S (S Z))))))))
-type Row   = Vec Eight (Maybe Piece)
-type Board = Vec Eight Row
+type Row   = Vec Eight (Maybe Piece)  -- Row of eight Maybe Pieces
+type Board = Vec Eight Row            -- Grid of eight rows
 \end{lstlisting}
 
 Although this is the main board type, it is augmented with a \lstinline{BoardDecorator}, so named because the intention is to be similar to the decorator design pattern\cite{decorator} (with the exception that subclassing and superclassing are not features of Haskell). \lstinline{BoardDecorator} should be used instead of \lstinline{Board}, since it provides additional information:
@@ -327,23 +327,70 @@ game = chess
        end
 \end{lstlisting}
 
+\subsubsection{EDSL Board Creation}
+
+There are additional statements than the above, to help create an initial chess board for easy testing. A short example is below:
+
+\begin{lstlisting}
+-- A simple example board created, 
+example   = create                 -- create chess board
+                put _Wh _R at _a8  -- Set a white rook at a8
+                put _Wh _R at _h1
+                put _Bl _P at _h7  -- Set a black rook at h7
+                lastTeam _Bl       -- Set black as last team moved
+            startMoves             -- Begin chess game
+                rook _a8 to _a2
+                pawn _h7 to _h6
+                rook _h1 to _h2
+            end
+\end{lstlisting}
+
+\subsubsection{EDSL Issues}
+
+Early versions of the EDSL crashed GHC, due to the initial definition of \lstinline{chess}, whereby \lstinline{StartDec} was not manually created by the programmer, but pieced together through a series of type family applications:
+
+\begin{lstlisting}
+chess :: Spec (Proxy StartDec)
+chess cont = cont (Proxy :: Proxy StartDec)
+\end{lstlisting}
+
+GHC would run out of memory to allocate, and would usually crash. This behaviour is unusual, and so we filed a GHC bug report\footnote{\url{https://gitlab.haskell.org/ghc/ghc/-/issues/18902}}. As a work-around until the bug is fixed, \lstinline{StartDec} was manually written out in full in the source Haskell file.
+
+Additionally, adding the move number to the type error\footnote{e.g. \lstinline{Error at move 1: Pawn cannot move to...}} causes a spike in memory usage and compile time; not as excessive as above, as GHC does not crash, but still double or triple what it should be. The move number will only be re-added to the error if this problem can be fixed or worked around, since it would hamper the testing of a large number of games.
+
 \subsection{Testing}
 
-% TODO:
+The test suite is a mixture of \lstinline{HSpec} tests\cite{hspec} and module declarations. The original plan was to have all tests be HSpec behaviour tests; many of these HSpec tests make use of the type-level testing facilities laid out in other works\cite{mezzo}. However, running the test suite causes excessive memory usage, exceeding 27 GB in some cases.
+
+Work on a solution is ongoing, but for now, many tests for the EDSL's new features are expressed as high-level declarations in a Haskell module, and seeing whether they compile or not (and if not, what error they throw). This will hopefully only be temporary, but it should suffice as a rudimentary method of integration testing.
 
 \section{Next Steps}
 
-% todo:
+As the project's main feature set is nearly complete, the remaining time will be spent testing, evaluating, and improving the project. Full-length chess games will be expressed in the EDSL, to determine if the program compiles correct chess games; and the subtle errors will be introduced to those games, to test that incorrect games fail to compile. A comprehensive integration testing plan/suite will be drawn up before the end of the year.
+
+\subsection{Chess Rules}
+
+At the moment, the only chess rule missed out is \emph{mandatory promotion}. Promotion is currently optional, meaning a Pawn can reach the opposite end of the board and remain a pawn. However, according to the FIDE 2018 Laws of Chess\footnote{\url{https://handbook.fide.com/chapter/E012018}} promotion is not optional, and must occur.
+
+The current implementation of promotion does not involve the \lstinline{Move} function, but since the pawn must be promoted at the end of its' move, the \lstinline{Move} function needs to include this functionality.
+
+\subsection{EDSL}
+
+The only major addition to the EDSL is mandatory promotion, as we explain above. However, a few additional helper functions or syntax changes may be helpful during development, and so the EDSL is subject to change.
+
+\subsection{Performance}
+
+The current memory usage of the EDSL is acceptable, but only short (<10 moves) chess games have been described and tested thus far. Memory usage and compile time are likely to rise with the length of the chess game, and so memory usage optimisations may become necessary as testing continues.
 
 \subsection{Revised Timetable/Plan}
 
 \subsubsection{Weeks 9-10: 30th November to 13th December}
 
-This space is set for testing of the (near-complete) system against a curated data set, and fixing any potential problems that arise. The test will involve piping the data set to the type-level model via the EDSL, and as such will be integration and system testing, with unit testing taking place during development.
+These two weeks will be spent implementing mandatory promotion, and performing integration/system testing. A curated data set of chess games will be expressed in the EDSL and put through the GHC compiler. Some of these games will be valid, and some will be invalid. Only valid games should compile, and invalid games should fail to compile with an appropriate type error.
 
 \subsubsection{Weeks 11-14: 14th December 2020 to 10th January 2021}
 
-This is the first section of allocated empty space; should some of the risks in the below section materialise, this is when the project may be caught up on. Should the project be going well, then this extra time will be spent either starting early on the dissertation, or adding extensions to the project to further explore the modelling of games at the type-level.
+This is the first section of allocated empty space. If the test suite is posing any issues (with regards to compile time and memory usage) then this additional month should help with solving them. But should the testing be going well, with promotion complete, then this extra time will be spent either starting early on the dissertation, or adding extensions to the project to further explore the modelling of games at the type-level.
 
 \subsubsection{Weeks 15-18: 11th January to 7th February}
 
@@ -355,7 +402,7 @@ The module CS324 Computer Graphics has a coursework due on the 20th January; as 
 
 Once the previous detailed planning stage is complete, writing shall begin; with a detailed enough plan, this section should not take longer than a month. An initial draft will be completed by the 7th of March.
 
-The project itself will be evaluated during this period, examined for any subtle bugs, and the code will be finalised and completed. Work on the project presentation should also start in earnest, writing out a script.
+The project itself will be evaluated during this period, examined for any subtle bugs, and the code will be cleaned up and completed. Work on the project presentation will also start in earnest, writing out a script.
 
 \subsubsection{Weeks 23-24: 8th March to 21st March}
 
@@ -366,6 +413,24 @@ These two weeks are more empty space; set aside to act as a buffer for delays in
 Drafting, re-drafting, and refining the dissertation (with the help of the supervisor) will take place during this time. This is the final stretch, and will be spent ensuring that the final piece of writing is as good as it can be.
 
 Revision for examinations is key during this period; however, since the dissertation should be complete and this period is for evaluation and not the main bulk of writing, there should be ample time.
+
+\section{Resources, Risks, and Ethical Considerations}
+
+\subsection{Resources}
+
+Developing this program requires a computer (and Operating System) which can run the latest version of GHC (8.10.2, at the time of writing). GHC runs on most Linux distributions, as well as Windows and MacOS. In other words, it runs on almost all consumer-grade PCs, and so development is unlikely to be a problem. The development environment will be the same as the "production" environment; it is a tool designed for those involved in the compilation process.
+
+There are many Chess rulesets, casual or otherwise. The project will use the FIDE official ruleset, because it gives comprehensive, detailed rules that are widely used\footnote{It also includes rules for the players themselves, but these meta-rules are beyond the scope of the project.}.
+
+\subsection{Risks}
+
+The biggest risk going into the project was that it was unachievable; however, that risk has not materialised---the implementation is almost complete. The largest project-related risks left are the memory usage and compile time issues. 
+
+There are, of course, other risks not directly associated with the project; in 2020, there is a large-scale pandemic going on, which could pose considerable personal risk. However, by following Government and University guidelines, the chances of contracting COVID-19 will be kept to a minimum, and the project should not be interrupted by sudden illness.
+
+\subsection{Legal, Professional, and Ethical Considerations}
+
+As this project is undertaken alone, with no involvement from third parties (aside from the project supervisor), there are no additional legal, professional, or ethical considerations to consider. There will be no personal data processing, and no pre-existing Haskell type-level Chess implementation to plagiarise.
 
 \bibliographystyle{ieeetr}
 
