@@ -3,10 +3,22 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{listings}
 \usepackage{charter}
+\usepackage{xcolor}
+
+\definecolor{background}{rgb}{0.97, 0.97, 0.97}
+\definecolor{comments}{rgb}{0.0, 0.64, 0.0}
+\definecolor{keywords}{rgb}{0.0, 0.0, 0.64}
 
 \lstset{
-    language=haskell,
-    basicstyle=\small\ttfamily
+    language=Haskell,
+    basicstyle=\small\ttfamily,
+    backgroundcolor=\color{background},
+    keywordstyle=\color{keywords}\bfseries,
+    commentstyle=\color{comments}\textit,
+    breakatwhitespace=true,
+    breaklines=true,
+    keepspaces=true,
+    captionpos=b
 }
 
 \title{Chesskell: Embedding a Two-Player Game in Haskell's type system}
@@ -45,7 +57,7 @@ There are many publicly available chess engines and chess-related programs writt
 
 There have been allusions to chess at the type-level through solving the N-queens problem in dependently typed languages, such as Idris\cite{idrisnqueens}\footnote{\url{https://github.com/ExNexu/nqueens-idris}}. The N-queens problem makes use of some chess rules, including the Queen's attack positions (a straight line in any direction); but as the end goal is not to successfully model a game of chess, it is not a full type-level chess implementation.
 
-Despite the apparent lack of work on Chess at the type level specifically, there has been work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. Mezzo\cite{mezzo} is an EDSL for music composition, which checks if the created piece of music conforms to some musical ruleset before compilation of the program. WASH/CGI\cite{washcgi} is an EDSL for type-safe server-side web scripting, which ensures thread-safe server operations and valid XHTML generation.
+Despite the apparent lack of work on Chess at the type level specifically, there has been work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. \cite{mezzohaskellsymposium} is an EDSL for music composition, which checks if the created piece of music conforms to some musical ruleset before compilation of the program. WASH/CGI\cite{washcgi} is an EDSL for type-safe server-side web scripting, which ensures thread-safe server operations and valid XHTML generation.
 
 \section{Project Functional Requirements}
 
@@ -82,13 +94,13 @@ The declarations below, combined with the \lstinline{-XDataKinds} extension, cre
 % For values that have been promoted to types, a ' may be prefixed (as with \lstinline{'Black}) above. However, this prefix is optional, since GHC can, in most cases, tell whether something is a value or a type from context. Where unclear, this report will use the prefix to distinguish types from values.
 
 \begin{lstlisting}
-    data Team = Black | White
-    data PieceName = Pawn
-               | Bishop
-               | Knight
-               | Rook
-               | King
-               | Queen
+data Team = Black | White
+data PieceName = Pawn
+            | Bishop
+            | Knight
+            | Rook
+            | King
+            | Queen
 \end{lstlisting}
 
 \subsubsection{Position}
@@ -98,10 +110,10 @@ The type for holding a piece's position makes use of two more types, one for col
 % The below definition makes use of \emph{Generalised Algebraic Data Type} syntax, or GADT syntax for short. This is an extension to Haskell, allowing programmers to define more complex data types by describing the types of its' type constructors. This is clear below: \lstinline{Z} is a value of type \lstinline{Nat}, while \lstinline{S} is a function that takes in a \lstinline{Nat} and returns another \lstinline{Nat}.
 
 \begin{lstlisting}
-    data Column = A | B | C | D | E | F | G | H
-    data Nat where
-        Z :: Nat
-        S :: Nat -> Nat
+data Column = A | B | C | D | E | F | G | H
+data Nat where
+    Z :: Nat
+    S :: Nat -> Nat
 \end{lstlisting}
 
 The Position type itself is a \emph{product type}, a type whose cardinality\footnote{A type's cardinality is the number of inhabitants it has.} is equal to the product of the types it takes in. Since \lstinline{Position} takes in a type of cardinality 8 (\lstinline{Column}) and a type of infinite cardinality (\lstinline{Nat}), it has infinite cardinality, even though only 64 of them are valid chess positions.
@@ -109,8 +121,8 @@ The Position type itself is a \emph{product type}, a type whose cardinality\foot
 % TODO: Chess board diagram??
 
 \begin{lstlisting}
-    data Position where
-        At :: Column -> Nat -> Position
+data Position where
+    At :: Column -> Nat -> Position
 \end{lstlisting}
 
 \subsubsection{The Pieces}
@@ -118,13 +130,13 @@ The Position type itself is a \emph{product type}, a type whose cardinality\foot
 Each piece contains information relevant for the rule check: that piece's team, name, and an information type. The information type contains a \lstinline{Nat} and a \lstinline{Position}, to represent the number of moves that piece has taken, and its current position on the board. Recording the number of moves the piece has taken is important for several rules in chess, including castling and \textit{En Passant}. As such, it's included in the \lstinline{PieceInfo} type.
 
 \begin{lstlisting}
-    -- Pieceinfo type, containing general information
-    data PieceInfo where
-        Info :: Nat -> Position -> Bool -> PieceInfo
+-- Pieceinfo type, containing general information
+data PieceInfo where
+    Info :: Nat -> Position -> Bool -> PieceInfo
 
-    -- Piece type, containing the most important information for a piece
-    data Piece where
-        MkPiece :: Team -> PieceName -> PieceInfo -> Piece
+-- Piece type, containing the most important information for a piece
+data Piece where
+    MkPiece :: Team -> PieceName -> PieceInfo -> Piece
 \end{lstlisting}
 
 \subsubsection{The Board}
@@ -134,17 +146,17 @@ At the type level, the most common way of storing n elements is with the built-i
 Performing such a check each move would be wasteful. Instead, length-indexed vectors are used. Nat values are used to specify the length of a vector, and it would generate a type error if the vector was any other length. As with most things in Haskell, they are defined recursively; an empty vector has length 0, and you express a vector of length (n + 1) by pushing an element to the front of a vector of length n.
 
 \begin{lstlisting}
-    data Vec (n :: Nat) (a :: Type) where
-        VEnd   :: Vec Z a
-        (:->)  :: a -> Vec n a -> Vec (S n) a
+data Vec (n :: Nat) (a :: Type) where
+    VEnd   :: Vec Z a
+    (:->)  :: a -> Vec n a -> Vec (S n) a
 \end{lstlisting}
 
 For example, a vector of 3 boolean types has the type \lstinline{Vec (S (S (S Z))) Bool}. The board can be expressed using these vectors---a vector of 8 vectors of 8 pieces. (\lstinline{Maybe Piece}s are used instead, since a board square does not necessary contain a piece.)
 
 \begin{lstlisting}
-    type Eight = (S (S (S (S (S (S (S (S Z))))))))
-    type Row   = Vec Eight (Maybe Piece)
-    type Board = Vec Eight Row
+type Eight = (S (S (S (S (S (S (S (S Z))))))))
+type Row   = Vec Eight (Maybe Piece)
+type Board = Vec Eight Row
 \end{lstlisting}
 
 Although this is the main board type, it is augmented with a \lstinline{BoardDecorator}, so named because the intention is to be similar to the decorator design pattern\cite{decorator} (with the exception that subclassing and superclassing are not features of Haskell). \lstinline{BoardDecorator} should be used instead of \lstinline{Board}, since it provides additional information:
@@ -160,8 +172,7 @@ This information prevents repeated passes over the \lstinline{Board} which exist
 
 \begin{lstlisting}
 data BoardDecorator where
-    Dec :: Board -> Team -> Position -> (Position, Position)
-        -> Nat -> BoardDecorator
+    Dec :: Board -> Team -> Position -> (Position, Position) -> Nat -> BoardDecorator
 \end{lstlisting}
 
 \subsection{Checking Chess Rules}
@@ -181,28 +192,22 @@ Each piece, depending on its team and name, can move to a certain number of spac
 \begin{lstlisting}
 data PieceMoveList :: Piece -> BoardDecorator -> Exp [Position]
 -- If it's the pawn's first move, move two spaces, otherwise move one
-type instance Eval (PieceMoveList (MkPiece team Pawn info) boardDec)
-    = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece team Pawn info) boardDec) (PawnPostStart (MkPiece team Pawn info) boardDec))
+type instance Eval (PieceMoveList (MkPiece team Pawn info) boardDec) = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece team Pawn info) boardDec) (PawnPostStart (MkPiece team Pawn info) boardDec))
 
 -- Bishops move diagonally
-type instance Eval (PieceMoveList (MkPiece team Bishop info) boardDec)
-    = Eval (AllReachableDiag team boardDec (Eval (GetPosition info)))
+type instance Eval (PieceMoveList (MkPiece team Bishop info) boardDec) = Eval (AllReachableDiag team boardDec (Eval (GetPosition info)))
 
 -- Knights move in an L-shape
-type instance Eval (PieceMoveList (MkPiece team Knight info) boardDec)
-    = Eval (AllReachableGivenList team boardDec (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
+type instance Eval (PieceMoveList (MkPiece team Knight info) boardDec) = Eval (AllReachableGivenList team boardDec (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
 
 -- Rooks move in straight lines
-type instance Eval (PieceMoveList (MkPiece team Rook info) boardDec)
-    = Eval (AllReachableStraightLine team boardDec (Eval (GetPosition info)))
+type instance Eval (PieceMoveList (MkPiece team Rook info) boardDec) = Eval (AllReachableStraightLine team boardDec (Eval (GetPosition info)))
 
 -- Queens can move in any direction
-type instance Eval (PieceMoveList (MkPiece team Queen info) boardDec)
-    = Eval (AllReachableLineAndDiag team boardDec (Eval (GetPosition info)))
+type instance Eval (PieceMoveList (MkPiece team Queen info) boardDec) = Eval (AllReachableLineAndDiag team boardDec (Eval (GetPosition info)))
 
 -- Kings can move a single space in any direction
-type instance Eval (PieceMoveList (MkPiece team King info) boardDec)
-    = KingMoveList (MkPiece team King info) boardDec
+type instance Eval (PieceMoveList (MkPiece team King info) boardDec) = KingMoveList (MkPiece team King info) boardDec
 \end{lstlisting}
 
 There is another function, \lstinline{PieceAttackList}, which is similar to \lstinline{PieceMoveList} but gives the list of spaces that a piece can attack. This is different from a piece's move list in a handful of cases (for instance, pieces can attack the opposite team's King, but cannot move to its position and take it).
@@ -234,28 +239,32 @@ Value-level information is not naturally available to Haskell's type-level facil
 
 Proxy types are parameterised with kind-polymorphic type variable. A \lstinline{Proxy} value can have type \lstinline{Proxy Int} or \lstinline{Proxy 'Black}, for example. Proxies are used to make runtime board decorator information available at the type level in Chesskell.
 
-Singleton types mimic dependent types in that % TODO:
+Singleton types mimic dependent types\cite{singletons}; each type has a single, unambiguous value. This value can be used to pass around type information at the value level (and the corresponding type can be used to pass around value information at the type level). Chesskell uses singletons to perform computation with positions and piece names.
 
 \subsubsection{EDSL Implementation}
-
-% TODO: Cite dissertation or haskell symposium paper??
 
 The EDSL is implemented through a Continuation Passing Style\cite{cps} scheme, with inspiration taken from the Flat Builders pattern developed by Dmitrij Szamozvancev\cite{mezzo}. The core idea is that a value is transformed via a series of continuation functions, until the final continuation function returns a value.
 
 \begin{lstlisting}
--- Starts with a value of type t, gets a continuation
--- of type (t -> m), and applies it to the value
+-- Starts with a value of type t, gets a continuation of type (t -> m), and applies it to the value
 type Spec t = forall m. (t -> m) -> m
 
--- Converts a value of type s into a value of type t,
--- passing that t-value into a continuation
+-- Converts a value of type s into a value of type t, passing that t-value into a continuation
 type Conv s t = s -> Spec t
 
 -- Ends the continuation stream
 type Term t r = t -> r
 \end{lstlisting}
 
-The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are passed, transforming that value, until the chess game ends (or until a rule is broken). The core continuations defined are named after the pieces, such as \lstinline{pawn} and \lstinline{king}. Each of them takes in...
+The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are passed, transforming that value, until the chess game ends (or until a rule is broken). The core continuations defined are named after the pieces, such as \lstinline{pawn} and \lstinline{king}. Each of them takes in an \lstinline{SPosition}, a singleton version of \lstinline{Position}. A new datatype, \lstinline{MoveArgs}, is defined in order to simplify the process of passing information between the continuations.
+
+\begin{lstlisting}
+data MoveArgs where
+    MA :: BoardDecorator -> Position -> PieceName -> Position -> MoveArgs
+
+pawn :: Proxy (b :: BoardDecorator) -> SPosition fromPos -> Spec (Proxy (MA b fromPos 'Pawn))
+pawn (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b fromPos Pawn))
+\end{lstlisting}
 
 \subsection{Testing}
 
