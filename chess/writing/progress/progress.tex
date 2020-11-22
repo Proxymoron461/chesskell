@@ -1,4 +1,4 @@
-\documentclass[12pt, a4paper]{scrartcl}
+\documentclass[12pt, a4paper, bibliography=totocnumbered]{scrartcl}
 \usepackage[utf8]{inputenc}
 \usepackage[hidelinks]{hyperref}
 \usepackage{listings}
@@ -40,19 +40,23 @@
 
 In 2020, video games are more popular than ever. In the US alone, an ESA report\footnote{\url{https://www.theesa.com/wp-content/uploads/2020/07/Final-Edited-2020-ESA_Essential_facts.pdf}} estimates that there are more than 214 million individuals who play games. Considering this, it's surprising how many games are released with major bugs in their software---some of which end up being so notable that news and footage of them appear on mainstream media\footnote{\url{https://www.bbc.co.uk/news/technology-50156033}}.
 
-As programming languages have evolved, many have begun to address more errors at compile time. Features like optional types are being introduced to languages such as Java and C\#, and languages like Rust have pioneered ways of safely handling dynamic allocation through the use of owner types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many language compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions.
+As programming languages have evolved, many have begun to address more errors at compile time. Features similar optional types have been added to languages such as Java and C\#, and languages like Rust have pioneered ways of safely handling dynamic allocation through ownership types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions.
 
-However, the most common programming language used for game development is C++\cite{gamepp}, despite its' lack of safety and allowance of direct pointer arithmetic. C++ is chosen for its' speed, but as computers (and gaming consoles) get more powerful, runtime speed becomes less important than developer productivity. Research into bringing more type-safety into game programming environments is rare, and is the niche this project attempts to fill.
+% However, the most common programming language used for game development is C\texttt{++} \cite{gamepp}, despite its' lack of safety and allowance of direct pointer arithmetic. C\texttt{++} is chosen for its' speed, but as computers (and gaming consoles) get more powerful, runtime speed becomes less important than developer productivity. Research into bringing more type-safety into game programming environments is rare, and is the niche this project attempts to fill.
 
-Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values\cite{yorgey2012giving}, using \emph{type families}\cite{opentfs}\cite{closedtfs} that emulate functions at the type-level. These computations run at compile time, before the compiler generates an executable of the source code, allowing programmers to transform logic errors into type errors\cite{twt}.
+However, catching logical errors in imperative languages is almost always done at runtime. Many software systems use runtime features (such as exceptions) to discover and deal with errors and misuse of APIs. Enforcement of invariants and rules is typically done dynamically; if a check fails, an exception is thrown and potentially handled. However, if a programmer forgets to implement such a check, the behaviour is unpredictable. A 2007 study \cite{exceptionsusedpoorly} on Java and .NET codebases indicates that exceptions are rarely used to recover from errors, and a 2016 analysis of Java codebases \cite{badjavaexceptions} reveals that exceptions are commonly misused in Java.
 
-The aim of this project is to demonstrate a proof-of-concept; that it is possible to model Chess at the type-level, and that compiled programs comply with the rules.
+Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values \cite{yorgey2012giving}, using \emph{type families} \cite{opentfs} \cite{closedtfs} that emulate functions at the type-level. These computations run at compile time, before the compiler generates an executable of the source code, allowing programmers to transform logic errors into type errors \cite{twt}. The exception misuse described above could be avoided by employing logical invariant checks at the type-level, rather than at runtime.
+
+Since these are relatively recent developments, there are few examples of their usage in complex applications. In this project, we show how to utilise type-level programming features in Haskell in order to model the classic board game Chess in Haskell's type system, ruling out invalid moves at the type-level. A Haskell-embedded Domain-Specific Language (DSL), for describing games of chess, will interact with the type-level model. This Embedded DSL (EDSL) will be modelled on Algebraic Notation, a method of writing down the moves associated with a particular match of chess. We implement the full, official FIDE ruleset for chess.
 
 \section{Background}
 
-The project, nicknamed Chesskell, has the main aim of modelling the classic board game Chess in Haskell's type system. A Haskell-embedded Domain-Specific Language (DSL), for describing games of chess, will interact with the type-level model. This Embedded DSL (EDSL) will be modelled on Algebraic Notation, a method of writing down the moves associated with a particular match of chess.
+In fully dependently-typed languages, such as Idris, there is no clear distinction between types and values. Types' definitions depend on values, and vice versa; so types and values are interchangeable in usage. Functions can be written to compute with types, as well as values.
 
-% In Haskell, values have types, and types have kinds. Types of kind \lstinline{*} (or \lstinline{Type}) have term-level values; \lstinline{Int} has kind \lstinline{*} because it has the inhabitants \lstinline{0}, \lstinline{1}, \lstinline{2}, etc. The \lstinline{-XDataKinds} extension allows the programmer to define other kinds\cite{yorgey2012giving}, but these kinds do not have any term-level values. We explain this with a more concrete example below, when relevant. Chesskell makes heavy use of these programmer-defined kinds.
+Haskell was not designed to be such a language. In Haskell, values have types, and types have kinds. Types of kind \lstinline{*} (or \lstinline{Type}) have term-level values; \lstinline{Int} has kind \lstinline{*} because it has the inhabitants \lstinline{0}, \lstinline{1}, \lstinline{2}, etc. The \lstinline{-XDataKinds} extension allows the programmer to define other kinds \cite{yorgey2012giving}, but these kinds do not have any term-level values.
+
+During compilation of a Haskell program (by GHC), \emph{type erasure} occurs. At runtime, Haskell types have no representation, and so writing runtime computation for type-level constructs is nigh impossible. Much previous academic work has gone into emulating dependent types in Haskell \cite{singletons}, working around type erasure through clever use of GHC extensions. Chesskell uses many of these techniques to blur the line between types and values, allowing compile-time checking of the rules of chess---as we explain below.
 
 % TODO: A nice diagram??
 
@@ -62,25 +66,29 @@ There are many publicly available chess-related programs written in Haskell\foot
 
 There have been allusions to chess at the type-level through solving the N-queens problem in dependently typed languages, such as Idris\footnote{\url{https://github.com/ExNexu/nqueens-idris}}. The N-queens problem makes use of some chess rules, including the Queen's attack positions (a straight line in any direction); but as the end goal is not to successfully model a game of chess, it is not a full type-level chess implementation.
 
-Despite the apparent lack of work on Chess at the type level specifically, there is work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. Mezzo\cite{mezzohaskellsymposium} is an EDSL for music composition, which checks if the described piece of music conforms to some musical ruleset during compilation of the program. WASH/CGI\cite{washcgi} is an EDSL for type-safe server-side web scripting, which ensures thread-safe server operations and valid XHTML generation.
+An important part of any good chess program is its board representation, since all other parts of the program come from this; move generation, move evaluation, and the entire search space are all defined or influenced by the board representation. A great deal of work has gone into defining memory- or time-efficient chess boards \cite{bitboard} \cite{searchtables}, including combinations of multiple representations to yield greater speed \cite{bitandccr}. While there is value to be gleaned from examining these representations, Chesskell serves a different purpose; it does not need to search through the valid set of moves to determine which are the best, and speed is not its focus. Chesskell's board representation must be relatively efficient, but it would be naive to expect similar levels of performance from type-level constraint solving computation as from optimised term-level code.
 
-\section{Project Functional Requirements}
+Despite the apparent lack of work on Chess at the type level specifically, there is work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. Mezzo \cite{mezzohaskellsymposium} is an EDSL for music composition, which checks if the described piece of music conforms to some musical ruleset during compilation of the program. This EDSL is most similar to Chesskell in aim, if not in application domain; performing compile-time checks of rulesets that are commonly checked at runtime.
 
-\begin{enumerate}
-    \item The system will contain a type-level model of chess, which will:
-          \begin{enumerate}
-              \item Support all rules within the FIDE official chess rules.
-              \item Have an internal representation of the board, the pieces, and other information relevant to the state of play.
-              \item Be able to detect when a rule of chess has been broken, and give out a compile-time error to explain which rule was broken and how.
-          \end{enumerate}
-    \item This type-level system will run on the Glasgow Haskell Compiler.
-    \item This type-level system will be accessible via an Embedded Domain-Specific Language, which will:
-          \begin{enumerate}
-              \item Describe a game of chess, move by move.
-              \item Be written in Haskell source files, and be valid Haskell according to the Haskell grammar\cite{2010langreport}.
-              \item Be type-checked by the type-level model, and will cause errors if the game described breaks the established rules of chess.
-          \end{enumerate}
-\end{enumerate}
+As another example, BioShake \cite{bioshake} is an EDSL for creating performant bioinformatics computational workflows. The correctness of these workflows is checked during compilation, preventing it from being created if certain errors would occur. For bioinformatics workflows especially, this is ideal since many of these workflows are lengthy. BioShake goes further, however; providing tools to allow parallel execution of these workflows. While it is encouraging to see this (and other EDSLs \cite{aplite}) focus on (and achieve) high performance, Chesskell will have no such focus. This is primarily because only certain parts of the rule-checking process can be parallelised; much of the move handling and order of rule checks must be done sequentially.
+
+% \section{Project Functional Requirements}
+
+% \begin{enumerate}
+%     \item The system will contain a type-level model of chess, which will:
+%           \begin{enumerate}
+%               \item Support all rules within the FIDE official chess rules.
+%               \item Have an internal representation of the board, the pieces, and other information relevant to the state of play.
+%               \item Be able to detect when a rule of chess has been broken, and give out a compile-time error to explain which rule was broken and how.
+%           \end{enumerate}
+%     \item This type-level system will run on the Glasgow Haskell Compiler.
+%     \item This type-level system will be accessible via an Embedded Domain-Specific Language, which will:
+%           \begin{enumerate}
+%               \item Describe a game of chess, move by move.
+%               \item Be written in Haskell source files, and be valid Haskell according to the Haskell grammar \cite{2010langreport}.
+%               \item Be type-checked by the type-level model, and will cause errors if the game described breaks the established rules of chess.
+%           \end{enumerate}
+% \end{enumerate}
 
 \section{Current Progress}
 
@@ -166,7 +174,7 @@ type Row   = Vec Eight (Maybe Piece)  -- Row of eight Maybe Pieces
 type Board = Vec Eight Row            -- Grid of eight rows
 \end{lstlisting}
 
-Although this is the main board type, it is augmented with a \lstinline{BoardDecorator}, so named because the intention is similar to the decorator design pattern\cite{decorator} (with the exception that subclassing and superclassing are not features of Haskell). \lstinline{BoardDecorator} should be used instead of \lstinline{Board}, since it provides additional information:
+Although this is the main board type, it is augmented with a \lstinline{BoardDecorator}, so named because the intention is similar to the decorator design pattern \cite{decorator} (with the exception that subclassing and superclassing are not features of Haskell). \lstinline{BoardDecorator} should be used instead of \lstinline{Board}, since it provides additional information:
 
 \begin{itemize}
     \item The last team to move;
@@ -249,13 +257,13 @@ type instance Eval (Move fromPos toPos boardDec) = Eval ((
 
 Type-level information is not naturally available to Haskell's term-level facilities, due to type erasure. As such, there are various methods to simulate computation with types at runtime.
 
-Proxy types are parameterised with kind-polymorphic type variables\cite{yorgey2012giving}. A \lstinline{Proxy} value can have type \lstinline{Proxy Int} or \lstinline{Proxy 'Black}, for example. Proxies are used to make runtime board decorator information available at the type level in Chesskell.
+Proxy types are parameterised with kind-polymorphic type variables \cite{yorgey2012giving}. A \lstinline{Proxy} value can have type \lstinline{Proxy Int} or \lstinline{Proxy 'Black}, for example. Proxies are used to make runtime board decorator information available at the type level in Chesskell.
 
-Singleton types mimic dependent types\cite{singletons}; each type has a single, unambiguous value, and vice versa. We use this value to pass around type information at the term-level. Chesskell uses singletons to perform computation with positions and piece names.
+Singleton types mimic dependent types \cite{singletons}; each type has a single, unambiguous value, and vice versa. We use this value to pass around type information at the term-level. Chesskell uses singletons to perform computation with positions and piece names.
 
 \subsubsection{EDSL Implementation}
 
-A Continuation Passing Style\cite{cps} scheme forms the foundation for the EDSL, with inspiration taken from Dmitrij Szamozvancev's Flat Builders pattern\cite{mezzo}. The core idea is value transformation through a series of continuation function applications, until the final continuation function returns a value.
+A Continuation Passing Style \cite{cps} scheme forms the foundation for the EDSL, with inspiration taken from Dmitrij Szamozvancev's Flat Builders pattern \cite{mezzo}. The core idea is value transformation through a series of continuation function applications, until the final continuation function returns a value.
 
 \begin{lstlisting}
 -- Starts with a value of type t, gets a continuation of type (t -> m), and applies it to the value
@@ -268,7 +276,7 @@ type Conv s t = s -> Spec t
 type Term t r = t -> r
 \end{lstlisting}
 
-Type-level computations within the EDSL are achieved through \emph{type applications}\cite{typeapplication}, which allow the programmer to specify the exact type of a kind-polymorphic type variable. Using a combination of singletons, proxies, kind signatures, and type applications, the value-level Haskell code for the EDSL can have specific type variables and involve type family application. Essentially, the term-level EDSL can involve type-level rule checking.
+Type-level computations within the EDSL are achieved through \emph{type applications} \cite{typeapplication}, which allow the programmer to specify the exact type of a kind-polymorphic type variable. Using a combination of singletons, proxies, kind signatures, and type applications, the value-level Haskell code for the EDSL can have specific type variables and involve type family application. Essentially, the term-level EDSL can involve type-level rule checking.
 
 The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are applied, transforming that value, until the chess game ends (or a rule is broken). The core continuations are named after the pieces, such as \lstinline{pawn} and \lstinline{king}. Each of them takes in an \lstinline{SPosition}, a singleton version of \lstinline{Position}. We define a new datatype, \lstinline{MoveArgs}, in order to simplify the process of passing information between the continuations.
 
@@ -425,9 +433,9 @@ Additionally, adding the move number to the type error\footnote{e.g. \lstinline{
 
 \subsection{Testing}
 
-The test suite is a mixture of HSpec behaviour-driven tests\cite{hspec} and module declarations, where the HSpec tests cover many of the declared type families (such as \lstinline{Move} and \lstinline{PieceMoveList}).
+The test suite is a mixture of HSpec behaviour-driven tests \cite{hspec} and module declarations, where the HSpec tests cover many of the declared type families (such as \lstinline{Move} and \lstinline{PieceMoveList}).
 
-The original plan was to have all tests be HSpec tests; many of these HSpec tests make use of the type-level testing facilities laid out in other works\cite{mezzo}. However, running the test suite on EDSL statements, as well as some of the expensive type families (such as those involving castling) causes excessive memory usage, exceeding 27 GB in some cases.
+The original plan was to have all tests be HSpec tests; many of these HSpec tests make use of the type-level testing facilities laid out in other works \cite{mezzo}. However, running the test suite on EDSL statements, as well as some of the expensive type families (such as those involving castling) causes excessive memory usage, exceeding 27 GB in some cases.
 
 Work on a solution is ongoing, but for now, we express EDSL tests as high-level declarations in a Haskell module. The tests are run by seeing whether these declarations compile or not (and if not, what error they throw). This will hopefully only be temporary, but it should suffice as a rudimentary (if slow) method of integration testing.
 
@@ -479,21 +487,21 @@ Drafting, re-drafting, and refining the dissertation (with the help of the super
 
 Revision for examinations is key during this period; however, since the dissertation should be complete and this period is for evaluation and not the main bulk of writing, there should be ample time.
 
-\section{Resources, Risks, and Ethical Considerations}
+% \section{Resources, Risks, and Ethical Considerations}
 
-\subsection{Resources}
+% \subsection{Resources}
 
-Developing this program requires a computer (and Operating System) which can run the latest version of GHC (8.10.2, at the time of writing). GHC runs on most Linux distributions, as well as Windows and MacOS. In other words, it runs on almost all consumer-grade PCs, and so suitable development and testing hardware is plenty.
+% Developing this program requires a computer (and Operating System) which can run the latest version of GHC (8.10.2, at the time of writing). GHC runs on most Linux distributions, as well as Windows and MacOS. In other words, it runs on almost all consumer-grade PCs, and so suitable development and testing hardware is plenty.
 
-\subsection{Risks}
+\section{Risks}
 
 The biggest risk going into the project was that it was unachievable; however, that risk has not materialised---the implementation is almost complete. The largest project-related risks left are the memory usage and compile time issues. 
 
 There are, of course, other risks not directly associated with the project; in 2020, there is a large-scale pandemic going on, which could pose considerable personal risk. However, by following Government and University guidelines, the chances of contracting COVID-19 will be kept to a minimum, and sudden illness should not interrupt the project.
 
-\subsection{Legal, Professional, and Ethical Considerations}
+% \subsection{Legal, Professional, and Ethical Considerations}
 
-As this project is undertaken alone, with no involvement from third parties (aside from the project supervisor), there are no additional legal, professional, or ethical considerations to consider. The program contains no personal data processing, and we will not introduce such processing.
+% As this project is undertaken alone, with no involvement from third parties (aside from the project supervisor), there are no additional legal, professional, or ethical considerations to consider. The program contains no personal data processing, and we will not introduce such processing.
 
 \bibliographystyle{ieeetr}
 
