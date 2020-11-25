@@ -48,19 +48,22 @@ king :: Proxy (b :: BoardDecorator) -> SPosition fromPos -> Spec (Proxy (MA b fr
 king (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b fromPos King))
 
 to :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) -> SPosition toPos
-      -> Spec (Proxy (Eval (MoveWithStateCheck n fromPos toPos b)))
+      -> Spec (Proxy (Eval (IfPieceThenMove n fromPos toPos b)))
 to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: SPosition toPos)  cont
-    = cont (Proxy @(Eval (MoveWithStateCheck n fromPos toPos b)))
-
--- TODO: "becomes", which allows promotion to whatever piece you say you should promote to
+    = cont (Proxy @(Eval (IfPieceThenMove n fromPos toPos b)))
 
 -- Even though it's a Proxy TypeError, it will split out errors just fine!
 end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
 
 becomes :: Proxy (b :: BoardDecorator) -> SPieceName name
-           -> Spec (Proxy (PromotePieceTo name (GetLastPosition b) b))
-becomes (dec :: Proxy b) (n :: SPieceName name) cont = cont (Proxy @(PromotePieceTo name (GetLastPosition b) b))
+           -> Spec (Proxy (PromotePieceTo' name (GetLastPosition b) b))
+becomes (dec :: Proxy b) (n :: SPieceName name) cont = cont (Proxy @(PromotePieceTo' name (GetLastPosition b) b))
+
+promoteTo :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) -> SPieceName promoteTo -> SPosition toPos
+      -> Spec (Proxy (Eval (PromotePawnMove fromPos toPos promoteTo b)))
+promoteTo (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (pro :: SPieceName promoteTo) (to' :: SPosition toPos)  cont
+    = cont (Proxy @(Eval (PromotePawnMove fromPos toPos promoteTo b)))
 
 -- data SetPieceAtDec :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
 data CreateArgs where

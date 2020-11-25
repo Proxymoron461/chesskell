@@ -268,18 +268,21 @@ type instance Eval (SetPieceAt piece board pos) = Eval (If (Eval (IsValidPositio
 data SetPieceAtSwapped :: Piece -> Position -> Board -> Exp Board
 type instance Eval (SetPieceAtSwapped piece pos board) = Eval (SetPieceAt piece board pos)
 
-type family PromotePieceTo (name :: PieceName) (pos :: Position) (b :: BoardDecorator) :: BoardDecorator where
-   PromotePieceTo Pawn _ boardDec   = TL.TypeError ((TL.Text "A Pawn cannot be promoted to a Pawn.") TL.:$$: (TL.Text ("Error at move: " ++ TypeShow (GetNoOfMoves boardDec))))
-   PromotePieceTo King _ boardDec   = TL.TypeError ((TL.Text "A Pawn cannot be promoted to a King.") TL.:$$: (TL.Text ("Error at move: " ++ TypeShow (GetNoOfMoves boardDec))))
-   PromotePieceTo name (At col Nat8) boardDec
+data PromotePieceTo :: PieceName -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (PromotePieceTo name pos b) = PromotePieceTo' name pos b
+
+type family PromotePieceTo' (name :: PieceName) (pos :: Position) (b :: BoardDecorator) :: BoardDecorator where
+   PromotePieceTo' Pawn _ boardDec   = TL.TypeError ((TL.Text "A Pawn cannot be promoted to a Pawn.") TL.:$$: (TL.Text ("Error at move: " ++ TypeShow (GetNoOfMoves boardDec))))
+   PromotePieceTo' King _ boardDec   = TL.TypeError ((TL.Text "A Pawn cannot be promoted to a King.") TL.:$$: (TL.Text ("Error at move: " ++ TypeShow (GetNoOfMoves boardDec))))
+   PromotePieceTo' name (At col Nat8) boardDec
       = Eval (If (Eval (IsPieceAtWhichDec boardDec (At col Nat8) (IsPawn .&. HasTeam White)))
             (ID (SetBoard (Eval (ApplyFuncAt (PromoteTo name) (GetBoard boardDec) (At col Nat8))) boardDec))
             (TE' (TL.Text ("The only promotable pieces in row 8 are White Pawns."))))
-   PromotePieceTo name (At col Nat1) boardDec
+   PromotePieceTo' name (At col Nat1) boardDec
       = Eval (If (Eval (IsPieceAtWhichDec boardDec (At col Nat1) (IsPawn .&. HasTeam Black)))
             (ID (SetBoard (Eval (ApplyFuncAt (PromoteTo name) (GetBoard boardDec) (At col Nat1))) boardDec))
             (TE' (TL.Text ("The only promotable pieces in row 1 are Black Pawns."))))
-   PromotePieceTo _ (At col row) boardDec = TL.TypeError ((TL.Text ("Pawns can only be promoted in rows 1 and 8, not row: " ++ TypeShow row)) TL.:$$: (TL.Text ("Error at move: " ++ TypeShow (GetNoOfMoves boardDec))))
+   PromotePieceTo' _ (At col row) boardDec = TL.TypeError ((TL.Text ("Pawns can only be promoted in rows 1 and 8, not row: " ++ TypeShow row)) TL.:$$: (TL.Text ("Error at move: " ++ TypeShow (GetNoOfMoves boardDec))))
 
 data SetPieceAtDec :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
 type instance Eval (SetPieceAtDec piece boardDec toPos)

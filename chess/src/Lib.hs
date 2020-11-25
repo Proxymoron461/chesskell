@@ -536,16 +536,21 @@ data PawnPostStart :: Piece -> BoardDecorator -> Exp [Position]
 type instance Eval (PawnPostStart pawn boardDec) = (Eval (PawnMove pawn boardDec 1)) ++ (Eval (PawnTakePositions True pawn boardDec))
 
 -- Only moves a piece if it is of the correct type
-data MoveWithStateCheck :: PieceName -> Position -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (MoveWithStateCheck name fromPos toPos boardDec)
-    = Eval (IfPieceThenMove name fromPos toPos boardDec)
-
+-- Checks if the piece should have undergone a promotion
 data IfPieceThenMove :: PieceName -> Position -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (IfPieceThenMove name fromPos toPos boardDec)
     = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos (IsPiece name)))
-        (Move fromPos toPos boardDec)
+        ((ShouldHavePromotedCheck toPos . Move fromPos toPos) boardDec)
         (If (Eval (IsPieceAt boardDec fromPos))
             (TE' (TL.Text ("The piece at: " ++ TypeShow fromPos ++ " is not a " ++ TypeShow name ++ ".")))
+            (TE' (TL.Text ("There is no piece at: " ++ TypeShow fromPos ++ ".")))))
+
+data PromotePawnMove :: Position -> Position -> PieceName -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (PromotePawnMove fromPos toPos promoteTo boardDec)
+    = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos (IsPiece Pawn)))
+        ((PromotePieceTo promoteTo toPos . Move fromPos toPos) boardDec)
+        (If (Eval (IsPieceAt boardDec fromPos))
+            (TE' (TL.Text ("The piece at: " ++ TypeShow fromPos ++ " is not a " ++ TypeShow Pawn ++ ". Non-Pawn pieces cannot be promoted.")))
             (TE' (TL.Text ("There is no piece at: " ++ TypeShow fromPos ++ ".")))))
 
 -- Type family for moving a piece, and putting it through a series of checks first
@@ -619,6 +624,22 @@ type instance Eval (CheckNoCheck team boardDec) =
     Eval (If (Eval (IsKingInCheck team boardDec))
         (TE' (TL.Text ("The " ++ TypeShow team ++ " King is in check after a " ++ TypeShow team ++ " move. This is not allowed.")))
         (ID boardDec))
+
+-- Checks if a promotion should have occurred
+data ShouldHavePromotedCheck :: Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (ShouldHavePromotedCheck toPos boardDec)
+    = ShouldHavePromotedCheck' toPos boardDec
+
+type family ShouldHavePromotedCheck' (t :: Position) (b :: BoardDecorator) :: BoardDecorator where
+    ShouldHavePromotedCheck' (At col Nat8) boardDec
+        = Eval (If (Eval (IsPieceAtWhichDec boardDec (At col Nat8) (IsPawn .&. HasTeam White)))
+            (TE' (TL.Text ("Promotion should have occurred at: " ++ TypeShow (At col Nat8))))
+            (ID boardDec))
+    ShouldHavePromotedCheck' (At col Nat1) boardDec
+        = Eval (If (Eval (IsPieceAtWhichDec boardDec (At col Nat1) (IsPawn .&. HasTeam Black)))
+            (TE' (TL.Text ("Promotion should have occurred at: " ++ TypeShow (At col Nat1))))
+            (ID boardDec))
+    ShouldHavePromotedCheck' _ boardDec = boardDec
 
 data DoChecks :: [ BoardDecorator -> Exp BoardDecorator ] -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (DoChecks '[]       boardDec) = boardDec
