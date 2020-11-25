@@ -19,8 +19,8 @@ import TestTypes
 import CanCastleTests
 import CastleHelperTests
 
--- type WhiteCastleLeftDec  = Eval (MoveWithStateCheck King (At E Nat1) (At C Nat1) CastleDec)
--- type WhiteCastleRightDec = Eval (MoveWithStateCheck King (At E Nat1) (At G Nat1) CastleDec)
+-- type WhiteCastleLeftDec  = Eval (IfPieceThenMove King (At E Nat1) (At C Nat1) CastleDec)
+-- type WhiteCastleRightDec = Eval (IfPieceThenMove King (At E Nat1) (At G Nat1) CastleDec)
 
 -- castleTest1 :: '(True, True) :~: '(Eval (IsKingAt White WhiteCastleLeftDec (At C Nat1)), Eval (IsRookAt White WhiteCastleLeftDec (At D Nat1)))
 -- castleTest1 = Refl
@@ -28,8 +28,8 @@ import CastleHelperTests
 -- castleTest2 :: '(True, True) :~: '(Eval (IsKingAt White WhiteCastleLeftDec (At G Nat1)), Eval (IsRookAt White WhiteCastleLeftDec (At F Nat1)))
 -- castleTest2 = Refl
 
--- type BlackCastleLeftDec  = Eval (MoveWithStateCheck King (At E Nat8) (At C Nat8) (SetLastTeam CastleDec White))
--- type BlackCastleRightDec = Eval (MoveWithStateCheck King (At E Nat8) (At G Nat8) (SetLastTeam CastleDec White))
+-- type BlackCastleLeftDec  = Eval (IfPieceThenMove King (At E Nat8) (At C Nat8) (SetLastTeam CastleDec White))
+-- type BlackCastleRightDec = Eval (IfPieceThenMove King (At E Nat8) (At G Nat8) (SetLastTeam CastleDec White))
 
 -- castleTest3 :: '(True, True) :~: '(Eval (IsKingAt Black BlackCastleLeftDec (At C Nat8)), Eval (IsRookAt Black BlackCastleLeftDec (At D Nat8)))
 -- castleTest3 = Refl
