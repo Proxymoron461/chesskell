@@ -4,6 +4,7 @@
 \usepackage{listings}
 \usepackage{charter}
 \usepackage{xcolor}
+\usepackage{parskip}
 
 \definecolor{background}{rgb}{0.97, 0.97, 0.97}
 \definecolor{comments}{rgb}{0.0, 0.64, 0.0}
@@ -90,13 +91,39 @@ As another example, BioShake \cite{bioshake} is an EDSL for creating performant 
 %           \end{enumerate}
 % \end{enumerate}
 
-\section{Current Progress}
+\section{Current Progress} \label{examplegame}
+
+Our EDSL is almost complete, allowing us to describe games of chess. For example, we express a simple 3-move checkmate by White as follows in Chesskell:
+
+\begin{lstlisting}
+game = chess
+            pawn _e2 to _e4
+            pawn _f7 to _f5
+            queen _d1 to _f3
+            pawn _g7 to _g5
+            queen _f3 to _h5
+        end
+\end{lstlisting}
+
+Note that the White team always begins a game of chess, and moves alternate teams; so there is no need to annotate moves with their team.
+
+Each chess move is described with a type family, which takes as input the current state of the board, and outputs the board after the move has been processed. The core movement function, aptly named \lstinline{Move}, takes in the position to move from, the position to move to, and the current state of the board, using this information to produce a new board in which the move has been made:
+
+\begin{lstlisting}
+data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
+\end{lstlisting}
+
+The EDSL, as we detail below, uses this \lstinline{Move} function to perform type-level rule checking of the described chess game.
 
 \subsection{Chess Types Overview}
 
 The software has a full representation of a game of chess at the type-level, as we explain below. As the system checks the game move by move, the only required representation is the board at the time of checking; containing all pieces on that board.
 
-The most important types are the board, and the individual pieces on it. Both of these types are composed of other types, making them \emph{composite types}; the board is comprised of pieces, and the pieces contain that piece's team, name, and position.
+The \lstinline{Board} type is the most important type in Chesskell, representing the chess board at the type-level. It is a \emph{composite type} containing all pieces in play; however, \lstinline{Board} types are usually accessed through the \lstinline{BoardDecorator}, which contains more information for ease of use (as we detail below).
+
+% TODO: Diagram? BoardDecorator contains Board contains Pieces contains Position, Team, Info contains ...
+
+Chesskell's types will be detailed from the bottom up, since the types here are composite and require understanding of other types.
 
 \subsubsection{Team and PieceName}
 
@@ -124,7 +151,7 @@ The type for holding a piece's position makes use of two more types, one for col
 
 \begin{lstlisting}
 data Column = A | B | C | D | E | F | G | H
-data Nat where  -- Used for rows
+data Nat where
     Z :: Nat
     S :: Nat -> Nat
 \end{lstlisting}
@@ -145,11 +172,9 @@ Each piece contains information relevant for rule checking: that piece's team, n
 The \lstinline{PieceInfo} type was created separate from the plain \lstinline{Piece} type so that if any further information was needed, it could be added without breaking existing \lstinline{Piece} pattern-match definitions (though no such additional information was required).
 
 \begin{lstlisting}
--- Piece info type, containing general information
 data PieceInfo where
     Info :: Nat -> Position -> PieceInfo
 
--- Piece type, containing the key information for a piece
 data Piece where
     MkPiece :: Team -> PieceName -> PieceInfo -> Piece
 \end{lstlisting}
@@ -170,8 +195,8 @@ For example, a vector of 3 boolean types has the type: \lstinline{Vec (S (S (S Z
 
 \begin{lstlisting}
 type Eight = (S (S (S (S (S (S (S (S Z))))))))
-type Row   = Vec Eight (Maybe Piece)  -- Row of eight Maybe Pieces
-type Board = Vec Eight Row            -- Grid of eight rows
+type Row   = Vec Eight (Maybe Piece)
+type Board = Vec Eight Row
 \end{lstlisting}
 
 Although this is the main board type, it is augmented with a \lstinline{BoardDecorator}, so named because the intention is similar to the decorator design pattern \cite{decorator} (with the exception that subclassing and superclassing are not features of Haskell). \lstinline{BoardDecorator} should be used instead of \lstinline{Board}, since it provides additional information:
@@ -187,12 +212,7 @@ Previous versions of the program, to find the king positions, would pass repeate
 
 \begin{lstlisting}
 data BoardDecorator where
-    Dec :: Board             -- Chess board
-    -> Team                  -- Last team moved
-    -> Position              -- Last position moved to
-    -> (Position, Position)  -- King positions
-    -> Nat                   -- No. of moves so far
-    -> BoardDecorator
+    Dec :: Board -> Team -> Position -> (Position, Position) -> Nat -> BoardDecorator
 \end{lstlisting}
 
 \subsection{Checking Chess Rules}
@@ -210,40 +230,35 @@ This means that the board is mappable, performing computation on the pieces ther
 Each piece, depending on its team and name, can move to a certain number of spaces. For instance, a King can move a single space in any direction. The \lstinline{PieceMoveList} type family formalises this, returning a list of spaces that a piece can move to (given a piece and board decorator).
 
 \begin{lstlisting}
-data PieceMoveList :: Piece -> BoardDecorator -> Exp [Position]
--- If it's the pawn's first move (i.e. it has a move count of 0), allow it to move two spaces, otherwise move one
-type instance Eval (PieceMoveList (MkPiece team Pawn info) boardDec) = Eval (If (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece team Pawn info) boardDec) (PawnPostStart (MkPiece team Pawn info) boardDec))
+    data PieceMoveList :: Piece -> BoardDecorator -> Exp [Position]
+\end{lstlisting}
 
--- Bishops move diagonally
+Consider examples for Bishops and Queens:
+
+\begin{lstlisting}
 type instance Eval (PieceMoveList (MkPiece team Bishop info) boardDec) = Eval (AllReachableDiag team boardDec (Eval (GetPosition info)))
 
--- Knights move in an L-shape
-type instance Eval (PieceMoveList (MkPiece team Knight info) boardDec) = Eval (AllReachableGivenList team boardDec (Eval (GetAllKnightPositions (Eval (GetPosition info)))))
-
--- Rooks move in straight lines
-type instance Eval (PieceMoveList (MkPiece team Rook info) boardDec) = Eval (AllReachableStraightLine team boardDec (Eval (GetPosition info)))
-
--- Queens can move in any direction
 type instance Eval (PieceMoveList (MkPiece team Queen info) boardDec) = Eval (AllReachableLineAndDiag team boardDec (Eval (GetPosition info)))
-
--- Kings can move a single space in any direction
-type instance Eval (PieceMoveList (MkPiece team King info) boardDec) = KingMoveList (MkPiece team King info) boardDec
 \end{lstlisting}
+
+Bishops can move diagonally by any number of spaces, and Queens can move any number of spaces in a straight line (i.e. up, down, left, right, and diagonally). The type families \lstinline{AllReachableDiag} and \lstinline{AllReachableLineAndDiag} take in a position, a team, and the current board, and output all "reachable" positions in a certain direction or combination of directions.
+
+Reachability (for a given direction) is defined here as all the empty spaces in all that direction, stopping at the first occupied space. That space is included or excluded depending on whether that space is occupied by a piece of the opposite team, since an attacking piece could move to that space and take the piece there.
+
+% TODO: Diagram here??
 
 There is another function, \lstinline{PieceAttackList}, which is similar to \lstinline{PieceMoveList} but gives the list of spaces that a piece can attack. This is different from a piece's move list in a handful of cases (for instance, pieces can attack the opposite team's King, but cannot move to its position and take it).
 
 \subsubsection{Moving the Pieces}
 
-The core movement function, aptly named \lstinline{Move}, performs a series of checks on the board state, moves the piece, and then performs further checks. The actual movement code is omitted here for brevity; but all moves except for pawn promotion are complete.
+\lstinline{Move}, as we introduce above, performs a series of checks on the board state, moves the piece, and then performs further checks. The actual movement code is omitted here for brevity; but all moves except for pawn promotion are complete. The checks themselves are implemented as functions that take in a \lstinline{BoardDecorator}, and output either a \lstinline{BoardDecorator} (if the check passes) or a type error.
 
 \begin{lstlisting}
--- MoveNoChecks moves the piece depending on its' type,
--- handling any relevant side effects
 data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (Move fromPos toPos boardDec) = Eval ((
-    CheckNoCheck (GetMovingTeam boardDec) . -- Post-move checks
-    MoveNoChecks fromPos toPos .            -- Move the piece
-        NotTakingKingCheck toPos .          -- Pre-move checks
+    CheckNoCheck (GetMovingTeam boardDec) .
+    MoveNoChecks fromPos toPos .
+        NotTakingKingCheck toPos .
         CanMoveCheck fromPos toPos .
         NotTakingOwnTeamCheck toPos .
         NotSamePosCheck fromPos toPos .
@@ -265,30 +280,39 @@ Singleton types mimic dependent types \cite{singletons}; each type has a single,
 
 A Continuation Passing Style \cite{cps} scheme forms the foundation for the EDSL, with inspiration taken from Dmitrij Szamozvancev's Flat Builders pattern \cite{mezzo}. The core idea is value transformation through a series of continuation function applications, until the final continuation function returns a value.
 
+The type \lstinline{Spec t} is the type of functions which take in a continuation to operate on a value of type \lstinline{t}. For instance, a function with type \lstinline{Int -> Spec Int} would take in an integer, and then a continuation to operate on that integer.
+
 \begin{lstlisting}
--- Starts with a value of type t, gets a continuation of type (t -> m), and applies it to the value
 type Spec t = forall m. (t -> m) -> m
+\end{lstlisting}
 
--- Converts a value of type s into a value of type t, passing that t-value into a continuation
+A function with type \lstinline{Int -> Spec Int} can be represented with \lstinline{Conv Int Int}---the \lstinline{Conv s t} type represents functions which convert a value of type \lstinline{s} to a value of type \lstinline{Spec t}.
+
+\begin{lstlisting}
 type Conv s t = s -> Spec t
+\end{lstlisting}
 
--- Ends the continuation stream
+Finally, the \lstinline{Term t r} type ends the continuation stream by taking no continuations, and simply taking in a value of type \lstinline{t} and returning a value of type \lstinline{r}. If \lstinline{t} and \lstinline{r} are equal, then an example definition would be \lstinline{id}.
+
+\begin{lstlisting}
 type Term t r = t -> r
 \end{lstlisting}
 
-Type-level computations within the EDSL are achieved through \emph{type applications} \cite{typeapplication}, which allow the programmer to specify the exact type of a kind-polymorphic type variable. Using a combination of singletons, proxies, kind signatures, and type applications, the value-level Haskell code for the EDSL can have specific type variables and involve type family application. Essentially, the term-level EDSL can involve type-level rule checking.
+The above continuation types are combined with type-level rule checking, to create a Chess EDSL that operates through passing continuations. Type-level computations within the EDSL are achieved through \emph{type applications} \cite{typeapplication}, which allow the programmer to specify the exact type of a kind-polymorphic type variable. Using a combination of singletons, proxies, kind signatures, and type applications, the value-level Haskell code for the EDSL can have specific type variables and involve type family application. Essentially, the term-level EDSL can involve type-level rule checking.
 
-The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are applied, transforming that value, until the chess game ends (or a rule is broken). The core continuations are named after the pieces, such as \lstinline{pawn} and \lstinline{king}. Each of them takes in an \lstinline{SPosition}, a singleton version of \lstinline{Position}. We define a new datatype, \lstinline{MoveArgs}, in order to simplify the process of passing information between the continuations.
+The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are applied, transforming that value, until the chess game ends (or a rule is broken). Chess games begin with the board in a set configuration; and so a type \lstinline{StartDec} (of kind \lstinline{BoardDecorator}) was defined to contain all of this information.
 
 \begin{lstlisting}
--- StartDec is a board decorator holding all the information for the start of a chess game
 chess :: Spec (Proxy StartDec)
 chess cont = cont (Proxy @StartDec)
+\end{lstlisting}
 
+The core continuations are named after the pieces, such as \lstinline{pawn} and \lstinline{king}. Each of them takes in an \lstinline{SPosition}, a singleton version of \lstinline{Position}. We define a new datatype, \lstinline{MoveArgs}, in order to simplify the process of passing information between the continuations; \lstinline{MoveArgs} can be partially applied, whereas a regular type family cannot. The example \lstinline{pawn} continuation is used below; however, all of the piece continuations are similar, and only differ in the \lstinline{PieceName} type passed to the continuation via \lstinline{MoveArgs}.
+
+\begin{lstlisting}
 data MoveArgs where
     MA :: BoardDecorator -> Position -> PieceName -> Position -> MoveArgs
 
--- Passes a created MoveArgs type constructor to the continuation
 pawn :: Proxy (b :: BoardDecorator) -> SPosition fromPos -> Spec (Proxy (MA b fromPos 'Pawn))
 pawn (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b fromPos Pawn))
 \end{lstlisting}
@@ -296,7 +320,6 @@ pawn (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b from
 The next continuation, \lstinline{to}, takes in another \lstinline{SPosition}, performs the move computation, puts the resulting board decorator into a \lstinline{Proxy} type, and passes that \lstinline{Proxy} into the continuation given.
 
 \begin{lstlisting}
--- Moves a piece from one position to another
 to :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) -> SPosition toPos -> Spec (Proxy (Eval (MoveWithStateCheck n fromPos toPos b)))
 to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: SPosition toPos) cont = cont (Proxy @(Eval (MoveWithStateCheck n fromPos toPos b)))
 \end{lstlisting}
@@ -308,20 +331,7 @@ end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
 \end{lstlisting}
 
-Using the above continuations, we can lay out a chess game, move by move. Consider a short game, involving a 3-move checkmate by White. The game can be laid out as below in the EDSL, and will compile successfully:
-
-\begin{lstlisting}
--- Describes a game with a checkmate by White in 3 moves
-game = chess
-           pawn _e2 to _e4   -- White begins
-           pawn _f7 to _f5   -- Black move
-           queen _d1 to _f3
-           pawn _g7 to _g5
-           queen _f3 to _h5  -- Checkmate!
-       end
-\end{lstlisting}
-
-However, should Black attempt to move after checkmate, an error will be logged, since no moves by Black will be valid:
+Using the above continuations, we can lay out a chess game, move by move. Consider the game expressed in the EDSL which we describe in section \ref{examplegame}. It compiles successfully; but should Black attempt to move after checkmate, an error will be logged, since no moves by Black will be valid:
 
 \begin{lstlisting}
 -- Below results in the following type error:
@@ -329,12 +339,12 @@ However, should Black attempt to move after checkmate, an error will be logged, 
     -- * When checking the inferred type
     --     game :: Data.Proxy.Proxy (TypeError ...)
 game = chess
-           pawn _e2 to _e4   -- White begins
-           pawn _f7 to _f5   -- Black move
+           pawn _e2 to _e4
+           pawn _f7 to _f5
            queen _d1 to _f3
            pawn _g7 to _g5
-           queen _f3 to _h5  -- Checkmate!
-           pawn _g5 to _g4   -- Invalid move by black - Black King is in checkmate
+           queen _f3 to _h5
+           pawn _g5 to _g4
        end
 \end{lstlisting}
 
@@ -347,27 +357,25 @@ Or, should White attempt an impossible move in the middle of the game, such as m
     -- * When checking the inferred type
     -- game :: Data.Proxy.Proxy (...)
 game = chess
-           pawn _e2 to _e4   -- White begins
-           pawn _f7 to _f5   -- Black move
-           queen _d1 to _d3  -- White Queen moves through a Pawn - not allowed
+           pawn _e2 to _e4
+           pawn _f7 to _f5
+           queen _d1 to _d3
            pawn _g7 to _g5
-           queen _f3 to _h5  -- Checkmate!
+           queen _f3 to _h5
        end
 \end{lstlisting}
 
 \subsubsection{EDSL Board Creation}
 
-There are additional statements to help create an initial chess board for easy testing. A short example is below:
+There are additional statements to help create an initial chess board for easy testing. A short example is below, in which White Rooks are placed at a8 and h1, and a Black Pawn is placed at h7 before the game begins.
 
 \begin{lstlisting}
--- A simple example board created for testing castling code
 example
-  = create                 -- create chess board
-        put _Wh _R at _a8  -- Set a white rook at a8
+  = create                 
+        put _Wh _R at _a8
         put _Wh _R at _h1
-        put _Bl _P at _h7  -- Set a black rook at h7
-        lastTeam _Bl       -- Set black as last team moved
-    startMoves             -- Begin chess game
+        put _Bl _P at _h7   
+    startMoves           
         rook _a8 to _a2
         pawn _h7 to _h6
         rook _h1 to _h2
@@ -402,17 +410,16 @@ However, the below code will also compile, when it should not, since according t
 game = create
             put _Wh _P at _a7
         startMoves
-            pawn _a7 to _a8  -- No promotion - should have type error
+            pawn _a7 to _a8
         end
 \end{lstlisting}
 
 \subsubsection{EDSL Issues}
 
-GHC had issues compiling early versions of the EDSL, due to the initial definition of \lstinline{chess}; the programmer did not manually create \lstinline{StartDec}, but pieced it together through a series of type family applications:
+GHC had issues compiling early versions of the EDSL, due to the initial definition of \lstinline{chess}; the programmer did not manually create \lstinline{StartDec}, but pieced it together through a series of expensive type family applications:
 
 \begin{lstlisting}
--- Create StartDec with expensive type family computations
-type StartDec = MakeDecorator (...)
+type StartDec = MakeDecorator (ExpensiveOperation (...))
 \end{lstlisting}
 
 This early version of \lstinline{StartDec} was used to set up the chess game, with attempts at two definitions of \lstinline{chess}; one using a type application, and the other using a type signature.
@@ -449,11 +456,23 @@ At the moment, the only incomplete chess rule is \emph{mandatory promotion}. Pro
 
 \subsection{EDSL}
 
-The only major addition to the EDSL is mandatory promotion, as we explain above. However, a few additional helper functions or syntax changes may be helpful during development, and so the EDSL is subject to change.
+The last EDSL feature left to implement is mandatory promotion, as we explain above. However, a few additional helper functions or syntax changes may be helpful during development, and so the EDSL is subject to change.
 
 \subsection{Performance}
 
 The current memory usage and compile time of the EDSL is acceptable, but only short ($<$10 moves) chess games have been described and tested thus far. Memory usage and compile time are likely to rise both with the length of the chess game, and the number of games tested. Memory usage optimisations may become necessary as testing continues.
+
+\subsection{Project Extensions}
+
+As the project is nearly complete, it may be worth adding several extensions to further explore Chess at the type level. Some potential extensions are described below.
+
+\subsubsection{Session Types}
+
+\emph{Session types} are formalisms of communication, between two or more parties, at the type level \cite{torinosessions}. Interestingly, chess could theoretically be modelled in terms of communication between two parties, Black and White; they can only send one message at a time to each other, and their communications cannot break the rules of chess. A potential extension would be to conduct more research into this topic, determining how viable a session-typed Chesskell would be, and possibly implementing it (time constraints allowing).
+
+\subsubsection{Haskell Symposium Paper}
+
+Another potential extension is to write a paper on Chesskell for the Haskell Symposium 2021 (either for its early track, or for its regular track). The Haskell Symposium accepts papers on a variety of topics, including language design, experiences, tools, and so on. This would be a good opportunity to gauge academic interest in Chesskell, and contribute to the wider academia surrounding type-level programming.
 
 \subsection{Revised Timetable/Plan}
 
@@ -463,7 +482,7 @@ These two weeks will be spent implementing mandatory promotion, and performing i
 
 \subsubsection{Weeks 11-14: 14th December 2020 to 10th January 2021}
 
-This is the first section of allocated empty space. If the test suite is posing any issues (with regards to compile time and memory usage) then this additional month should help with solving them. But should the testing be going well, with promotion complete, then this extra time will be spent either starting early on the dissertation, or adding extensions to the project to further explore the modelling of games at the type-level.
+This is the first section of allocated empty space. If the test suite is posing any issues (with regards to compile time and memory usage) then this additional month should help with solving them. But should the testing be going well, with promotion complete, then this extra time will be spent either starting early on the dissertation, or adding extensions to the project to further explore Chess at the type level (as we discuss above).
 
 \subsubsection{Weeks 15-18: 11th January to 7th February}
 
