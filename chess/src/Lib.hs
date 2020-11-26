@@ -552,11 +552,11 @@ type instance Eval (ShouldHavePromotedCheck toPos boardDec)
 type family ShouldHavePromotedCheck' (t :: Position) (b :: BoardDecorator) :: BoardDecorator where
     ShouldHavePromotedCheck' (At col Nat8) boardDec
         = Eval (If (Eval (IsPieceAtWhichDec boardDec (At col Nat8) (IsPawn .&. HasTeam White)))
-            (TE' (TL.Text ("Promotion should have occurred at: " ++ TypeShow (At col Nat8) ++ ". Pawns must promote when they reach the opposite end of the board.")))
+            (TE' (TL.Text ("Promotion should have occurred at: " ++ TypeShow (At col Nat8) ++ ". Pawns must be promoted when they reach the opposite end of the board.")))
             (ID boardDec))
     ShouldHavePromotedCheck' (At col Nat1) boardDec
         = Eval (If (Eval (IsPieceAtWhichDec boardDec (At col Nat1) (IsPawn .&. HasTeam Black)))
-            (TE' (TL.Text ("Promotion should have occurred at: " ++ TypeShow (At col Nat1) ++ ". Pawns must promote when they reach the opposite end of the board.")))
+            (TE' (TL.Text ("Promotion should have occurred at: " ++ TypeShow (At col Nat1) ++ ". Pawns must be promoted when they reach the opposite end of the board.")))
             (ID boardDec))
     ShouldHavePromotedCheck' _ boardDec = boardDec
 
