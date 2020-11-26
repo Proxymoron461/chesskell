@@ -445,11 +445,11 @@ We require additional logic to enforce promotion, in two ways. Firstly, promotio
 Enforcing promotion during movement is achieved with a new check, \lstinline{ShouldHavePromotedCheck}, which checks if a promotion should have occurred\footnote{i.e. if a Pawn reached the opposite end of the board.} and outputs a type error if so, and the inputted \lstinline{BoardDecorator} otherwise. Promotion within the EDSL occurs through a new function, \lstinline{promoteTo}, which uses a type family \lstinline{PromotePawnMove} to promote a Pawn to a given \lstinline{PieceName} after movement. The following code snippet compiles, since the White Pawn is promoted to a Queen:
 
 \begin{lstlisting}
-game = create
-           put _Wh _P at _h7
-       startMoves
-           pawn _h7 promoteTo _Queen _h8
-       end
+game =  create
+            put _Wh _P at _h7
+        startMoves
+            pawn _h7 promoteTo _Queen _h8
+        end
 \end{lstlisting}
 
 However, the below does not compile, since no promotion occurs even though the White Pawn reaches the opposite end of the board:
@@ -459,7 +459,7 @@ However, the below does not compile, since no promotion occurs even though the W
 --     * Promotion should have occurred at: H8. Pawns must be promoted when they reach the opposite end of the board.
 --     * When checking the inferred type
 --         didntPromoteWhite :: Data.Proxy.Proxy (TypeError ...)
-game = create
+game =  create
             put _Wh _P at _h7
         startMoves
             pawn _h7 to _h8
