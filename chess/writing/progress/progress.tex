@@ -9,6 +9,8 @@
 \definecolor{background}{rgb}{0.97, 0.97, 0.97}
 \definecolor{comments}{rgb}{0.0, 0.64, 0.0}
 \definecolor{keywords}{rgb}{0.0, 0.0, 0.64}
+\definecolor{identifiers}{rgb}{0.63, 0.81, 0.94}
+\definecolor{strings}{rgb}{1.0, 0.6, 0.4}
 
 \lstset{
     language=haskell,
@@ -16,6 +18,8 @@
     backgroundcolor=\color{background},
     keywordstyle=\color{keywords}\bfseries,
     commentstyle=\color{comments}\textit,
+    stringstyle=\color{strings},
+    % identifierstyle=\color{identifiers},
     breakatwhitespace=true,
     breaklines=true,
     keepspaces=true,
@@ -223,14 +227,36 @@ We perform all rule-checking with type families that take in the \lstinline{Boar
 
 Although Haskell allows type-level computation via type families, these type families can't be partially applied like normal Haskell functions can. However, Li-yao Xia's work on First Class Families\footnote{\url{https://github.com/Lysxia/first-class-families}} defines a kind of type-level interpreter, allowing similar behaviour to partial application.
 
+First Class Families are achieved through the definition of an open type family, \lstinline{Eval}, and an expression type, \lstinline{Exp}. In Haskell, type constructors can be partially applied at the type level, where type families cannot. Type-level functions are defined such that their return value is wrapped in an \lstinline{Exp}. Consider a type-level implementation of addition in First Class Family form, and in type family form:
+
+\begin{lstlisting}
+data Plus :: Nat -> Nat -> Exp Nat
+type instance Eval (Plus x y) = Plus' x y
+
+type family Plus' (n :: Nat) (m :: Nat) :: Nat where
+    Plus'
+\end{lstlisting}
+
+\lstinline{Plus 4} would be a valid type, with kind \lstinline{Nat -> Exp Nat}; whereas \lstinline{Plus' 4} would result in a type error. With a 
+
 This means that the board is mappable, performing computation on the pieces therein without writing a new function for each map. Incrementing a piece's move count, or changing the name of a piece, is therefore much easier with First Class Families than it would otherwise be with regular type families.
+
+There is one major caveat, though. When pattern-matching with First Class Families, catch-all matches fail to work. That is, the below would fail to compile, since either definition could be valid for \lstinline{Plus Z 5}.
+
+\begin{lstlisting}
+data Plus :: Nat -> Nat -> Exp Nat
+type instance Eval (Plus Z n) = n
+type instance Eval (Plus m n) = -- ...
+\end{lstlisting}
+
+However, First Class Family definitions %TODO
 
 \subsubsection{Move Lists}
 
 Each piece, depending on its team and name, can move to a certain number of spaces. For instance, a King can move a single space in any direction. The \lstinline{PieceMoveList} type family formalises this, returning a list of spaces that a piece can move to (given a piece and board decorator).
 
 \begin{lstlisting}
-    data PieceMoveList :: Piece -> BoardDecorator -> Exp [Position]
+data PieceMoveList :: Piece -> BoardDecorator -> Exp [Position]
 \end{lstlisting}
 
 Consider examples for Bishops and Queens:
