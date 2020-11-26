@@ -49,7 +49,7 @@ As programming languages have evolved, many have begun to address more errors at
 
 % However, the most common programming language used for game development is C\texttt{++} \cite{gamepp}, despite its' lack of safety and allowance of direct pointer arithmetic. C\texttt{++} is chosen for its' speed, but as computers (and gaming consoles) get more powerful, runtime speed becomes less important than developer productivity. Research into bringing more type-safety into game programming environments is rare, and is the niche this project attempts to fill.
 
-However, catching logical errors in imperative languages is almost always done at runtime. Many software systems use runtime features (such as exceptions) to discover and deal with errors and misuse of APIs. Enforcement of invariants and rules is typically dynamic; if a check fails, an exception is thrown and potentially handled. However, if a programmer forgets to implement such a check, the behaviour is unpredictable. A 2007 study \cite{exceptionsusedpoorly} on Java and .NET codebases indicates that exceptions are rarely used to recover from errors, and a 2016 analysis of Java codebases \cite{badjavaexceptions} reveals that exceptions are commonly misused in Java.
+However, catching logical errors in imperative languages is almost always done at runtime. Many software systems use runtime features such as exceptions to discover and deal with errors and misuse of APIs. Enforcement of invariants and rules is typically dynamic; if a check fails, an exception is thrown and potentially handled. However, if a programmer forgets to implement such a check, the behaviour is unpredictable. A 2007 study \cite{exceptionsusedpoorly} on Java and .NET codebases indicates that exceptions are rarely used to recover from errors, and a 2016 analysis of Java codebases \cite{badjavaexceptions} reveals that exceptions are commonly misused in Java.
 
 Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values \cite{yorgey2012giving}, using \emph{type families} \cite{opentfs} \cite{closedtfs} that emulate functions at the type-level. These computations run at compile time, before the compiler generates an executable of the source code, allowing programmers to transform logic errors into type errors \cite{twt}. The exception misuse described above could be avoided by employing logical invariant checks at the type-level, rather than at runtime.
 
@@ -59,9 +59,9 @@ Since these are relatively recent developments, there are few examples of their 
 
 In fully dependently-typed languages, such as Idris, there is no clear distinction between types and values. Types' definitions depend on values, and vice versa; so types and values are interchangeable in usage. Functions can be written to compute with types, as well as values.
 
-Haskell was not designed to be such a language. In Haskell, values have types, and types have kinds. Types of kind \lstinline{*} (or \lstinline{Type}) have term-level values; \lstinline{Int} has kind \lstinline{*} because it has the inhabitants \lstinline{0}, \lstinline{1}, \lstinline{2}, etc. The \lstinline{-XDataKinds} extension allows the programmer to define other kinds \cite{yorgey2012giving}, but these kinds do not have any term-level values.
+Haskell was not designed to be such a language. In Haskell, values have types, and types have kinds. Types of kind \lstinline{*}, also known as \lstinline{Type}, have term-level values; \lstinline{Int} has kind \lstinline{*} because it has the inhabitants \lstinline{0}, \lstinline{1}, \lstinline{2}, etc. The \lstinline{-XDataKinds} extension allows the programmer to define other kinds \cite{yorgey2012giving}, but these kinds do not have any term-level values.
 
-During compilation of a Haskell program (by GHC), \emph{type erasure} occurs. At runtime, Haskell types have no representation, and so writing runtime computation for type-level constructs is nigh impossible. Much previous academic work has gone into emulating dependent types in Haskell \cite{singletons}, working around type erasure through clever use of GHC extensions. Chesskell uses many of these techniques to blur the line between types and values, allowing compile-time checking of the rules of chess---as we explain below.
+While GHC compiles a Haskell program, \emph{type erasure} occurs. At runtime, Haskell types have no representation, and so writing runtime computation for type-level constructs is nigh impossible. Much previous academic work has gone into emulating dependent types in Haskell \cite{singletons}, working around type erasure through clever use of GHC extensions. Chesskell uses many of these techniques to blur the line between types and values, allowing compile-time checking of the rules of chess---as we explain below.
 
 % TODO: A nice diagram??
 
@@ -69,13 +69,13 @@ During compilation of a Haskell program (by GHC), \emph{type erasure} occurs. At
 
 There are many publicly available chess-related programs written in Haskell\footnote{\url{https://github.com/mlang/chessIO}}\footnote{\url{https://github.com/nionita/Barbarossa}}. Many of these are chess engines, which take in a board state and output the move(s) which are strongest, and so therefore perform move checking at the value-level to ensure that the moves that it outputs are valid. Chesskell differs from these in function, in that the end software will not output a list of strong moves; it will simply take in the moves performed, and state whether they are valid chess moves or not. We are not aware of any such type-level chess implementations in Haskell.
 
-There have been allusions to chess at the type-level through solving the N-queens problem in dependently typed languages, such as Idris\footnote{\url{https://github.com/ExNexu/nqueens-idris}}. The N-queens problem makes use of some chess rules, including the Queen's attack positions (a straight line in any direction); but as the end goal is not to successfully model a game of chess, it is not a full type-level chess implementation.
+There have been allusions to chess at the type-level through solving the N-queens problem in dependently typed languages, such as Idris\footnote{\url{https://github.com/ExNexu/nqueens-idris}}. The N-queens problem makes use of some chess rules, including the Queen's attack positions\footnote{A Queen can attack in a straight line in any direction.}; but as the end goal is not to successfully model a game of chess, it is not a full type-level chess implementation.
 
 An important part of any good chess program is its board representation, since all other parts of the program come from this; move generation, move evaluation, and the entire search space are all defined or influenced by the board representation. A great deal of work has gone into defining memory- or time-efficient chess boards \cite{bitboard} \cite{searchtables}, including combinations of multiple representations to yield greater speed \cite{bitandccr}. While there is value to be gleaned from examining these representations, Chesskell serves a different purpose; it does not need to search through the valid set of moves to determine which are the best, and speed is not its focus. Chesskell's board representation must be relatively efficient, but it would be naive to expect similar levels of performance from type-level constraint solving computation as from optimised term-level code.
 
 Despite the apparent lack of work on Chess at the type level specifically, there is work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. Mezzo \cite{mezzohaskellsymposium} is an EDSL for music composition, which checks if the described piece of music conforms to some musical ruleset during compilation of the program. This EDSL is most similar to Chesskell in aim, if not in application domain; performing compile-time checks of rulesets that are commonly checked at runtime.
 
-As another example, BioShake \cite{bioshake} is an EDSL for creating performant bioinformatics computational workflows. The correctness of these workflows is checked during compilation, preventing it from being created if certain errors would occur. For bioinformatics workflows especially, this is ideal since many of these workflows are lengthy. BioShake goes further, however; providing tools to allow parallel execution of these workflows. While it is encouraging to see this (and other EDSLs \cite{aplite}) focus on (and achieve) high performance, Chesskell will have no such focus. This is primarily because only certain parts of the rule-checking process can be parallelised; much of the move handling and order of rule checks must be done sequentially.
+As another example, BioShake \cite{bioshake} is an EDSL for creating performant bioinformatics computational workflows. The correctness of these workflows is checked during compilation, preventing it from being created if certain errors would occur. For bioinformatics workflows especially, this is ideal since many of these workflows are lengthy. BioShake goes further, however; providing tools to allow parallel execution of these workflows. While it is encouraging to see this and other EDSLs \cite{aplite} focus on (and achieve) high performance, Chesskell will have no such focus. This is primarily because only certain parts of the rule-checking process can be parallelised; much of the move handling and order of rule checks must be done sequentially.
 
 % \section{Project Functional Requirements}
 
@@ -128,7 +128,7 @@ edslMove (x :: SPosition from) (y :: SPosition to) (z :: Proxy (b :: Board)) = P
 
 The software has a full representation of a game of chess at the type-level, as we explain below. As the system checks the game move by move, the only required representation is the board at the time of checking; containing all pieces on that board.
 
-The \lstinline{Board} type is the most important type in Chesskell, representing the chess board at the type-level. It is a \emph{composite type} containing all pieces in play. However, \lstinline{Board} types are usually accessed through a type named \lstinline{BoardDecorator}, which contains more information for ease of use (as we detail below).
+The \lstinline{Board} type is the most important type in Chesskell, representing the chess board at the type-level. It is a \emph{composite type} containing all pieces in play. However, \lstinline{Board} types are usually accessed through a type named \lstinline{BoardDecorator}, which contains more information for ease of use, as we detail below.
 
 We describe Chesskell's types from the bottom up in the following sections, since the types here are composite and require understanding of other types.
 
@@ -176,7 +176,7 @@ data Position where
 
 Each piece, represented by the \lstinline{Piece} type, contains information relevant for rule checking: that piece's team, name, and an information type. The information type, named \lstinline{PieceInfo}, contains a \lstinline{Nat} and a \lstinline{Position}, to represent the number of moves that piece has taken, and its current position on the board respectively. Recording the number of moves the piece has taken is important for several rules in chess, including castling and \textit{En Passant}, and so is included in the \lstinline{PieceInfo} type.
 
-The \lstinline{PieceInfo} type was created separate from the plain \lstinline{Piece} type so that if any further information was needed, it could be added without breaking existing \lstinline{Piece} pattern-match definitions (though no such additional information was required).
+The \lstinline{PieceInfo} type was created separate from the plain \lstinline{Piece} type so that if any further information was needed, it could be added without breaking existing \lstinline{Piece} pattern-match definitions, though no such additional information was required.
 
 \begin{lstlisting}
 data PieceInfo where
@@ -188,7 +188,7 @@ data Piece where
 
 \subsubsection{The Board}
 
-At the type level, the most common way of storing n elements is with the built-in list type \lstinline{[]} (similar to the value-level). However, a singly-linked list has issues; how can we ensure that the chess board is the appropriate size (an 8x8 grid) without a length check each move? This would take at least 56 additions, since list length is computed recursively; as well as 7 more addition operations to put together the list lengths.
+At the type level, the most common way of storing n elements is with the built-in list type \lstinline{[]}, similar to the value-level. However, a singly-linked list has issues; how can we ensure that the chess board is the appropriate size (an 8x8 grid) without a length check each move? This would take at least 56 additions, since list length is computed recursively; as well as 7 more addition operations to put together the list lengths.
 
 Performing such a check each move would be wasteful. Instead, length-indexed vectors are used. \lstinline{Nat} values specify the length of a vector, resulting in a type error if the vector is any other length. As with most things in Haskell, we use recursive definitions; an empty vector has length 0, and you express a vector of length (n + 1) by pushing an element to the front of a vector of length n.
 
@@ -206,7 +206,7 @@ type Row   = Vec Eight (Maybe Piece)
 type Board = Vec Eight Row
 \end{lstlisting}
 
-Although this is the main board type, it is augmented with a \lstinline{BoardDecorator}, so named because the intention is similar to the decorator design pattern \cite{decorator} (with the exception that subclassing and superclassing are not features of Haskell). \lstinline{BoardDecorator} should be used instead of \lstinline{Board}, since it provides additional information:
+Although this is the main board type, it is augmented with a \lstinline{BoardDecorator}, so named because the intention is similar to the decorator design pattern \cite{decorator}, with the exception that subclassing and superclassing are not features of Haskell. \lstinline{BoardDecorator} should be used instead of \lstinline{Board}, since it provides additional information:
 
 \begin{itemize}
     \item The last team to move;
@@ -224,7 +224,7 @@ data BoardDecorator where
 
 \subsection{Checking Chess Rules}
 
-We perform all rule-checking with type families that take in the \lstinline{BoardDecorator} (among other arguments) and output either a correct result, or a type error. Rule-checking occurs during movement, since the chess game effectively hangs while players do not move.
+We perform all rule-checking with type families that take in the \lstinline{BoardDecorator}, among other arguments, and output either a correct result, or a type error. Rule-checking occurs during movement, since the chess game effectively hangs while players do not move.
 
 \subsubsection{Type families in Haskell}
 
@@ -271,13 +271,13 @@ type instance Eval (PieceMoveList (MkPiece team Bishop info) boardDec) = Eval (A
 
 Bishops can move diagonally in a straight line by any number of spaces. The type families \lstinline{AllReachableDiag} is used to get a list of all diagonally "reachable" positions. It takes in the position of the relevant piece, that piece's team, and the current state of the board, and outputs all diagonal positions that piece can move to.
 
-Reachability (for a given direction) is defined here as all the empty spaces in all that direction, stopping at the first occupied space. That space is included or excluded depending on whether that space is occupied by a piece of the opposite team, since an attacking piece could move to that space and take the piece there.
+Reachability for a given direction is defined here as all the empty spaces in all that direction, stopping at the first occupied space. That space is included or excluded depending on whether that space is occupied by a piece of the opposite team, since an attacking piece could move to that space and take the piece there.
 
-There is another function, \lstinline{PieceAttackList}, which is similar to \lstinline{PieceMoveList} but gives the list of spaces that a piece can attack. This is different from a piece's move list in a handful of cases (for instance, pieces can attack the opposite team's King, but cannot move to its position and take it).
+There is another function, \lstinline{PieceAttackList}, which is similar to \lstinline{PieceMoveList} but gives the list of spaces that a piece can attack. This is different from a piece's move list in a handful of cases; for instance, pieces can attack the opposite team's King, but cannot move to its position and take it.
 
 \subsubsection{Moving the Pieces}
 
-\lstinline{Move}, as we introduce above, performs a series of checks on the board state, computes a move from an origin \lstinline{Position} to a destination \lstinline{Position} with a given \lstinline{BoardDecorator}, and then performs further checks. The actual movement code is omitted here for brevity; but all moves are present and complete. The checks themselves are implemented as functions that take in a \lstinline{BoardDecorator}, and output either a \lstinline{BoardDecorator} (if the check passes) or a type error.
+\lstinline{Move}, as we introduce above, performs a series of checks on the board state, computes a move from an origin \lstinline{Position} to a destination \lstinline{Position} with a given \lstinline{BoardDecorator}, and then performs further checks. The actual movement code is omitted here for brevity; but all moves are present and complete. The checks themselves are implemented as functions that take in a \lstinline{BoardDecorator}, and output either a \lstinline{BoardDecorator} if the check passes, or a type error.
 
 \begin{lstlisting}
 data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
@@ -326,7 +326,7 @@ type Term t r = t -> r
 
 The above continuation types are combined with type-level rule checking, to create a Chess EDSL that operates through passing continuations. Type-level computations within the EDSL are achieved through \emph{type applications} \cite{typeapplication}, which allow the programmer to specify the exact type of a kind-polymorphic type variable. Using a combination of singletons, proxies, kind signatures, and type applications, the value-level Haskell code for the EDSL can have specific type variables and involve type family application. Essentially, the term-level EDSL can involve type-level rule checking.
 
-The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are applied, transforming that value, until the chess game ends (or a rule is broken). Chess games begin with the board in a set configuration; and so a type \lstinline{StartDec} (of kind \lstinline{BoardDecorator}) was defined to contain all of this information.
+The chess game starts with a \lstinline{Proxy} value, with its type containing a \lstinline{BoardDecorator} type. Continuations are applied, transforming that value, until the chess game ends or a rule is broken. Chess games begin with the board in a set configuration; and so a type \lstinline{StartDec} of kind \lstinline{BoardDecorator} was defined to contain all of this information.
 
 \begin{lstlisting}
 chess :: Spec (Proxy StartDec)
@@ -350,7 +350,7 @@ to :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) ->
 to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: SPosition toPos) cont = cont (Proxy @(Eval (MoveWithStateCheck n fromPos toPos b)))
 \end{lstlisting}
 
-The final relevant definition is of \lstinline{end}, which ends the chess game (and the continuation stream).
+The final relevant definition is of \lstinline{end}, which ends the chess game, as well as the continuation stream.
 
 \begin{lstlisting}
 end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
@@ -492,11 +492,11 @@ Additionally, adding the move number to the type error\footnote{e.g. \lstinline{
 
 \subsection{Testing}
 
-The test suite is a mixture of HSpec behaviour-driven tests \cite{hspec} and module declarations, where the HSpec tests cover many of the declared type families (such as \lstinline{Move} and \lstinline{PieceMoveList}).
+The test suite is a mixture of HSpec behaviour-driven tests \cite{hspec} and module declarations, where the HSpec tests cover many of the declared type families, such as \lstinline{Move} and \lstinline{PieceMoveList}.
 
-The original plan was to have all tests be HSpec tests; many of these HSpec tests make use of the type-level testing facilities laid out in other works \cite{mezzo}. However, running the test suite on EDSL statements, as well as some of the expensive type families (such as those involving castling) causes excessive memory usage, exceeding 27 GB in some cases.
+The original plan was to have all tests be HSpec tests; many of these HSpec tests make use of the type-level testing facilities laid out in other works \cite{mezzo}. However, running the test suite on EDSL statements, as well as some of the expensive type families, such as those involving castling, causes excessive memory usage, exceeding 27 GB in some cases.
 
-Work on a solution is ongoing, but for now, we express EDSL tests as high-level declarations in a Haskell module. The tests are run by seeing whether these declarations compile or not (and if not, what error they throw). This will hopefully only be temporary, but it should suffice as a rudimentary (if slow) method of integration testing.
+Work on a solution is ongoing, but for now, we express EDSL tests as high-level declarations in a Haskell module. The tests are run by seeing whether these declarations compile or not, and if not, what error they throw. This will hopefully only be temporary, but it should suffice as a rudimentary, if slow, method of integration testing.
 
 \section{Next Steps}
 
@@ -520,11 +520,11 @@ As the project is nearly complete, it may be worth adding several extensions to 
 
 \subsubsection{Session Types}
 
-\emph{Session types} are formalisms of communication, between two or more parties, at the type level \cite{torinosessions}. Interestingly, chess could theoretically be modelled in terms of communication between two parties, Black and White; they can only send one message at a time to each other, and their communications cannot break the rules of chess. A potential extension would be to conduct more research into this topic, determining how viable a session-typed Chesskell would be, and possibly implementing it (time constraints allowing).
+\emph{Session types} are formalisms of communication, between two or more parties, at the type level \cite{torinosessions}. Interestingly, chess could theoretically be modelled in terms of communication between two parties, Black and White; they can only send one message at a time to each other, and their communications cannot break the rules of chess. A potential extension would be to conduct more research into this topic, determining how viable a session-typed Chesskell would be, and possibly implementing it, time constraints allowing.
 
 \subsubsection{Haskell Symposium Paper}
 
-Another potential extension is to write a paper on Chesskell for the Haskell Symposium 2021 (either for its early track, or for its regular track). The Haskell Symposium accepts papers on a variety of topics, including language design, experiences, tools, and so on. This would be a good opportunity to gauge academic interest in Chesskell, and contribute to the wider academia surrounding type-level programming.
+Another potential extension is to write a paper on Chesskell for the Haskell Symposium 2021, either for its early track or its regular track. The Haskell Symposium accepts papers on a variety of topics, including language design, experiences, tools, and so on. This would be a good opportunity to gauge academic interest in Chesskell, and contribute to the wider academia surrounding type-level programming.
 
 \subsection{Revised Timetable/Plan}
 
@@ -534,7 +534,7 @@ These two weeks will be spent performing integration/system testing. A curated d
 
 \subsubsection{Weeks 11-14: 14th December 2020 to 10th January 2021}
 
-This is the first section of allocated empty space. If the test suite is posing any issues (with regards to compile time and memory usage) then this additional month should help with solving them. But should the testing be going well, then this extra time will be spent either starting early on the dissertation, or adding extensions to the project to further explore Chess at the type level (as we discuss above).
+This is the first section of allocated empty space. If the test suite is posing any issues with regards to compile time and memory usage then this additional month should help with solving them. But should the testing be going well, then this extra time will be spent either starting early on the dissertation, or adding extensions to the project to further explore Chess at the type level, as we discuss above.
 
 \subsubsection{Weeks 15-18: 11th January to 7th February}
 
@@ -554,7 +554,7 @@ These two weeks are more empty space; set aside to act as a buffer for delays in
 
 \subsubsection{Weeks 25-29: 22nd March to 25th April}
 
-Drafting, re-drafting, and refining the dissertation (with the help of the supervisor) will take place during this time. This is the final stretch, and will be spent ensuring that the final piece of writing is as good as it can be.
+Drafting, re-drafting, and refining the dissertation with the help of the supervisor will take place during this time. This is the final stretch, and will be spent ensuring that the final piece of writing is as good as it can be.
 
 Revision for examinations is key during this period; however, since the dissertation should be complete and this period is for evaluation and not the main bulk of writing, there should be ample time.
 
