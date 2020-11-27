@@ -5,6 +5,7 @@
 \usepackage{charter}
 \usepackage{xcolor}
 \usepackage{parskip}
+\usepackage[multiple]{footmisc}
 
 \definecolor{background}{rgb}{0.97, 0.97, 0.97}
 \definecolor{comments}{rgb}{0.0, 0.64, 0.0}
@@ -45,7 +46,7 @@
 
 In 2020, video games are more popular than ever. In the US alone, an ESA report\footnote{\url{https://www.theesa.com/wp-content/uploads/2020/07/Final-Edited-2020-ESA_Essential_facts.pdf}} estimates that there are more than 214 million individuals who play games. Considering this, it's surprising how many games are released with major bugs in their software---some of which end up being so notable that news and footage of them appear on mainstream media\footnote{\url{https://www.bbc.co.uk/news/technology-50156033}}.
 
-As programming languages have evolved, many have begun to address more errors at compile time. Features similar to optional types have been added to languages such as Java and C\#, and languages like Rust have pioneered ways of safely handling dynamic allocation through ownership types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions.
+As programming languages have evolved, many have begun to address more errors at compile time. Features similar to optional types have been added to languages such as Java\footnote{\url{https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html}} and C\#\footnote{\url{https://docs.microsoft.com/en-us/dotnet/csharp/nullable-references}}, and languages like Rust have pioneered ways of safely handling dynamic allocation through ownership types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions.
 
 % However, the most common programming language used for game development is C\texttt{++} \cite{gamepp}, despite its' lack of safety and allowance of direct pointer arithmetic. C\texttt{++} is chosen for its' speed, but as computers (and gaming consoles) get more powerful, runtime speed becomes less important than developer productivity. Research into bringing more type-safety into game programming environments is rare, and is the niche this project attempts to fill.
 
@@ -61,7 +62,7 @@ In fully dependently-typed languages, such as Idris, there is no clear distincti
 
 Haskell was not designed to be such a language. In Haskell, values have types, and types have kinds. Types of kind \lstinline[basicstyle=\ttfamily]{*}, also known as \lstinline[basicstyle=\ttfamily]{Type}, have term-level values; \lstinline[basicstyle=\ttfamily]{Int} has kind \lstinline[basicstyle=\ttfamily]{*} because it has the inhabitants \lstinline[basicstyle=\ttfamily]{0}, \lstinline[basicstyle=\ttfamily]{1}, \lstinline[basicstyle=\ttfamily]{2}, etc. The \lstinline[basicstyle=\ttfamily]{-XDataKinds} extension allows the programmer to define other kinds \cite{yorgey2012giving}, but these kinds do not have any term-level values.
 
-While GHC compiles a Haskell program, \emph{type erasure} occurs. At runtime, Haskell types have no representation, and so writing runtime computation for type-level constructs is nigh impossible. Much previous academic work has gone into emulating dependent types in Haskell \cite{singletons}, working around type erasure through clever use of GHC extensions. Chesskell uses many of these techniques to blur the line between types and values, allowing compile-time checking of the rules of chess---as we explain below.
+While GHC compiles a Haskell program, \emph{type erasure} occurs. At runtime, Haskell types have no representation, and so writing runtime computation for type-level constructs is nigh impossible. Much previous academic work has gone into emulating dependent types in Haskell \cite{singletons}, worKing around type erasure through clever use of GHC extensions. Chesskell uses many of these techniques to blur the line between types and values, allowing compile-time checking of the rules of chess---as we explain below.
 
 % TODO: A nice diagram??
 
@@ -73,7 +74,7 @@ There have been allusions to chess at the type-level through solving the N-queen
 
 An important part of any good chess program is its board representation, since all other parts of the program come from this; move generation, move evaluation, and the entire search space are all defined or influenced by the board representation. A great deal of work has gone into defining memory- or time-efficient chess boards \cite{bitboard} \cite{searchtables}, including combinations of multiple representations to yield greater speed \cite{bitandccr}. While there is value to be gleaned from examining these representations, Chesskell serves a different purpose; it does not need to search through the valid set of moves to determine which are the best, and speed is not its focus. Chesskell's board representation must be relatively efficient, but it would be naive to expect similar levels of performance from type-level constraint solving computation as from optimised term-level code.
 
-Despite the apparent lack of work on Chess at the type level specifically, there is work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. Mezzo \cite{mezzohaskellsymposium} is an EDSL for music composition, which checks if the described piece of music conforms to some musical ruleset during compilation of the program. This EDSL is most similar to Chesskell in aim, if not in application domain; performing compile-time checks of rulesets that are commonly checked at runtime.
+Despite the apparent lack of work on Chess at the type level specifically, there is work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. Mezzo \cite{mezzohaskellsymposium} is an EDSL for music composition, which checks if the described piece of music conforms to some musical ruleset during compilation of the program. This EDSL is similar to Chesskell in aim, if not in application domain; performing compile-time checks of rulesets that are commonly checked at runtime.
 
 As another example, BioShake \cite{bioshake} is an EDSL for creating performant bioinformatics computational workflows. The correctness of these workflows is checked during compilation, preventing any from being created if their execution would result in certain errors. For bioinformatics workflows especially, this is ideal since many of these workflows are lengthy. BioShake goes further, however; providing tools to allow parallel execution of these workflows. While it is encouraging to see this and other EDSLs \cite{aplite} focus on (and achieve) high performance, Chesskell will have no such focus. This is primarily because only certain parts of the rule-checking process can be parallelised; much of the move handling and order of rule checks must be done sequentially.
 
@@ -134,7 +135,7 @@ We describe Chesskell's types from the bottom up in the following sections, sinc
 
 \subsubsection{Team and PieceName}
 
-Both \lstinline[basicstyle=\ttfamily]{Team} and \lstinline[basicstyle=\ttfamily]{PieceName} are simple algebraic data types, with all constructors defined in code. The \lstinline[basicstyle=\ttfamily]{Team} type enumerates all teams a piece can belong to; \lstinline[basicstyle=\ttfamily]{Black} and \lstinline[basicstyle=\ttfamily]{White}. The \lstinline[basicstyle=\ttfamily]{PieceName} type enumerates all possible names of pieces; pawn, rook, and so on.
+Both \lstinline[basicstyle=\ttfamily]{Team} and \lstinline[basicstyle=\ttfamily]{PieceName} are simple algebraic data types, with all constructors defined in code. The \lstinline[basicstyle=\ttfamily]{Team} type enumerates all teams a piece can belong to; \lstinline[basicstyle=\ttfamily]{Black} and \lstinline[basicstyle=\ttfamily]{White}. The \lstinline[basicstyle=\ttfamily]{PieceName} type enumerates all possible names of pieces; Pawn, Rook, and so on.
 
 The declarations below, combined with the \lstinline[basicstyle=\ttfamily]{-XDataKinds} extension, create two things. The first is a value-level representation of \lstinline[basicstyle=\ttfamily]{Team} and \lstinline[basicstyle=\ttfamily]{Piecename}, where \lstinline[basicstyle=\ttfamily]{Black} is a value of type \lstinline[basicstyle=\ttfamily]{Team}. The second is a \emph{type-level} representation, where \lstinline[basicstyle=\ttfamily]{'Black} is a type of kind \lstinline[basicstyle=\ttfamily]{Team}\footnote{Note that \lstinline[basicstyle=\ttfamily]{'Black} has no term-level values, since it does not have kind \lstinline[basicstyle=\ttfamily]{*}}.
 
@@ -211,11 +212,11 @@ Although this is the main board type, it is augmented with a \lstinline[basicsty
 \begin{itemize}
     \item The last team to move;
     \item The last position moved to;
-    \item The White and Black king positions, stored as a tuple;
+    \item The White and Black King positions, stored as a tuple;
     \item The number of moves in the game thus far.
 \end{itemize}
 
-Previous versions of the program, to find the king positions, would pass repeatedly over the \lstinline[basicstyle=\ttfamily]{Board}. Having their positions available in the decorator saves the system from making these passes. While there is the overhead that the \lstinline[basicstyle=\ttfamily]{BoardDecorator} must be updated at each move, the code is much conceptually clearer with the use of the decorator.
+Previous versions of the program, to find the King positions, would pass repeatedly over the \lstinline[basicstyle=\ttfamily]{Board}. Having their positions available in the decorator saves Chesskell from making these passes. While there is the overhead that the \lstinline[basicstyle=\ttfamily]{BoardDecorator} must be updated at each move, the code is much conceptually clearer with the use of the decorator.
 
 \begin{lstlisting}
 data BoardDecorator where
@@ -228,7 +229,7 @@ We perform all rule-checking with type families that take in the \lstinline[basi
 
 \subsubsection{Type families in Haskell}
 
-Although Haskell allows type-level computation via type families, these type families can't be partially applied like normal Haskell functions can. However, Li-yao Xia's work on First Class Families\footnote{\url{https://github.com/Lysxia/first-class-families}} defines a kind of type-level interpreter, allowing similar behaviour to partial application.
+Although Haskell allows type-level computation via type families, these type families can't be partially applied like normal Haskell functions can. However, Li-yao Xia's work on First Class Families\footnote{\url{https://github.com/Lysxia/first-class-families}} defines a type-level interpreter, allowing similar behaviour to partial application.
 
 First Class Families are achieved through the definition of an open type family, \lstinline[basicstyle=\ttfamily]{Eval}, and an expression type, \lstinline[basicstyle=\ttfamily]{Exp}. In Haskell, type constructors can be partially applied at the type level, where type families cannot. Type-level functions are defined such that their return value is wrapped in an \lstinline[basicstyle=\ttfamily]{Exp}. Consider a type-level implementation of addition in First Class Family form, and in type family form:
 
@@ -283,9 +284,9 @@ Consider a \lstinline[basicstyle=\ttfamily]{PieceMoveList} instance for Bishops:
 type instance Eval (PieceMoveList (MkPiece team Bishop info) boardDec) = Eval (AllReachableDiag team boardDec (Eval (GetPosition info)))
 \end{lstlisting}
 
-Bishops can move diagonally in a straight line by any number of spaces. The type families \lstinline[basicstyle=\ttfamily]{AllReachableDiag} is used to get a list of all diagonally "reachable" positions. It takes in the position of the relevant piece, that piece's team, and the current state of the board, and outputs all diagonal positions that piece can move to.
+Bishops can move diagonally in a straight line by any number of spaces. The type family \lstinline[basicstyle=\ttfamily]{AllReachableDiag} is used to get a list of all diagonally "reachable" positions. It takes in the \lstinline[basicstyle=\ttfamily]{Position} of the relevant piece, that piece's \lstinline[basicstyle=\ttfamily]{Team}, and the current state of the board as a \lstinline[basicstyle=\ttfamily]{BoardDecorator}. It outputs all diagonal positions that piece can move to.
 
-Reachability for a given direction is defined here as all the empty spaces in all that direction, stopping at the first occupied space. That space is included or excluded depending on whether that space is occupied by a piece of the opposite team, since an attacking piece could move to that space and take the piece there.
+Reachability for a given direction is defined here as all the empty spaces in that direction, stopping at either the first occupied space or the edge of the board. That space is included or excluded depending on whether that space is occupied by a piece of the opposite team, since an attacking piece could move to that space and take the piece there.
 
 There is another function, \lstinline[basicstyle=\ttfamily]{PieceAttackList}, which is similar to \lstinline[basicstyle=\ttfamily]{PieceMoveList} but gives the list of spaces that a piece can attack. This is different from a piece's move list in a handful of cases; for instance, pieces can attack the opposite team's King, but cannot move to its position and take it.
 
@@ -454,9 +455,9 @@ game = create
         end
 \end{lstlisting}
 
-We require additional logic to enforce promotion, in two ways. Firstly, promotion must occur when a pawn reaches the opposite end of the board. Secondly, if a pawn reaches the opposite end of the board but is not promoted, then Chesskell should throw a type error.
+We require additional logic to enforce promotion, in two ways. Firstly, promotion must occur when a Pawn reaches the opposite end of the board. Secondly, if a Pawn reaches the opposite end of the board but is not promoted, then Chesskell should throw a type error.
 
-Enforcing promotion during movement is achieved with a new check, \lstinline[basicstyle=\ttfamily]{ShouldHavePromotedCheck}, which checks if a promotion should have occurred\footnote{i.e. if a Pawn reached the opposite end of the board.} and outputs a type error if so, and the inputted \lstinline[basicstyle=\ttfamily]{BoardDecorator} otherwise. Promotion within the EDSL occurs through a new function, \lstinline[basicstyle=\ttfamily]{promoteTo}, which uses a type family \lstinline[basicstyle=\ttfamily]{PromotePawnMove} to promote a Pawn to a given \lstinline[basicstyle=\ttfamily]{PieceName} after movement. The following code snippet compiles, since the White Pawn is promoted to a Queen:
+\lstinline[basicstyle=\ttfamily]{ShouldHavePromotedCheck} is a new check for enforcing promotion during movement. It checks if a promotion should have occurred\footnote{i.e. if a Pawn reached the opposite end of the board.} and outputs a type error if so, and the inputted \lstinline[basicstyle=\ttfamily]{BoardDecorator} otherwise. Promotion within the EDSL occurs through a new function, \lstinline[basicstyle=\ttfamily]{promoteTo}, which uses a type family \lstinline[basicstyle=\ttfamily]{PromotePawnMove} to promote a Pawn to a given \lstinline[basicstyle=\ttfamily]{PieceName} after movement. The following code snippet compiles, since the White Pawn is promoted to a Queen:
 
 \begin{lstlisting}
 game =  create
