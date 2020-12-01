@@ -2,10 +2,11 @@
 
 module ChessSessions where
 
-import Control.SessionTypes
+import Control.SessionTypes hiding (Nat(..))
 import Control.SessionTypes.Indexed
 
 import Data.Proxy
+import Data.Type.Nat hiding (SNat(..))
 
 import MakeSingletons
 import ChessTypes
@@ -42,3 +43,15 @@ prog_recursion_dual = recurse $ go 0
       go n = do
         send n
         (weaken0 >> eps n) <&> (var $ go (n + 1))
+
+-- recurse :: MonadSession m => m ('Cap (s : ctx) s) r a -> m ('Cap ctx ('R s)) r a
+chess_recursion :: SPosition pos1 -> SPosition pos2
+    -> STTerm m ('Cap ctx (R ((SPosition pos1, SPosition pos2) :!> (SPosition pos3, SPosition pos4) :?> Off '[V, Wk Eps])))
+        ('Cap ctx Eps) ()
+chess_recursion x y = recurse $ f x y
+    where
+        f from to = do
+            send (from, to)
+            pair <- recv
+            (var0 >> uncurry f _ _) <&> (weaken0 >> eps0)
+            return ()
