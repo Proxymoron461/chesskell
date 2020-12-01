@@ -24,6 +24,7 @@ dependencies:
   - singletons
   - template-haskell
   - fin
+  - sessiontypes
 
 default-extensions:
   - DataKinds

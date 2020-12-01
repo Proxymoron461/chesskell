@@ -3,7 +3,18 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    name: sessiontypes
+    version: 0.1.2
+    git: https://github.com/Proxymoron461/sessiontypes.git
+    pantry-tree:
+      size: 1558
+      sha256: 51f8a6e54f4f092ec610678c66802d012bcaf84c956c8d68976adfcf0b74abd0
+    commit: 14c5c12916d16a4ea7a9a45d5205d4776a720e7c
+  original:
+    git: https://github.com/Proxymoron461/sessiontypes.git
+    commit: 14c5c12916d16a4ea7a9a45d5205d4776a720e7c
 snapshots:
 - completed:
     size: 531696

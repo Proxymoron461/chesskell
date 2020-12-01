@@ -41,6 +41,10 @@ packages:
 #
 # extra-deps: []
 
+extra-deps:
+  - git: https://github.com/Proxymoron461/sessiontypes.git
+    commit: 14c5c12916d16a4ea7a9a45d5205d4776a720e7c
+
 # Override default flag values for local packages and extra-deps
 # flags: {}
 
