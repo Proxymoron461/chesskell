@@ -37,12 +37,33 @@ whitePawnMustPromote = Proxy @(Eval (Move (At A Nat7) (At A Nat8) BlackLastPromD
 blackPawnMustPromote :: Proxy (a :: BoardDecorator)
 blackPawnMustPromote = Proxy @(Eval (Move (At C Nat2) (At C Nat1) WhiteLastPromDec))
 
+whiteKingPromotion :: Proxy (a :: BoardDecorator)
+whiteKingPromotion = Proxy @(Eval (PromotePawnMove (At A Nat7) (At A Nat8) King BlackLastPromDec))
+
+blackKingPromotion :: Proxy (a :: BoardDecorator)
+blackKingPromotion = Proxy @(Eval (PromotePawnMove (At C Nat2) (At C Nat1) King WhiteLastPromDec))
+
+whitePawnPromotion :: Proxy (a :: BoardDecorator)
+whitePawnPromotion = Proxy @(Eval (PromotePawnMove (At A Nat7) (At A Nat8) Pawn BlackLastPromDec))
+
+blackPawnPromotion :: Proxy (a :: BoardDecorator)
+blackPawnPromotion = Proxy @(Eval (PromotePawnMove (At C Nat2) (At C Nat1) Pawn WhiteLastPromDec))
+
 promotionTestSuite = describe "Promotion Tests" $ do
     describe "Must Promote Tests" $ do
         it "1: A White Pawn must promote when it is moving from row 7 to row 8" $
             shouldNotTypeCheck whitePawnMustPromote
         it "2: A Black Pawn must promote when it is moving from row 2 to row 1" $
             shouldNotTypeCheck blackPawnMustPromote
+    describe "Disallowed Promotion Tests" $ do
+        it "1: White Pieces cannot promote to Kings" $
+            shouldNotTypeCheck whiteKingPromotion
+        it "2: Black Pieces cannot promote to Kings" $
+            shouldNotTypeCheck blackKingPromotion
+        it "3: White Pieces cannot promote to Pawns" $
+            shouldNotTypeCheck whitePawnPromotion
+        it "4: Black Pieces cannot promote to Pawns" $
+            shouldNotTypeCheck blackPawnPromotion
 
 -- promoteTo :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) -> SPieceName promoteTo -> SPosition toPos
 --       -> Spec (Proxy (Eval (PromotePawnMove fromPos toPos promoteTo b)))
