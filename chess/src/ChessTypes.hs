@@ -288,6 +288,9 @@ data SetPieceAtDec :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
 type instance Eval (SetPieceAtDec piece boardDec toPos)
    = SetKings (UpdateKings (GetKings boardDec) piece toPos) (SetBoard (Eval (SetPieceAt piece (GetBoard boardDec) toPos)) boardDec)
 
+data SetPieceAtDecSwapped :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (SetPieceAtDecSwapped piece pos boardDec) = Eval (SetPieceAtDec piece boardDec pos)
+
 data SetPieceAtDecClear :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
 type instance Eval (SetPieceAtDecClear piece boardDec pos)
    = Eval (ClearPieceAtDec (Eval (PiecePosition piece)) (Eval (SetPieceAtDec piece boardDec pos)))
@@ -305,6 +308,9 @@ type instance Eval (SetPieceAtNoChecks piece board (At col row)) = Eval (SetRow 
 -- TODO: Optimise to work in one fell swoop, rather than one by one?
 data SetPiecesAt :: [(Piece, Position)] -> Board -> Exp Board
 type instance Eval (SetPiecesAt pps board) = Eval (Foldr (Uncurry2 SetPieceAtSwapped) board pps)
+
+data SetPiecesAtDec :: [(Piece, Position)] -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (SetPiecesAtDec pps boardDec) = Eval (Foldr (Uncurry2 SetPieceAtDecSwapped) boardDec pps)
 
 data GetRow :: Board -> Nat -> Exp (Maybe Row)
 type instance Eval (GetRow board (S n)) = Just $ VAUgly board n

@@ -14,6 +14,7 @@ import Vec
 import FirstClassFunctions
 import ChessTypes
 import FlatBuilders
+import Ranges
 import Data.Type.Nat hiding (SNat(..))
 import Data.Proxy
 
@@ -39,7 +40,7 @@ fromProxyTrue (Proxy :: Proxy b) = Refl @(b)
 
 -- TEST TYPES
 -- TODO: Remove these and replace with EDSL stuff
--- NOTE: These boards are upside-down - the first row is the last one visually
+-- NOTE: These boards are upside-down - the first row is the bottom one visually
 type TestPosition = At A Nat1  -- i.e. bottom left
 type TestPiece    = MkPiece Black Pawn (Info Z TestPosition False)
 type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
@@ -50,6 +51,8 @@ type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Noth
                     :-> EmptyRow
                     :-> EmptyRow
                     :<> EmptyRow
+
+type TestDec = Dec TestBoard Black (At A Nat1) '(At A Z, At H Z) Nat1
 
 type TestWhitePawn = MkPiece White Pawn (Info Z (At A Nat2) False)
 type TestWhitePawn2 = MkPiece White Pawn (Info Z (At A Nat7) False)
@@ -64,10 +67,13 @@ type TestBoard2   = EmptyRow
                     :-> (Just TestWhitePawn2 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :<> (Nothing :-> Just TestBlackPawn :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
 
+type TestDec2 = Dec TestBoard2 Black (At A Nat1) '(At A Z, At H Z) Nat1
+
 type TestList = Eval (RangeBetween 0 10)
 
 type TestInfo = Info Z (At A Nat1) False
 type TestPieceList = '[MkPiece Black Pawn TestInfo, MkPiece White Pawn TestInfo, MkPiece White King TestInfo]
 
 type KingBoard = Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At A Nat1), '(MkPiece Black King TestInfo, At H Nat8) ] EmptyBoard)
+type KingDec = Dec KingBoard Black (At H Nat8) '(At A Nat1, At H Nat8) Nat2
 type EmptyDec = Dec EmptyBoard Black (At A Nat1) '(At E Nat1, At E Nat8) Nat1
