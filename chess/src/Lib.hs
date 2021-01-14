@@ -459,7 +459,7 @@ type instance Eval (PawnPostStart pawn boardDec) = (Eval (PawnMove pawn boardDec
 data IfPieceThenMove :: PieceName -> Position -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (IfPieceThenMove name fromPos toPos boardDec)
     = Eval (If (Eval (IsPieceAtWhichDec boardDec fromPos (IsPiece name)))
-        ((ShouldHavePromotedCheck toPos . Move fromPos toPos) boardDec)
+        (Move fromPos toPos boardDec)
         (If (Eval (IsPieceAt boardDec fromPos))
             (TE' (TL.Text ("The piece at: " ++ TypeShow fromPos ++ " is not a " ++ TypeShow name ++ ".")))
             (TE' (TL.Text ("There is no piece at: " ++ TypeShow fromPos ++ ".")))))
@@ -475,7 +475,7 @@ type instance Eval (PromotePawnMove fromPos toPos promoteTo boardDec)
 -- Type family for moving a piece, and putting it through a series of checks first
 data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (Move fromPos toPos boardDec) = Eval ((
-    CheckNoCheck (GetMovingTeam boardDec) . MoveNoChecks fromPos toPos . 
+    ShouldHavePromotedCheck toPos . CheckNoCheck (GetMovingTeam boardDec) . MoveNoChecks fromPos toPos . 
         NotTakingKingCheck toPos .
         CanMoveCheck fromPos toPos .
         NotTakingOwnTeamCheck toPos .
