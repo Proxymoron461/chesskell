@@ -13,57 +13,29 @@ import FirstClassFunctions
 import ChessTypes
 
 import TestTypes
+import FailedPromotionTests
 
-type WhitePromPawn  = MkPiece White Pawn (Info Z (At A Nat2) False)
-type WhitePromPawn2 = MkPiece White Pawn (Info Z (At A Nat7) False)
-type WhitePromPawn3 = MkPiece White Pawn (Info (S Z) (At B Nat3) False)
-type BlackPromPawn  = MkPiece Black Pawn (Info Z (At B Nat8) False)
-type BlackPromPawn2 = MkPiece Black Pawn (Info (S Z) (At C Nat2) False)
-type PromotionBoard = EmptyRow
-                    :-> (Just WhitePromPawn :-> Nothing :-> Just BlackPromPawn2 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
-                    :-> (Nothing :-> Just WhitePromPawn3 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :-> EmptyRow
-                    :-> (Just WhitePromPawn2 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Just (MkPiece White King (Info Z (At F Nat7) False)) :-> Nothing :<> Nothing)
-                    :<> (Nothing :-> Just BlackPromPawn :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Just (MkPiece Black King (Info Z (At H Nat8) False)))
+whiteRookPromotion :: True :~: Eval (IsPieceAtWhichDec (Eval (PromotePawnMove (At A Nat7) (At A Nat8) Rook BlackLastPromDec)) (At A Nat8) IsRook)
+whiteRookPromotion = Refl
 
-type BlackLastPromDec = Dec PromotionBoard Black (At C Nat2) '(At F Nat7, At H Nat8) Nat2
-type WhiteLastPromDec = Dec PromotionBoard White (At B Nat3) '(At F Nat7, At H Nat8) Nat2
+-- whiteQueenPromotion :: True :~: Eval (IsPieceAtWhichDec (Eval (PromotePawnMove (At A Nat7) (At A Nat8) Queen BlackLastPromDec)) (At A Nat8) IsQueen)
+-- whiteQueenPromotion = Refl
 
-whitePawnMustPromote :: Proxy (a :: BoardDecorator)
-whitePawnMustPromote = Proxy @(Eval (Move (At A Nat7) (At A Nat8) BlackLastPromDec))
+-- blackBishopPromotion :: True :~: Eval (IsPieceAtWhichDec (Eval (PromotePawnMove (At C Nat2) (At C Nat1) Pawn WhiteLastPromDec)) (At C Nat1) IsBishop)
+-- blackBishopPromotion = Refl
 
-blackPawnMustPromote :: Proxy (a :: BoardDecorator)
-blackPawnMustPromote = Proxy @(Eval (Move (At C Nat2) (At C Nat1) WhiteLastPromDec))
-
-whiteKingPromotion :: Proxy (a :: BoardDecorator)
-whiteKingPromotion = Proxy @(Eval (PromotePawnMove (At A Nat7) (At A Nat8) King BlackLastPromDec))
-
-blackKingPromotion :: Proxy (a :: BoardDecorator)
-blackKingPromotion = Proxy @(Eval (PromotePawnMove (At C Nat2) (At C Nat1) King WhiteLastPromDec))
-
-whitePawnPromotion :: Proxy (a :: BoardDecorator)
-whitePawnPromotion = Proxy @(Eval (PromotePawnMove (At A Nat7) (At A Nat8) Pawn BlackLastPromDec))
-
-blackPawnPromotion :: Proxy (a :: BoardDecorator)
-blackPawnPromotion = Proxy @(Eval (PromotePawnMove (At C Nat2) (At C Nat1) Pawn WhiteLastPromDec))
+-- blackKnightPromotion :: True :~: Eval (IsPieceAtWhichDec (Eval (PromotePawnMove (At C Nat2) (At C Nat1) Pawn WhiteLastPromDec)) (At C Nat1) IsKnight)
+-- blackKnightPromotion = Refl
 
 promotionTestSuite = describe "Promotion Tests" $ do
-    describe "Must Promote Tests" $ do
-        it "1: A White Pawn must promote when it is moving from row 7 to row 8" $
-            shouldNotTypeCheck whitePawnMustPromote
-        it "2: A Black Pawn must promote when it is moving from row 2 to row 1" $
-            shouldNotTypeCheck blackPawnMustPromote
-    describe "Disallowed Promotion Tests" $ do
-        it "1: White Pieces cannot promote to Kings" $
-            shouldNotTypeCheck whiteKingPromotion
-        it "2: Black Pieces cannot promote to Kings" $
-            shouldNotTypeCheck blackKingPromotion
-        it "3: White Pieces cannot promote to Pawns" $
-            shouldNotTypeCheck whitePawnPromotion
-        it "4: Black Pieces cannot promote to Pawns" $
-            shouldNotTypeCheck blackPawnPromotion
-
--- promoteTo :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) -> SPieceName promoteTo -> SPosition toPos
---       -> Spec (Proxy (Eval (PromotePawnMove fromPos toPos promoteTo b)))
+    failedPromotionTestSuite -- defined in FailedPromotionTests.hs
+    describe "Correct Promotion Tests" $ do
+        it "1: Promoting to a Rook should put a Rook at the target position" $
+            shouldTypeCheck whiteRookPromotion
+        -- it "2: Promoting to a Queen should put a Queen at the target position" $
+        --     shouldTypeCheck whiteQueenPromotion
+        -- it "3: Promoting to a Bishop should put a Bishop at the target position" $
+        --     shouldTypeCheck blackBishopPromotion
+        -- it "4: Promoting to a Knight should put a Knight at the target position" $
+        --     shouldTypeCheck blackKnightPromotion
+        
