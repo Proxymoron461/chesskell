@@ -21,6 +21,7 @@ import KingTests
 import SideCases
 import MiscTests
 import CastleTests
+import PromotionTests
 
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
@@ -33,5 +34,6 @@ main = hspec $ do
   kingTestSuite  -- Defined in KingTests.hs
   -- movementTestSuite -- Defined in Movement.hs
   castleTestSuite -- Defined in CastleTests.hs
+  promotionTestSuite -- Defined in PromotionTests.hs
 
     
