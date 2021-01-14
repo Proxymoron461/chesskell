@@ -381,7 +381,7 @@ type family PawnReachableDiagNE (c :: Bool) (t :: Team) (p :: Position) (b :: Bo
     PawnReachableDiagNE _ _ (At _ Nat8) boardDec = '[]
     PawnReachableDiagNE False team (At col row) boardDec = '[ OneRight (At col (S row)) ]
     PawnReachableDiagNE True team (At col row) boardDec =
-        Eval (If (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam (OppositeTeam' team))))
+        Eval (If (Eval (IsPieceAtWhichDec boardDec (OneRight (At col (S row))) (HasTeam (OppositeTeam' team))))
             (ID '[ OneRight (At col (S row)) ])
             (ID '[]))
 
@@ -390,25 +390,25 @@ type family PawnReachableDiagNW (c :: Bool) (t :: Team) (p :: Position) (b :: Bo
     PawnReachableDiagNW _ _ (At _ Nat8) boardDec = '[]
     PawnReachableDiagNW False team (At col row) boardDec = '[ OneLeft (At col (S row)) ]
     PawnReachableDiagNW True team (At col row) boardDec =
-        Eval (If (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam (OppositeTeam' team))))
+        Eval (If (Eval (IsPieceAtWhichDec boardDec (OneLeft (At col (S row))) (HasTeam (OppositeTeam' team))))
             (ID '[ OneLeft (At col (S row)) ] )
             (ID '[]))
 
 type family PawnReachableDiagSE (c :: Bool) (t :: Team) (p :: Position) (b :: BoardDecorator) :: [Position] where
     PawnReachableDiagSE _ _ (At H _) boardDec = '[]
-    PawnReachableDiagSE _ _ (At _ Z) boardDec = '[]
+    PawnReachableDiagSE _ _ (At _ Nat1) boardDec = '[]
     PawnReachableDiagSE False team (At col (S row)) boardDec = '[ OneRight (At col row) ]
     PawnReachableDiagSE True team (At col (S row)) boardDec =
-        Eval (If (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (HasTeam (OppositeTeam' team))))
+        Eval (If (Eval (IsPieceAtWhichDec boardDec (OneRight (At col row)) (HasTeam (OppositeTeam' team))))
             (ID '[ OneRight (At col row) ])
             (ID '[]))
 
 type family PawnReachableDiagSW (c :: Bool) (t :: Team) (p :: Position) (b :: BoardDecorator) :: [Position] where
     PawnReachableDiagSW _ _ (At A _) boardDec = '[]
-    PawnReachableDiagSW _ _ (At _ Z) boardDec = '[]
+    PawnReachableDiagSW _ _ (At _ Nat1) boardDec = '[]
     PawnReachableDiagSW False team (At col (S row)) boardDec = '[ OneLeft (At col row) ]
     PawnReachableDiagSW True team (At col (S row)) boardDec =
-        Eval (If (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (HasTeam (OppositeTeam' team))))
+        Eval (If (Eval (IsPieceAtWhichDec boardDec (OneLeft (At col row)) (HasTeam (OppositeTeam' team))))
             (ID '[ OneLeft (At col row) ])
             (ID '[]))
 
