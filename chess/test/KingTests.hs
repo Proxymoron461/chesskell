@@ -14,52 +14,28 @@ import FirstClassFunctions
 import ChessTypes
 
 import TestTypes
+import KingCheckTests
 
 -- FIXME: Each compiles individually - it's compiling them all that kills it.
 -- WHAT THE FLIP
 
--- isKingTest1 :: True :~: Eval (Eval (IsKing (MkPiece White King TestInfo)) :&&: (IsKing (MkPiece White King TestInfo)))
--- isKingTest1 = Refl
+isKingTest1 :: True :~: Eval (Eval (IsKing (MkPiece White King TestInfo)) :&&: (IsKing (MkPiece Black King TestInfo)))
+isKingTest1 = Refl
 
--- isKingTest2 :: False :~: Eval (Eval (IsKing (MkPiece Black Pawn TestInfo)) :||: (IsKing (MkPiece White Queen TestInfo)))
--- isKingTest2 = Refl
+isKingTest2 :: False :~: Eval (Eval (IsKing (MkPiece Black Pawn TestInfo)) :||: (IsKing (MkPiece White Queen TestInfo)))
+isKingTest2 = Refl
 
--- -- TODO: Slow, but doesn't crash compiler
--- getUnderAttackPositions1 :: True :~: Eval (Eval (GetAdjacent (At F Nat5)) :=:=: Eval (GetUnderAttackPositions White (Eval (SetPieceAt (MkPiece White King TestInfo) EmptyBoard (At F Nat5)))))
--- getUnderAttackPositions1 = Refl
+-- TODO: Slow, but doesn't crash compiler
+getUnderAttackPositions1 :: True :~: Eval (Eval (GetAdjacent (At F Nat5)) :=:=: Eval (GetUnderAttackPositions White (Eval (SetPieceAtDec (MkPiece White King TestInfo) EmptyDec (At F Nat5)))))
+getUnderAttackPositions1 = Refl
 
--- -- TODO: Slow, but doesn't crash compiler
--- getUnderAttackPositions2 :: False :~: Eval ((At F Nat3) `In` (Eval (GetUnderAttackPositions White (Eval (SetPiecesAt '[ '(MkPiece White Rook TestInfo, At F Nat5), '(MkPiece Black Pawn TestInfo, At F Nat4) ] EmptyBoard)))))
--- getUnderAttackPositions2 = Refl
+-- TODO: Slow, but doesn't crash compiler
+getUnderAttackPositions2 :: False :~: Eval ((At F Nat3) `In` (Eval (GetUnderAttackPositions White (Eval (SetPiecesAtDec '[ '(MkPiece White Rook TestInfo, At F Nat5), '(MkPiece Black Pawn TestInfo, At F Nat4) ] EmptyDec)))))
+getUnderAttackPositions2 = Refl
 
--- -- TODO: Slow, but doesn't crash compiler
--- getUnderAttackPositions3 :: ('[] :: [Position]) :~: Eval (GetUnderAttackPositions Black (Eval (SetPieceAt (MkPiece White King TestInfo) EmptyBoard (At F Nat5))))
--- getUnderAttackPositions3 = Refl
-
--- -- TODO: Slow, but doesn't crash compiler
--- kingCheckTest1 :: True :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Pawn TestInfo, At E Nat6) ] EmptyBoard)))
--- kingCheckTest1 = Refl
-
--- -- TODO: Slow, but doesn't crash compiler
--- kingCheckTest2 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Rook TestInfo, At F Nat8), '(MkPiece White Queen TestInfo, At F Nat6) ] EmptyBoard)))
--- kingCheckTest2 = Refl
-
--- -- TODO: Slow, but doesn't crash compiler
--- kingCheckTest3 :: True :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Rook TestInfo, At F Nat8), '(MkPiece Black Queen TestInfo, At F Nat6) ] EmptyBoard)))
--- kingCheckTest3 = Refl
-
--- -- TODO: Slow, but doesn't crash compiler
--- kingCheckTest4 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Rook TestInfo, At F Nat8), '(MkPiece Black Pawn TestInfo, At F Nat6) ] EmptyBoard)))
--- kingCheckTest4 = Refl
-
--- -- TODO: Slow, but doesn't crash compiler
--- kingCheckTest5 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Pawn TestInfo, At F Nat6) ] EmptyBoard)))
--- kingCheckTest5 = Refl
-
--- -- TODO: Slow, but doesn't crash compiler
--- type CheckTest6Board = Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Pawn TestInfo, At E Nat6) ] EmptyBoard)
--- kingCheckTest6 :: Eval (IsKingInCheck White CheckTest6Board) :~: Eval (Eval (GetKingPosition White CheckTest6Board) `In` Eval (GetUnderAttackPositions (Eval (OppositeTeam White)) CheckTest6Board))
--- kingCheckTest6 = Refl
+-- TODO: Slow, but doesn't crash compiler
+getUnderAttackPositions3 :: ('[] :: [Position]) :~: Eval (GetUnderAttackPositions Black (Eval (SetPieceAtDec (MkPiece White King TestInfo) EmptyDec (At F Nat5))))
+getUnderAttackPositions3 = Refl
 
 -- These first two tests should not type check - the program should throw a type error if
 -- either side has a missing King
@@ -82,11 +58,11 @@ findKingPositionTest2 :: At D Nat4 :~: GetKingPosition Black (Eval (SetPieceAtDe
 findKingPositionTest2 = Refl
 
 kingTestSuite = describe "King Tests" $ do
-    -- describe "IsKing Tests" $ do
-    --   it "1: King pieces should return true" $
-    --     shouldTypecheck isKingTest1
-    --   it "2: Non-King pieces should return false" $
-    --     shouldTypecheck isKingTest2
+    describe "IsKing Tests" $ do
+      it "1: King pieces should return True" $
+        shouldTypecheck isKingTest1
+      it "2: Non-King pieces should return False" $
+        shouldTypecheck isKingTest2
     describe "FindKing Tests" $ do
       it "1: If there is no White King on the board, FindKing should throw an error" $
         shouldNotTypecheck findKingTest1
@@ -101,16 +77,11 @@ kingTestSuite = describe "King Tests" $ do
         shouldTypecheck findKingPositionTest1
       it "2: GetKingPosition should return the correct position of the Black King" $
         shouldTypecheck findKingPositionTest2
-    -- describe "IsKingInCheck Tests" $ do
-    --   it "1" $
-    --     shouldTypecheck kingCheckTest1
-    --   it "2" $
-    --     shouldTypecheck kingCheckTest2
-    --   it "3" $
-    --     shouldTypecheck kingCheckTest3
-    --   it "4" $
-    --     shouldTypecheck kingCheckTest4
-    --   it "5: A Pawn cannot put a King into check by simply being able to move to the King's position." $
-    --     shouldTypecheck kingCheckTest5
-    --   it "6: The result of IsKingInCheck should be identical to the result of manually checking if the King is in an attack position" $
-    --     shouldTypecheck kingCheckTest6
+    kingCheckTestSuite  -- Defined in KingCheckTests.hs
+    describe "GetUnderAttackPositions Tests" $ do
+      it "1: A board with a single King should have all under attack positions be all positions adjacent to the king" $
+        shouldTypecheck getUnderAttackPositions1
+      it "2: A White rook should not be able to attack a position behind a Black piece" $
+        shouldTypecheck getUnderAttackPositions2
+      it "3: A board with only White pieces should not have no positions under attack by the Black team" $
+        shouldTypecheck getUnderAttackPositions3
