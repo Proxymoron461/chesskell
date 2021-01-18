@@ -476,8 +476,8 @@ type instance Eval (PromotePawnMove fromPos toPos promoteTo boardDec)
 data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (Move fromPos toPos boardDec) = Eval ((
     ShouldHavePromotedCheck toPos . CheckNoCheck (GetMovingTeam boardDec) . MoveNoChecks fromPos toPos . 
-        NotTakingKingCheck toPos .
         CanMoveCheck fromPos toPos .
+        NotTakingKingCheck toPos .
         NotTakingOwnTeamCheck toPos .
         NotSamePosCheck fromPos toPos .
         NotLastToMoveCheck fromPos .
