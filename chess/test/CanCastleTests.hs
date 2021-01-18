@@ -46,11 +46,11 @@ canCastleTest3 = it "3: If there are pieces between the Black King and its' Rook
    shouldTypecheck canCastleTestRefl3
 
 canCastleTest4 :: Test.Hspec.Spec
-canCastleTest4 = it "4: Even if Black can only castle to the left, CanCastle Black should return true." $
+canCastleTest4 = it "4: Even if Black can only castle to the left, it should still be able to castle to the right." $
    shouldTypecheck canCastleTestRefl4
 
 canCastleTest5 :: Test.Hspec.Spec
-canCastleTest5 = it "5: Even if White can only castle to the right, CanCastle White should return true." $
+canCastleTest5 = it "5: Even if White can only castle to the right, it should still be able to castle to the left." $
    shouldTypecheck canCastleTestRefl5
 
 canCastleTestSuite :: Test.Hspec.Spec
