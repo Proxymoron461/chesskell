@@ -22,6 +22,8 @@ import SideCases
 import MiscTests
 import CastleTests
 import PromotionTests
+import PawnTakeTests
+import KnightMoveTests
 
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
@@ -35,5 +37,8 @@ main = hspec $ do
   -- movementTestSuite -- Defined in Movement.hs
   castleTestSuite -- Defined in CastleTests.hs
   promotionTestSuite -- Defined in PromotionTests.hs
+  describe "FIDE Laws Tests" $ do
+    pawnTakeTestSuite -- Defined in PawnTakeTests.hs
+    knightMoveTestSuite -- Defined in KnightMoveTests.hs
 
     
