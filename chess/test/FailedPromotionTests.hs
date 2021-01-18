@@ -1,6 +1,7 @@
 module FailedPromotionTests where
 
 import Test.Hspec
+import Test.ShouldNotTypecheck (shouldNotTypecheck)
 import Test.HUnit.Lang (Assertion, assertFailure)
 import Data.Type.Equality ((:~:)(..))
 import qualified GHC.TypeLits as TL (Nat)
@@ -11,8 +12,6 @@ import Lib
 import Vec
 import FirstClassFunctions
 import ChessTypes
-
-import TestTypes
 
 type WhitePromPawn  = MkPiece White Pawn (Info Z (At A Nat2) False)
 type WhitePromPawn2 = MkPiece White Pawn (Info Z (At A Nat7) False)
@@ -52,16 +51,16 @@ blackPawnPromotion = Proxy @(Eval (PromotePawnMove (At C Nat2) (At C Nat1) Pawn 
 failedPromotionTestSuite = describe "Failed Promotion Tests" $ do
     describe "Must Promote Tests" $ do
         it "1: A White Pawn must promote when it is moving from row 7 to row 8" $
-            shouldNotTypeCheck whitePawnMustPromote
+            shouldNotTypecheck whitePawnMustPromote
         it "2: A Black Pawn must promote when it is moving from row 2 to row 1" $
-            shouldNotTypeCheck blackPawnMustPromote
+            shouldNotTypecheck blackPawnMustPromote
     describe "Disallowed Promotion Tests" $ do
         it "1: White Pieces cannot promote to Kings" $
-            shouldNotTypeCheck whiteKingPromotion
+            shouldNotTypecheck whiteKingPromotion
         it "2: Black Pieces cannot promote to Kings" $
-            shouldNotTypeCheck blackKingPromotion
+            shouldNotTypecheck blackKingPromotion
         it "3: White Pieces cannot promote to Pawns" $
-            shouldNotTypeCheck whitePawnPromotion
+            shouldNotTypecheck whitePawnPromotion
         it "4: Black Pieces cannot promote to Pawns" $
-            shouldNotTypeCheck blackPawnPromotion
+            shouldNotTypecheck blackPawnPromotion
         
