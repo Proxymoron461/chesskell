@@ -24,6 +24,9 @@ import CastleTests
 import PromotionTests
 import PawnTakeTests
 import KnightMoveTests
+import NoUnderAttackCastleTests
+import CannotMoveThroughTests
+import CannotTakeOwnTeamTests
 
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
@@ -40,5 +43,8 @@ main = hspec $ do
   describe "FIDE Laws Tests" $ do
     pawnTakeTestSuite -- Defined in PawnTakeTests.hs
     knightMoveTestSuite -- Defined in KnightMoveTests.hs
+    noCastleUnderAttackTestSuite -- Defined in NoUnderAttackCastleTests.hs
+    cannotMoveThroughTestSuite -- Defined in CannotMoveThroughTests.hs
+    cannotTakeOwnTeamTestSuite -- Defined in CannotTakeOwnTeamTests.hs
 
     
