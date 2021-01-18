@@ -16,9 +16,6 @@ import ChessTypes
 import TestTypes
 import KingCheckTests
 
--- FIXME: Each compiles individually - it's compiling them all that kills it.
--- WHAT THE FLIP
-
 isKingTest1 :: True :~: Eval (Eval (IsKing (MkPiece White King TestInfo)) :&&: (IsKing (MkPiece Black King TestInfo)))
 isKingTest1 = Refl
 

@@ -27,27 +27,24 @@ import TestTypes
 --         Eval (pos `In` (Eval (GetEnPassantPosition (OneLeft pos) boardDec)))
 --         :&&: (pos `In` (Eval (GetEnPassantPosition (OneRight pos) boardDec))))
 
--- -- data IsSpaceVulnerableToEnPassant :: Team -> Board -> Position -> Exp Bool
--- -- Team is the ATTACKING TEAM
--- -- data GetEnPassantPosition :: Position -> BoardDecorator -> Exp [Position]
--- type WhitePawnFirst = FromJust' (Eval (Move (At A Nat2) (At A Nat4) StartDec))
+-- type WhitePawnFirst = (Eval (Move (At A Nat2) (At A Nat4) StartDec))
 -- enPassantTest1 :: True :~: IsSpaceVulnerableToEnPassant WhitePawnFirst (At A Nat4)
 -- enPassantTest1 = Refl
 
--- enPassantTest2 :: False :~: IsSpaceVulnerableToEnPassant (FromJust' (Eval (Move (At A Nat2) (At A Nat3) StartDec))) (At A Nat3)
+-- enPassantTest2 :: False :~: IsSpaceVulnerableToEnPassant ((Eval (Move (At A Nat2) (At A Nat3) StartDec))) (At A Nat3)
 -- enPassantTest2 = Refl
 
--- type BlackPawnFirst = FromJust' (Eval (Move (At A Nat7) (At A Nat5) StartDec))
+-- type BlackPawnFirst = (Eval (Move (At A Nat7) (At A Nat5) StartDec))
 -- enPassantTest3 :: True :~: IsSpaceVulnerableToEnPassant BlackPawnFirst (At A Nat5)
 -- enPassantTest3 = Refl
 
--- enPassantTest4 :: False :~: IsSpaceVulnerableToEnPassant (FromJust' (Eval (Move (At A Nat7) (At A Nat6) StartDec))) (At A Nat6)
+-- enPassantTest4 :: False :~: IsSpaceVulnerableToEnPassant ((Eval (Move (At A Nat7) (At A Nat6) StartDec))) (At A Nat6)
 -- enPassantTest4 = Refl
 
--- enPassantTest5 :: False :~: IsSpaceVulnerableToEnPassant (FromJust' (Eval (Move (At A Nat7) (At A Nat6) WhitePawnFirst))) (At A Nat4)
+-- enPassantTest5 :: False :~: IsSpaceVulnerableToEnPassant ((Eval (Move (At A Nat7) (At A Nat6) WhitePawnFirst))) (At A Nat4)
 -- enPassantTest5 = Refl
 
--- enPassantTest6 :: False :~: IsSpaceVulnerableToEnPassant (FromJust' (Eval (Move (At A Nat2) (At A Nat3) BlackPawnFirst))) (At A Nat5)
+-- enPassantTest6 :: False :~: IsSpaceVulnerableToEnPassant ((Eval (Move (At A Nat2) (At A Nat3) BlackPawnFirst))) (At A Nat5)
 -- enPassantTest6 = Refl
 
 -- enPassantTest1 = chess

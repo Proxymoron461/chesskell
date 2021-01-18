@@ -172,6 +172,7 @@ d4 :: Test.Hspec.Spec
 d4 = it "4: If the right Rook has moved, but the left one hasn't, HaveRooksMoved should return '(False, True)" $
       shouldTypeCheck haveRooksMovedTest4
 
+-- -- TODO: Find a way to include??
 -- d5 :: Test.Hspec.Spec
 -- d5 = it "5: If both Rooks have moved, HaveRooksMoved should return '(True, True)" $
 --       shouldTypeCheck $ fromProxyTrue (haveRooksMovedTest5 bothWhiteRooksMovedBoard)
