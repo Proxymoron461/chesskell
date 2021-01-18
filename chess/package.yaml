@@ -66,6 +66,7 @@ tests:
       - -fdefer-type-errors
       - -fno-cse
       - -fno-full-laziness
+      - -freduction-depth=0
     dependencies:
       - chess
       - hspec
