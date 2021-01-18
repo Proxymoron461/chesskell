@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -fdefer-type-errors #-}
-
 import Test.Hspec
 import Test.HUnit.Lang (Assertion, assertFailure)
 import Test.ShouldNotTypecheck (shouldNotTypecheck)
