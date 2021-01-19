@@ -26,6 +26,8 @@ import NoUnderAttackCastleTests
 import CannotMoveThroughTests
 import CannotTakeOwnTeamTests
 import CannotMoveIntoCheckTests
+import CannotStayInCheckTests
+import CannotCauseCheckTests
 
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
@@ -46,5 +48,7 @@ main = hspec $ do
     cannotMoveThroughTestSuite -- Defined in CannotMoveThroughTests.hs
     cannotTakeOwnTeamTestSuite -- Defined in CannotTakeOwnTeamTests.hs
     cannotMoveIntoCheckTestSuite -- Defined in CannotMoveIntoCheckTests.hs
+    cannotStayInCheckTestSuite -- Defined in CannotStayInCheckTests.hs
+    cannotCauseCheckTestSuite -- defined in CannotCauseCheckTests.hs
 
     
