@@ -45,27 +45,19 @@ type instance Eval (Foldr f z (x :-> xs)) = Eval (f x (Eval (Foldr f z xs)))
 type instance Eval (Find f VEnd)       = Nothing
 type instance Eval (Find f (x :-> xs)) = Eval (If (Eval (f x)) (ID (Just x)) (Find f xs))
 
--- When using Maybes, this returns another maybe!
--- :kind! Eval (VecAt TestBoard Z) :: Maybe Row
--- data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
-data VecAt :: Vec n a -> Nat -> Exp (Maybe a)
-type instance Eval (VecAt VEnd _)           = Nothing
-type instance Eval (VecAt (x :-> xs) Z)     = Just x
-type instance Eval (VecAt (x :-> xs) (S n)) = Eval (VecAt xs n)
-
 -- :kind! Eval ((A :-> B :<> C) !! (S (S Z))) = 'Just C
-data (!!) :: Vec n a -> Nat -> Exp (Maybe a)
-type instance Eval (vec !! nat) = Eval (VecAt vec nat)
+data (!!) :: Vec Eight a -> Nat -> Exp (Maybe a)
+type instance Eval (vec !! nat) = Just $ VecAt vec nat
 
-type family VAUgly (vec :: Vec Eight a) (n :: Nat) :: a where
-    VAUgly (a :-> xs) Nat0 = a
-    VAUgly (a :-> b :-> xs) Nat1 = b
-    VAUgly (a :-> b :-> c :-> xs) Nat2 = c
-    VAUgly (a :-> b :-> c :-> d :-> xs) Nat3 = d
-    VAUgly (a :-> b :-> c :-> d :-> e :-> xs) Nat4 = e
-    VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> xs) Nat5 = f
-    VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> xs) Nat6 = g
-    VAUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> xs) Nat7 = h
+type family VecAt (vec :: Vec Eight a) (n :: Nat) :: a where
+    VecAt (a :-> _) Nat0 = a
+    VecAt (a :-> b :-> _) Nat1 = b
+    VecAt (a :-> b :-> c :-> _) Nat2 = c
+    VecAt (a :-> b :-> c :-> d :-> _) Nat3 = d
+    VecAt (a :-> b :-> c :-> d :-> e :-> _) Nat4 = e
+    VecAt (a :-> b :-> c :-> d :-> e :-> f :-> _) Nat5 = f
+    VecAt (a :-> b :-> c :-> d :-> e :-> f :-> g :-> _) Nat6 = g
+    VecAt (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> _) Nat7 = h
 
 data PutAt :: a -> Nat -> Vec n a -> Exp (Vec n a)
 type instance Eval (PutAt x Z (y :-> ys))     = x :-> ys

@@ -239,14 +239,14 @@ data GetPieceAtDec :: BoardDecorator -> Position -> Exp (Maybe Piece)
 type instance Eval (GetPieceAtDec boardDec pos) = Eval (GetPieceAt (GetBoard boardDec) pos)
 
 data GPANCUgly :: Board -> Position -> Exp (Maybe Piece)
-type instance Eval (GPANCUgly (a :-> xs) (At col Nat1)) = VAUgly a (ColToIndex col)
-type instance Eval (GPANCUgly (a :-> b :-> c) (At col Nat2)) = VAUgly b (ColToIndex col)
-type instance Eval (GPANCUgly (a :-> b :-> c :-> d) (At col Nat3)) = VAUgly c (ColToIndex col)
-type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e) (At col Nat4)) = VAUgly d (ColToIndex col)
-type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f) (At col Nat5)) = VAUgly e (ColToIndex col)
-type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g) (At col Nat6)) = VAUgly f (ColToIndex col)
-type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h) (At col Nat7)) = VAUgly g (ColToIndex col)
-type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> xs) (At col Nat8)) = VAUgly h (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> xs) (At col Nat1)) = VecAt a (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c) (At col Nat2)) = VecAt b (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d) (At col Nat3)) = VecAt c (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e) (At col Nat4)) = VecAt d (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f) (At col Nat5)) = VecAt e (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g) (At col Nat6)) = VecAt f (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h) (At col Nat7)) = VecAt g (ColToIndex col)
+type instance Eval (GPANCUgly (a :-> b :-> c :-> d :-> e :-> f :-> g :-> h :-> xs) (At col Nat8)) = VecAt h (ColToIndex col)
 
 data GetPieceAtWhich :: Board -> Position -> (a -> Exp Bool) -> Exp (Maybe Piece)
 type instance Eval (GetPieceAtWhich board pos f) = Eval (MaybeWhich f (Eval (GetPieceAt board pos)))
@@ -313,7 +313,7 @@ data SetPiecesAtDec :: [(Piece, Position)] -> BoardDecorator -> Exp BoardDecorat
 type instance Eval (SetPiecesAtDec pps boardDec) = Eval (Foldr (Uncurry2 SetPieceAtDecSwapped) boardDec pps)
 
 data GetRow :: Board -> Nat -> Exp (Maybe Row)
-type instance Eval (GetRow board (S n)) = Just $ VAUgly board n
+type instance Eval (GetRow board (S n)) = Just $ VecAt board n
 
 -- Uses 1 for first row, and 8 for last row!
 data SetRow :: Board -> Nat -> Row -> Exp Board
@@ -386,26 +386,7 @@ type family OneUp (p :: Position) :: Position where
 
 type LastMoveInfo = (Maybe Board, Team)
 
--- type StartBoard = Eval (SetPiecesAt '[ '(MkPiece Black King MyTestInfo, At A Nat1), '(MkPiece White King MyTestInfo, At H Nat8), '(MkPiece Black Queen MyTestInfo, At D Nat3), '(MkPiece White Queen MyTestInfo, At E Nat3)] EmptyBoard)
 type StartInfo = 'Info Z (At A Z) False
-
-type family RowPositions (n :: TL.Nat) :: [Position] where
-    RowPositions n = RowPositionsDTNat (FromGHC n)
-
-type family RowPositionsDTNat (n :: Nat) :: [Position] where
-    RowPositionsDTNat n = '[ At A n, At B n, At C n, At D n, At E n, At F n, At G n, At H n]
-
--- Left-to-right construction of a row of pieces, given the team
-type family PieceRow (t :: Team) :: [Piece] where
-    PieceRow t = ('[
-        MkPiece t Rook StartInfo,
-        MkPiece t Knight StartInfo,
-        MkPiece t Bishop StartInfo,
-        MkPiece t Queen StartInfo,
-        MkPiece t King StartInfo,
-        MkPiece t Bishop StartInfo,
-        MkPiece t Knight StartInfo,
-        MkPiece t Rook StartInfo ])
 
 type EmptyRow   = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow

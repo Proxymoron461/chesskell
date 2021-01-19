@@ -65,6 +65,14 @@ type instance Eval (Equal (S m) (S n)) = Eval (Equal m n)
 type instance Eval (Equal Z (S n)) = False
 type instance Eval (Equal (S m) Z) = False
 type instance Eval (Equal Z Z) = True
+-- type instance Eval (Equal Nat1 Nat1) = True
+-- type instance Eval (Equal Nat2 Nat2) = True
+-- type instance Eval (Equal Nat3 Nat3) = True
+-- type instance Eval (Equal Nat4 Nat4) = True
+-- type instance Eval (Equal Nat5 Nat5) = True
+-- type instance Eval (Equal Nat6 Nat6) = True
+-- type instance Eval (Equal Nat7 Nat7) = True
+-- type instance Eval (Equal Nat8 Nat8) = True
 
 data NatToTLNat :: Nat -> Exp TL.Nat
 type instance Eval (NatToTLNat n) = ToGHC n
@@ -180,8 +188,11 @@ type family IsTypeEqualNonFCF (x :: a) (y :: b) :: Bool where
 -- :kind! Eval (If (Eval (IsJust (Eval (GetPieceAt TestBoard (At A 1))))) (ID "yes") (ID "no")) = "yes"
 -- :kind! Eval (If (Eval (IsJust (Eval (GetPieceAt TestBoard (At A 2))))) (ID "yes") (ID "no")) = "no"
 data If :: Bool -> Exp b -> Exp b -> Exp b
-type instance Eval (If 'True thenDo elseDo) = Eval thenDo
-type instance Eval (If 'False  thenDo elseDo) = Eval elseDo
+type instance Eval (If cond thenDo elseDo) = If' cond thenDo elseDo
+
+type family If' (b :: Bool) (t :: Exp a) (e :: Exp a) :: a where
+    If' 'True  x _ = Eval x
+    If' 'False _ y = Eval y
 
 -- :kind! Eval (MaybeIf IsZero (Just Z)) = 'True
 -- :kind! Eval (MaybeIf IsZero (Just (S Z))) = 'False
