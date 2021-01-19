@@ -38,11 +38,9 @@ type BlackNoLeftRight = (Just (MkPiece White Rook (Info Z (At A Nat1) False)) :-
 type WhiteNoLeftRightDec = Dec WhiteNoLeftRight Black (At D Nat7) '(At E Nat1, At E Nat8) Nat1
 type BlackNoLeftRightDec = Dec BlackNoLeftRight White (At D Nat2) '(At E Nat1, At E Nat8) Nat1
 
--- -- FIXME: This causes stack reduction errors?
 whiteKingCannotMoveIntoCheck :: Proxy (a :: BoardDecorator)
 whiteKingCannotMoveIntoCheck = Proxy @(Eval (Move (At E Nat1) (At F Nat1) WhiteNoLeftRightDec))
 
--- -- FIXME: This causes stack reduction errors?
 blackKingCannotMoveIntoCheck :: Proxy (a :: BoardDecorator)
 blackKingCannotMoveIntoCheck = Proxy @(Eval (Move (At E Nat8) (At D Nat8) BlackNoLeftRightDec))
 
