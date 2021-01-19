@@ -324,26 +324,26 @@ data (:+) :: Nat -> Column -> Exp (Maybe Column)
 data (:-) :: Nat -> Column -> Exp (Maybe Column)
 
 type instance Eval ((:+) Z         col) = Just col
-type instance Eval ((:+) (S Z)     A) = Just B
-type instance Eval ((:+) (S Z)     B) = Just C
-type instance Eval ((:+) (S Z)     C) = Just D
-type instance Eval ((:+) (S Z)     D) = Just E
-type instance Eval ((:+) (S Z)     E) = Just F
-type instance Eval ((:+) (S Z)     F) = Just G
-type instance Eval ((:+) (S Z)     G) = Just H
-type instance Eval ((:+) (S Z)     H) = Nothing
-type instance Eval ((:+) (S (S n)) col) = Eval (Bind ((:+) (S n)) (Eval ((:+) (S Z) col)))
+type instance Eval ((:+) (S Z)     A)   = Just B
+type instance Eval ((:+) (S Z)     B)   = Just C
+type instance Eval ((:+) (S Z)     C)   = Just D
+type instance Eval ((:+) (S Z)     D)   = Just E
+type instance Eval ((:+) (S Z)     E)   = Just F
+type instance Eval ((:+) (S Z)     F)   = Just G
+type instance Eval ((:+) (S Z)     G)   = Just H
+type instance Eval ((:+) (S Z)     H)   = Nothing
+type instance Eval ((:+) (S (S n)) col) = Eval ((Eval ((:+) (S Z) col)) >>= ((:+) (S n)))
 
 type instance Eval ((:-) Z         col) = Just col
-type instance Eval ((:-) (S Z)     A) = Nothing
-type instance Eval ((:-) (S Z)     B) = Just A
-type instance Eval ((:-) (S Z)     C) = Just B
-type instance Eval ((:-) (S Z)     D) = Just C
-type instance Eval ((:-) (S Z)     E) = Just D
-type instance Eval ((:-) (S Z)     F) = Just E
-type instance Eval ((:-) (S Z)     G) = Just F
-type instance Eval ((:-) (S Z)     H) = Just G
-type instance Eval ((:-) (S (S n)) col) = Eval (Bind ((:-) (S n)) (Eval ((:-) (S Z) col)))
+type instance Eval ((:-) (S Z)     A)   = Nothing
+type instance Eval ((:-) (S Z)     B)   = Just A
+type instance Eval ((:-) (S Z)     C)   = Just B
+type instance Eval ((:-) (S Z)     D)   = Just C
+type instance Eval ((:-) (S Z)     E)   = Just D
+type instance Eval ((:-) (S Z)     F)   = Just E
+type instance Eval ((:-) (S Z)     G)   = Just F
+type instance Eval ((:-) (S Z)     H)   = Just G
+type instance Eval ((:-) (S (S n)) col) = Eval ((Eval ((:-) (S Z) col)) >>= ((:-) (S n)))
 
 type family ColToIndex (col :: Column) :: Nat where
     ColToIndex A = Nat0
