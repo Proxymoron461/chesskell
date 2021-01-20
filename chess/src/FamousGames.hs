@@ -13,8 +13,8 @@ kholmovVsBronstein = chess
     knight _g1 to _f3
     knight _g8 to _f6
     knight _b1 to _c3
-    pawn _d7 to _d6 end  -- Successfully compiles, with <= 22GB memory usage.
-    -- pawn _d2 to _d4 end
+    pawn _d7 to _d6 -- end  -- Successfully compiles, with <= 22GB memory usage.
+    pawn _d2 to _d4 end
     -- pawn _c5 to _d4 end  -- FIXME: Too much memory usage.
     -- knight _f3 to _d4
     -- pawn _a7 to _a6

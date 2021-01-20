@@ -15,27 +15,26 @@ import ChessTypes
 
 import TestTypes
 
--- TODO: Slow, but doesn't crash compiler
+
 kingCheckTest1 :: True :~: Eval (IsKingInCheck White (Eval (SetPiecesAtDec '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Pawn TestInfo, At E Nat6) ] EmptyDec)))
 kingCheckTest1 = Refl
 
--- TODO: Slow, but doesn't crash compiler
+
 kingCheckTest2 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAtDec '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Rook TestInfo, At F Nat8), '(MkPiece White Queen TestInfo, At F Nat6) ] EmptyDec)))
 kingCheckTest2 = Refl
 
--- TODO: Slow, but doesn't crash compiler
+
 kingCheckTest3 :: True :~: Eval (IsKingInCheck White (Eval (SetPiecesAtDec '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Rook TestInfo, At F Nat8), '(MkPiece Black Queen TestInfo, At F Nat6) ] EmptyDec)))
 kingCheckTest3 = Refl
 
--- TODO: Slow, but doesn't crash compiler
+
 kingCheckTest4 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAtDec '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Rook TestInfo, At F Nat8), '(MkPiece Black Pawn TestInfo, At F Nat6) ] EmptyDec)))
 kingCheckTest4 = Refl
 
--- TODO: Slow, but doesn't crash compiler
+
 kingCheckTest5 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAtDec '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Pawn TestInfo, At F Nat6) ] EmptyDec)))
 kingCheckTest5 = Refl
 
--- -- TODO: Slow, but doesn't crash compiler
 -- TODO: Set white king position in kingCheckTest6??
 type CheckTest6Board = Eval (SetPiecesAtDec '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Pawn TestInfo, At E Nat6) ] EmptyDec)
 kingCheckTest6 :: Eval (IsKingInCheck White CheckTest6Board) :~: Eval ((GetKingPosition White CheckTest6Board) `In` Eval (GetUnderAttackPositions (Eval (OppositeTeam White)) CheckTest6Board))
