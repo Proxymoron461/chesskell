@@ -314,26 +314,26 @@ data IsKingInCheck :: Team -> BoardDecorator -> Exp Bool
 type instance Eval (IsKingInCheck team boardDec) = Eval (IsKingInCheckHelper (GetKingPosition team boardDec) team boardDec)
 
 data IsKingInCheckHelper :: Position -> Team -> BoardDecorator -> Exp Bool
--- type instance Eval (IsKingInCheckHelper kingPos team boardDec) = Eval (LazyAny '[
---     SendLeftRay kingPos team boardDec,  -- Just this on its own causes 20GB. What??
---     SendRightRay kingPos team boardDec,
---     SendAboveRay kingPos team boardDec,
---     SendBelowRay kingPos team boardDec, 
---     SendNWRay kingPos team boardDec,
---     SendNERay kingPos team boardDec,
---     SendSWRay kingPos team boardDec,
---     SendSERay kingPos team boardDec,
---     IsKnightAttacking kingPos team boardDec ])
-type instance Eval (IsKingInCheckHelper kingPos team boardDec) = EagerAny '[
-    SendLeftRay' kingPos team boardDec,  -- Also 25GB. What the heck.
-    SendRightRay' kingPos team boardDec,
-    SendAboveRay' kingPos team boardDec,
-    SendBelowRay' kingPos team boardDec,
-    SendNWRay' kingPos team boardDec,
-    SendNERay' kingPos team boardDec,
-    SendSWRay' kingPos team boardDec,
-    SendSERay' kingPos team boardDec,
-    Eval (IsKnightAttacking kingPos team boardDec) ]
+type instance Eval (IsKingInCheckHelper kingPos team boardDec) = Eval (LazyAny '[
+    SendLeftRay kingPos team boardDec,  -- Just this on its own causes 20GB. What??
+    SendRightRay kingPos team boardDec,
+    SendAboveRay kingPos team boardDec,
+    SendBelowRay kingPos team boardDec, 
+    SendNWRay kingPos team boardDec,
+    SendNERay kingPos team boardDec,
+    SendSWRay kingPos team boardDec,
+    SendSERay kingPos team boardDec,
+    IsKnightAttacking kingPos team boardDec ])
+-- type instance Eval (IsKingInCheckHelper kingPos team boardDec) = EagerAny '[
+--     SendLeftRay' kingPos team boardDec,  -- Also 25GB. What the heck.
+--     SendRightRay' kingPos team boardDec,
+--     SendAboveRay' kingPos team boardDec,
+--     SendBelowRay' kingPos team boardDec,
+--     SendNWRay' kingPos team boardDec,
+--     SendNERay' kingPos team boardDec,
+--     SendSWRay' kingPos team boardDec,
+--     SendSERay' kingPos team boardDec,
+--     Eval (IsKnightAttacking kingPos team boardDec) ]
 
 data LazyAny :: [Exp Bool] -> Exp Bool
 type instance Eval (LazyAny '[]) = False
@@ -586,9 +586,20 @@ type instance Eval (PromotePawnMove fromPos toPos promoteTo boardDec)
 
 -- Type family for moving a piece, and putting it through a series of checks first
 data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (Move fromPos toPos boardDec) = Eval ((
-    ShouldHavePromotedCheck toPos . CheckNoCheck (GetMovingTeam boardDec) . MoveNoChecks fromPos toPos .  -- 1m37 and 25GB!
-    -- ShouldHavePromotedCheck toPos . MoveNoChecks fromPos toPos .  -- 24 seconds, with 7.6 GB of memory usage!! Incredible!
+-- type instance Eval (Move fromPos toPos boardDec) = Eval ((
+--     ShouldHavePromotedCheck toPos . CheckNoCheck . MoveNoChecks fromPos toPos .  -- 1m37 and 25GB!
+--     -- ShouldHavePromotedCheck toPos . MoveNoChecks fromPos toPos .  -- 24 seconds, with 7.6 GB of memory usage!! Incredible!
+--         CanMoveCheck fromPos toPos .
+--         NotTakingKingCheck toPos .
+--         NotTakingOwnTeamCheck toPos .
+--         NotSamePosCheck fromPos toPos .
+--         NotLastToMoveCheck fromPos .
+--         TeamCheck fromPos) boardDec)
+type instance Eval (Move fromPos toPos boardDec) = Eval ((ShouldHavePromotedCheck toPos . CheckNoCheck) (Eval (MoveWithPreChecks fromPos toPos boardDec)))
+
+data MoveWithPreChecks :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (MoveWithPreChecks fromPos toPos boardDec) = Eval (
+    (MoveNoChecks fromPos toPos .  -- 1m37 and 25GB!
         CanMoveCheck fromPos toPos .
         NotTakingKingCheck toPos .
         NotTakingOwnTeamCheck toPos .
@@ -651,11 +662,12 @@ type instance Eval (NotLastToMoveCheck fromPos boardDec)
         (ID boardDec)
 
 -- Checks to be done AFTER moving
-data CheckNoCheck :: Team -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (CheckNoCheck team boardDec) =
-    If' (Eval (IsKingInCheck team boardDec))
-        (TE' (TL.Text ("The " ++ TypeShow team ++ " King is in check after a " ++ TypeShow team ++ " move. This is not allowed.")))
+data CheckNoCheck :: BoardDecorator -> Exp BoardDecorator
+type instance Eval (CheckNoCheck boardDec) =
+    If' (Eval (IsKingInCheck (GetLastTeam boardDec) boardDec))
+        (TE' (TL.Text ("The " ++ TypeShow (GetLastTeam boardDec) ++ " King is in check after a " ++ TypeShow (GetLastTeam boardDec) ++ " move. This is not allowed.")))
         (ID boardDec)
+-- type instance Eval (CheckNoCheck boardDec) = boardDec
 
 -- TODO: Check from King's position which pieces are reachable!
 
