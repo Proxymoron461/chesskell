@@ -34,10 +34,6 @@ type instance Eval (VFilterCount p xs) = Eval (FilterCount p (Eval (VecToList xs
 type instance Eval (Map f VEnd)       = VEnd
 type instance Eval (Map f (x :-> xs)) = Eval (f x) :-> Eval (Map f xs)
 
--- Vector instance for Length
-type instance Eval (Length VEnd)       = Nat0
-type instance Eval (Length (x :-> xs)) = Nat1 + Eval (Length xs)
-
 -- Vector instance for Foldr
 type instance Eval (Foldr f z VEnd)       = z
 type instance Eval (Foldr f z (x :-> xs)) = Eval (f x (Eval (Foldr f z xs)))

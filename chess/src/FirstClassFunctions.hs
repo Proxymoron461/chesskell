@@ -164,10 +164,8 @@ type instance Eval (Sequence (Nothing ': xs)) = Eval (Sequence xs)
 type instance Eval (Sequence (Just x  ': xs)) = Eval (Eval (Sequence xs) >>= ((CW Just) . (CW2 (:)) x))
 
 -- A quick way of checking if two types are equal!
-data IsTypeEqual :: a -> b -> Exp Bool
-type instance Eval (IsTypeEqual a b) = IsTypeEqualNonFCF a b
 data (:==:) :: a -> b -> Exp Bool
-type instance Eval (a :==: b) = Eval (IsTypeEqual a b)
+type instance Eval (a :==: b) = IsTypeEqualNonFCF a b
 
 -- Function for checking list equality by elements
 data (:=:=:) :: [a] -> [b] -> Exp Bool
@@ -231,15 +229,7 @@ type instance Eval (FromMaybeLazy b f (Just x)) = Eval (f x)
 data Const :: a -> b -> Exp a
 type instance Eval (Const a _) = a
 
-
--- :kind! Eval (Holds [IsJust, MaybeIf IsZero] (Just Z)) = 'True
--- :kind! Eval (Holds [IsJust, MaybeIf IsZero] (Just (S Z))) = 'False
--- Applies a list of predicates to a value, and only passes if all the predicates are true.
-data Holds :: [a -> Exp Bool] -> a -> Exp Bool
-type instance Eval (Holds '[] x)       = True
-type instance Eval (Holds (f ': fs) x) = Eval ((Eval (f x)) :&&: (Holds fs x))
-
-data In :: a -> [a] -> Exp Bool
+data In :: a -> t a -> Exp Bool
 type instance Eval (In x ys) = Eval (Any ((:==:) x) ys)
 
 -- :kind! Eval (Or True (TE' (TL.Text "eeeeh")))
@@ -275,17 +265,20 @@ type family Not' (x :: Bool) :: Bool where
 type family PairNot' (x :: (Bool, Bool)) :: (Bool, Bool) where
     PairNot' '(x, y) = '(Not' x, Not' y)
 
-data Any :: (a -> Exp Bool) -> [a] -> Exp Bool
-type instance Eval (Any p '[])       = False
-type instance Eval (Any p (x ': xs)) = Eval (Eval (p x) :||: Any p xs)
+data OrPred :: (a -> Exp Bool) -> a -> Bool -> Exp Bool
+type instance Eval (OrPred p a b) = Eval (Eval (p a) :||: (ID b))
 
-data All :: (a -> Exp Bool) -> [a] -> Exp Bool
-type instance Eval (All p '[])       = True
-type instance Eval (All p (x ': xs)) = Eval (Eval (p x) :&&: All p xs)
+data AndPred :: (a -> Exp Bool) -> a -> Bool -> Exp Bool
+type instance Eval (AndPred p a b) = Eval (Eval (p a) :&&: (ID b))
+
+data Any :: (a -> Exp Bool) -> f a -> Exp Bool
+type instance Eval (Any p xs) = Eval (Foldr (OrPred p) False xs)
+
+data All :: (a -> Exp Bool) -> f a -> Exp Bool
+type instance Eval (All p xs) = Eval (Foldr (AndPred p) True xs)
 
 data Length :: t a -> Exp Nat
-type instance Eval (Length '[])        = Z
-type instance Eval (Length (x ': xs))  = (S Z) + Eval (Length xs)
+type instance Eval (Length xs) = Eval (Foldr Add Nat0 xs)
 
 data Tail :: [a] -> Exp [a]
 type instance Eval (Tail '[])       = '[]
