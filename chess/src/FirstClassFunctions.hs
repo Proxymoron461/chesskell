@@ -295,7 +295,7 @@ type instance Eval (MapFilter f p (x ': xs)) = Eval (MapFilterHelper (Eval (f x)
 data MapFilterHelper :: b -> (a -> Exp b) -> (b -> Exp Bool) -> [a] -> Exp [b]
 type instance Eval (MapFilterHelper x f p ys) = Eval (If (Eval (p x)) (ID (x ': (Eval (MapFilter f p ys)))) (MapFilter f p ys))
 
-data Filter :: (a -> Exp Bool) -> [a] -> Exp [a]
+data Filter :: (a -> Exp Bool) -> f a -> Exp (f a)
 type instance Eval (Filter p '[]) = '[]
 type instance Eval (Filter p (x ': xs)) = Eval (If (Eval (p x)) (ID (x ': Eval (Filter p xs))) (Filter p xs))
 

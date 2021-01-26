@@ -77,12 +77,17 @@ data Cons :: a -> [a] -> Exp [a]
 type instance Eval (Cons x xs) = (x ': xs)
 
 -- FingerTree instance of (++)
-type instance (Empty ++ rightTree) = rightTree
-type instance ((Single x) ++ rightTree) = x :< rightTree
-type instance ((Deep leftL leftM leftR) ++ Empty) = (Deep leftL leftM leftR)
-type instance ((Deep leftL leftM leftR) ++ (Single x)) = (Deep leftL leftM leftR) :> x
-type instance ((Deep leftL leftM leftR) ++ (Deep rightL rightM rightR))
-    = Deep leftL (AddTree1Digit leftM (ToNode leftR rightL) rightM) rightR
+type instance (leftTree ++ rightTree) = FingerTreeAppend leftTree rightTree
+
+type family FingerTreeAppend (x :: FingerTree a) (y :: FingerTree a) :: FingerTree a where
+    FingerTreeAppend Empty rightTree = rightTree
+    FingerTreeAppend (Single x) Empty = Single x
+    FingerTreeAppend (Single x) (Single y) = Deep (One x) Empty (One y)
+    FingerTreeAppend (Single x) rightTree = x :< rightTree
+    FingerTreeAppend (Deep leftL leftM leftR) Empty = (Deep leftL leftM leftR)
+    FingerTreeAppend (Deep leftL leftM leftR) (Single x) = (Deep leftL leftM leftR) :> x
+    FingerTreeAppend (Deep leftL leftM leftR) (Deep rightL rightM rightR)
+        = Deep leftL (AddTree1Digit leftM (ToNode leftR rightL) rightM) rightR
 
 type family ToNode (d1 :: Digit a) (d2 :: Digit a) :: Digit (Node a) where
     ToNode (One x) (One a) = One (Node2 x a)
@@ -125,3 +130,11 @@ type family AddTree1Digit (t1 :: FingerTree a) (d1 :: Digit a) (t2 :: FingerTree
         = Deep leftL (AddTree1Digit leftM (ToNode leftR rightL) rightM) rightR
 
 -- TODO: FingerTree instance of (<*>)
+
+-- FingerTree instance of Filter
+type instance Eval (Filter p Empty) = Empty
+type instance Eval (Filter p (Single x)) = If' (Eval (p x)) (ID (Single x)) (ID Empty)
+type instance Eval (Filter p (Deep left middle right)) = Eval (Foldr (IfCons p) Empty (Deep left middle right))
+
+data IfCons :: (a -> Exp Bool) -> a -> FingerTree a -> Exp (FingerTree a)
+type instance Eval (IfCons p x xs) = If' (Eval (p x)) (x :<: xs) (ID xs)
