@@ -370,7 +370,7 @@ type instance Eval (PieceAttackList (MkPiece team King info) boardDec)   = Eval 
 type family KingMoveList (p :: Piece) (b :: BoardDecorator) :: [Position] where
     KingMoveList (MkPiece team King info) boardDec
         = (Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (GetPosition' info))))
-            ++ GetCastlePositions team boardDec) 
+            ++ GetCastlePositions team boardDec)
 
 -- data PieceHasMoveCount :: Nat -> Piece -> Exp Bool
 type family CanCastle (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
@@ -586,15 +586,6 @@ type instance Eval (PromotePawnMove fromPos toPos promoteTo boardDec)
 
 -- Type family for moving a piece, and putting it through a series of checks first
 data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
--- type instance Eval (Move fromPos toPos boardDec) = Eval ((
---     ShouldHavePromotedCheck toPos . CheckNoCheck . MoveNoChecks fromPos toPos .  -- 1m37 and 25GB!
---     -- ShouldHavePromotedCheck toPos . MoveNoChecks fromPos toPos .  -- 24 seconds, with 7.6 GB of memory usage!! Incredible!
---         CanMoveCheck fromPos toPos .
---         NotTakingKingCheck toPos .
---         NotTakingOwnTeamCheck toPos .
---         NotSamePosCheck fromPos toPos .
---         NotLastToMoveCheck fromPos .
---         TeamCheck fromPos) boardDec)
 type instance Eval (Move fromPos toPos boardDec) = Eval ((ShouldHavePromotedCheck toPos . CheckNoCheck) (Eval (MoveWithPreChecks fromPos toPos boardDec)))
 
 data MoveWithPreChecks :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
