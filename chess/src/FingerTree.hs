@@ -123,3 +123,5 @@ type family AddTree1Digit (t1 :: FingerTree a) (d1 :: Digit a) (t2 :: FingerTree
     AddTree1Digit (Deep leftL leftM leftR) dig (Single y) = AddDigitRight (Deep leftL leftM leftR) dig :> y
     AddTree1Digit (Deep leftL leftM leftR) dig (Deep rightL rightM rightR)
         = Deep leftL (AddTree1Digit leftM (ToNode leftR rightL) rightM) rightR
+
+-- TODO: FingerTree instance of (<*>)
