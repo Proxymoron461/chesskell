@@ -68,9 +68,7 @@ type instance Eval (Foldr f z (Node3 a b c)) = Eval (f a (Eval (f b (Eval (f c z
 type instance Eval (Foldr f z Empty)                    = z
 type instance Eval (Foldr f z (Single x))               = Eval (f x z)
 type instance Eval (Foldr f z (Deep left middle right))
-    -- = Eval (Foldr f (Eval (Foldr (Foldr f) (Eval (Foldr f z right)) middle)) left)  -- FIXME: Does not reduce
-    = Eval (Foldr (Foldr f) z middle)  -- FIXME: Does not reduce
-    -- = Eval (Foldr f (Eval (Foldr f z right)) left)  -- Works just fine
+    = Eval (Foldr f (Eval (Foldr (Flip (Foldr f)) (Eval (Foldr f z right)) middle)) left)
 
 data ToList :: f a -> Exp [a]
 type instance Eval (ToList x) = Eval (Foldr Cons '[] x)
