@@ -18,6 +18,9 @@ type family (:<) (x :: a) (n :: FingerTree a) :: FingerTree a where
     x :< Deep (One y)        middle right = Deep (Two x y) middle right
     x :< Deep (Two y z)      middle right = Deep (Three x y z) middle right
     x :< Deep (Three y z w)  middle right = Deep (Four x y z w) middle right
+    x :< Deep (Four y z w a) Empty (One b) = Deep (Four x y z w) Empty (Two a b)
+    x :< Deep (Four y z w a) Empty (Two b c) = Deep (Four x y z w) Empty (Three a b c)
+    x :< Deep (Four y z w a) Empty (Three b c d) = Deep (Four x y z w) Empty (Four a b c d)
     x :< Deep (Four y z w a) middle right = Deep (Two x y) (Node3 z w a :< middle) right
 infixr 5 :<
 
@@ -30,6 +33,9 @@ type family (:>) (n :: FingerTree a) (x :: a) :: FingerTree a where
     Deep left middle (One y)        :> x = Deep left middle (Two y x)
     Deep left middle (Two y z)      :> x = Deep left middle (Three y z x)
     Deep left middle (Three y z w)  :> x = Deep left middle (Four y z w x)
+    Deep (One b) Empty (Four y z w a) :> x = Deep (Two b y) Empty (Four z w a x)
+    Deep (Two b c) Empty (Four y z w a) :> x = Deep (Three b c y) Empty (Four z w a x)
+    Deep (Three b c d) Empty (Four y z w a) :> x = Deep (Four b c d y) Empty (Four z w a x)
     Deep left middle (Four y z w a) :> x = Deep left (middle :> Node3 y z w) (Two a x)
 infixl 5 :>
 
