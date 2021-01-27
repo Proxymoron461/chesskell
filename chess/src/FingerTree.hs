@@ -36,6 +36,22 @@ infixl 5 :>
 data (:>:) :: FingerTree a -> a -> Exp (FingerTree a)
 type instance Eval (tree :>: a) = tree :> a
 
+type family Head (x :: FingerTree a) :: a where
+    Head Empty = TL.TypeError (TL.Text "Attempting to get Head of an empty FingerTree!")
+    Head (Single x)                = x
+    Head (Deep (One x)        _ _) = x
+    Head (Deep (Two x _)      _ _) = x
+    Head (Deep (Three x _ _)  _ _) = x
+    Head (Deep (Four x _ _ _) _ _) = x
+
+type family Tail' (x :: FingerTree a) :: FingerTree a where
+    Tail' Empty = TL.TypeError (TL.Text "Attempting to get Tail of an empty FingerTree!")
+    Tail' (Single x) = Empty
+    Tail' (Deep (Two x y) middle right) = Deep (One y) middle right
+    Tail' (Deep (Three x y z) middle right) = Deep (Two y z) middle right
+    Tail' (Deep (Four x y z w) middle right) = Deep (Three y z w) middle right
+    Tail' (Deep (One x) middle right) = Eval (Foldr (Flip (Foldr (:<:))) (Eval (Foldr (:<:) Empty right)) middle)
+
 -- Node instance for Map
 type instance Eval (Map f (Node2 x y))    = Node2 (Eval (f x)) (Eval (f y))
 type instance Eval (Map f (Node3 x y z))  = Node3 (Eval (f x)) (Eval (f y)) (Eval (f z))
@@ -69,12 +85,6 @@ type instance Eval (Foldr f z Empty)                    = z
 type instance Eval (Foldr f z (Single x))               = Eval (f x z)
 type instance Eval (Foldr f z (Deep left middle right))
     = Eval (Foldr f (Eval (Foldr (Flip (Foldr f)) (Eval (Foldr f z right)) middle)) left)
-
-data ToList :: f a -> Exp [a]
-type instance Eval (ToList x) = Eval (Foldr Cons '[] x)
-
-data Cons :: a -> [a] -> Exp [a]
-type instance Eval (Cons x xs) = (x ': xs)
 
 -- FingerTree instance of (++)
 type instance (leftTree ++ rightTree) = FingerTreeAppend leftTree rightTree
@@ -138,3 +148,22 @@ type instance Eval (Filter p (Deep left middle right)) = Eval (Foldr (IfCons p) 
 
 data IfCons :: (a -> Exp Bool) -> a -> FingerTree a -> Exp (FingerTree a)
 type instance Eval (IfCons p x xs) = If' (Eval (p x)) (x :<: xs) (ID xs)
+
+data FromList :: [a] -> Exp (FingerTree a)
+type instance Eval (FromList xs) = Eval (Foldr (:<:) Empty xs)
+
+data ToList :: f a -> Exp [a]
+type instance Eval (ToList x) = Eval (Foldr Cons '[] x)
+
+data Cons :: a -> [a] -> Exp [a]
+type instance Eval (Cons x xs) = (x ': xs)
+
+-- FingerTree instance of TakeWhilePlus
+type instance Eval (TakeWhilePlus p q Empty) = Empty
+type instance Eval (TakeWhilePlus p q (Single x)) = If' (Eval (p x)) (ID (Single x)) (ID Empty)
+type instance Eval (TakeWhilePlus p q (Deep left middle right))
+    = Eval (If (Eval (p (Head (Deep left middle right))))
+        ((Head (Deep left middle right)) :<: Eval (TakeWhilePlus p q (Tail' (Deep left middle right))))
+        (If (Eval (q (Head (Deep left middle right))))
+            (ID (Single (Head (Deep left middle right))))
+            (ID Empty)))

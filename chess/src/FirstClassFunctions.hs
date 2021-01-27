@@ -310,12 +310,12 @@ type instance Eval (TakeNat Z     _)         = '[]
 type instance Eval (TakeNat (S n) '[])       = '[]
 type instance Eval (TakeNat (S n) (x ': xs)) = x ': Eval (TakeNat n xs)
 
-data TakeWhile :: (a -> Exp Bool) -> [a] -> Exp [a]
+data TakeWhile :: (a -> Exp Bool) -> f a -> Exp (f a)
 type instance Eval (TakeWhile p xs) = Eval (TakeWhilePlus p (Const False) xs)
 
 -- The regular TakeWhile, but on the first element that fails the test, it runs a second predicate.
 -- Useful for empty spaces, and then checking the first piece you come across is of a different team.
-data TakeWhilePlus :: (a -> Exp Bool) -> (a -> Exp Bool) -> [a] -> Exp [a]
+data TakeWhilePlus :: (a -> Exp Bool) -> (a -> Exp Bool) -> f a -> Exp (f a)
 type instance Eval (TakeWhilePlus p q '[]) = '[]
 type instance Eval (TakeWhilePlus p q (x ': xs)) = Eval (If (Eval (p x)) (ID (x ': Eval (TakeWhilePlus p q xs))) (If (Eval (q x)) (ID '[ x ]) (ID '[])))
 

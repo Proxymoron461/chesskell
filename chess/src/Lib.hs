@@ -12,20 +12,17 @@ someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
 data GetAllBelow :: Position -> Exp (FingerTree Position)
-type instance Eval (GetAllBelow (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetweenDTNat row Nat0)))))
+type instance Eval (GetAllBelow pos) = GetAllBelow' pos
 
 type family GetAllBelow' (n :: Position) :: FingerTree Position where
     GetAllBelow' (At col Nat1) = Single (At col Nat1)
-    GetAllBelow' (At col Nat2) = Deep (One (At col Nat1)) Empty (One (At col Nat2))
-    GetAllBelow' (At col Nat3) = 
-    GetAllBelow' (At col Nat4) =
-    GetAllBelow' (At col Nat5) =
-    GetAllBelow' (At col Nat6) =
-    GetAllBelow' (At col Nat7) =
-    GetAllBelow' (At col Nat8) =
-
-data GetNBelow :: TL.Nat -> Position -> Exp (FingerTree Position)
-type instance Eval (GetNBelow n (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetweenDTNat row (row - (FromGHC n)))))))
+    GetAllBelow' (At col Nat2) = Deep (One (At col Nat2)) Empty (One (At col Nat1))
+    GetAllBelow' (At col Nat3) = Deep (Two (At col Nat3) (At col Nat2)) Empty (One (At col Nat1))
+    GetAllBelow' (At col Nat4) = Deep (Three (At col Nat4) (At col Nat3) (At col Nat2)) Empty (One (At col Nat1))
+    GetAllBelow' (At col Nat5) = Deep (Four (At col Nat5) (At col Nat4) (At col Nat3) (At col Nat2)) Empty (One (At col Nat1))
+    GetAllBelow' (At col Nat6) = Deep (Four (At col Nat6) (At col Nat5) (At col Nat4) (At col Nat3)) Empty (Two (At col Nat2) (At col Nat1))
+    GetAllBelow' (At col Nat7) = Deep (Four (At col Nat7) (At col Nat6) (At col Nat5) (At col Nat4)) Empty (Three (At col Nat3) (At col Nat2) (At col Nat1))
+    GetAllBelow' (At col Nat8) = Deep (Four (At col Nat8) (At col Nat7) (At col Nat6) (At col Nat5)) Empty (Four (At col Nat4) (At col Nat3) (At col Nat2) (At col Nat1))
 
 -- Takes in x and y, and performs x - y with a lower bound of 0
 data SafeMinus :: TL.Nat -> TL.Nat -> Exp TL.Nat
@@ -37,111 +34,108 @@ type instance Eval (SafeMinusHelper x y EQ) = 0
 type instance Eval (SafeMinusHelper x y GT) = x TL.- y
 
 data GetAllAbove :: Position -> Exp (FingerTree Position)
-type instance Eval (GetAllAbove (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetweenDTNat row Nat8)))))
+type instance Eval (GetAllAbove pos) = GetAllAbove' pos
 
-data GetNAbove :: TL.Nat -> Position -> Exp (FingerTree Position)
-type instance Eval (GetNAbove n (At col row)) = Eval (Filter IsValidPosition (Eval (Map (CW (At col)) (Eval (RangeBetweenDTNat row (row + (FromGHC n)))))))
-
--- (:+) :: Nat -> Column -> Exp (Maybe Column)
-data GetNRight :: TL.Nat -> Position -> Exp (FingerTree Position)
-type instance Eval (GetNRight n pos) = Eval (Filter IsValidPosition (Eval (GetNRightPositionsNoChecks n pos)))
-
--- TODO: Combine with GetNLeftMaybes to achieve DRY?
-data GetNRightMaybes :: TL.Nat -> Position -> Exp [Maybe Column]
-type instance Eval (GetNRightMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:+)) col) (Eval (Map TLNatToNat (Eval (RangeBetween 0 n)))))))
-
--- TODO: Combine with GetNLeftPositionsNoChecks to achieve DRY?
-data GetNRightPositionsNoChecks :: TL.Nat -> Position -> Exp (FingerTree Position)
-type instance Eval (GetNRightPositionsNoChecks n (At col row)) = Eval (Map (((Flip (CW2 At)) row) . FromJust) (Eval (GetNRightMaybes n (At col row))))
+type family GetAllAbove' (n :: Position) :: FingerTree Position where
+    GetAllAbove' (At col Nat8) = Single (At col Nat8)
+    GetAllAbove' (At col Nat7) = Deep (One (At col Nat7)) Empty (One (At col Nat8))
+    GetAllAbove' (At col Nat6) = Deep (Two (At col Nat6) (At col Nat7)) Empty (One (At col Nat8))
+    GetAllAbove' (At col Nat5) = Deep (Three (At col Nat5) (At col Nat6) (At col Nat7)) Empty (One (At col Nat8))
+    GetAllAbove' (At col Nat4) = Deep (Four (At col Nat4) (At col Nat5) (At col Nat6) (At col Nat7)) Empty (One (At col Nat8))
+    GetAllAbove' (At col Nat3) = Deep (Four (At col Nat3) (At col Nat4) (At col Nat5) (At col Nat6)) Empty (Two (At col Nat7) (At col Nat8))
+    GetAllAbove' (At col Nat2) = Deep (Four (At col Nat2) (At col Nat3) (At col Nat4) (At col Nat5)) Empty (Three (At col Nat6) (At col Nat7) (At col Nat8))
+    GetAllAbove' (At col Nat1) = Deep (Four (At col Nat1) (At col Nat2) (At col Nat3) (At col Nat4)) Empty (Four (At col Nat5) (At col Nat6) (At col Nat7) (At col Nat8))
 
 data GetAllRight :: Position -> Exp (FingerTree Position)
-type instance Eval (GetAllRight pos) = Eval (GetNRight 8 pos)
+type instance Eval (GetAllRight pos) = GetAllRight' pos
 
-data GetNLeft :: TL.Nat -> Position -> Exp (FingerTree Position)
-type instance Eval (GetNLeft n pos) = Eval (Filter IsValidPosition (Eval (GetNLeftPositionsNoChecks n pos)))
-
--- Can reverse with RangeBetweenDTNat (n + 1) 1
-data GetNLeftMaybes :: TL.Nat -> Position -> Exp [Maybe Column]
-type instance Eval (GetNLeftMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:-)) col) (Eval (Map TLNatToNat (Eval (RangeBetween 0 n)))))))
-
-data GetNLeftPositionsNoChecks :: TL.Nat -> Position -> Exp (FingerTree Position)
-type instance Eval (GetNLeftPositionsNoChecks n (At col row)) = Eval (Map (((Flip (CW2 At)) row) . FromJust) (Eval (GetNLeftMaybes n (At col row))))
+-- TODO: Optimise with base cases!
+type family GetAllRight' (n :: Position) :: FingerTree Position where
+    GetAllRight' (At H row) = Single (At H row)
+    GetAllRight' (At col row) = (At col row) :< GetAllRight' (At (R col) row)
 
 data GetAllLeft :: Position -> Exp (FingerTree Position)
-type instance Eval (GetAllLeft pos) = Eval (GetNLeft 8 pos)
+type instance Eval (GetAllLeft pos) = GetAllLeft' pos
+
+-- TODO: Optimise with base cases!
+type family GetAllLeft' (n :: Position) :: FingerTree Position where
+    GetAllLeft' (At A row) = Single (At A row)
+    GetAllLeft' (At col row) = (At col row) :< GetAllLeft' (At (L col) row)
 
 data GetAllDiagNW :: Position -> Exp (FingerTree Position)
 type instance Eval (GetAllDiagNW pos) = GetAllDiagNW' pos
 
 type family GetAllDiagNW' (p :: Position) :: FingerTree Position where
-    GetAllDiagNW' (At col Nat8) = '[ At col Nat8 ]
-    GetAllDiagNW' (At _ Z) = '[]
-    GetAllDiagNW' (At _ Nat9) = '[]
-    GetAllDiagNW' (At A row) = '[ At A row ]
-    GetAllDiagNW' (At B row) = At B row ': GetAllDiagNW' (At A (S row))
-    GetAllDiagNW' (At C row) = At C row ': GetAllDiagNW' (At B (S row))
-    GetAllDiagNW' (At D row) = At D row ': GetAllDiagNW' (At C (S row))
-    GetAllDiagNW' (At E row) = At E row ': GetAllDiagNW' (At D (S row))
-    GetAllDiagNW' (At F row) = At F row ': GetAllDiagNW' (At E (S row))
-    GetAllDiagNW' (At G row) = At G row ': GetAllDiagNW' (At F (S row))
-    GetAllDiagNW' (At H row) = At H row ': GetAllDiagNW' (At G (S row))
+    GetAllDiagNW' (At col Nat8) = Single (At col Nat8)
+    GetAllDiagNW' (At _ Z) = Empty
+    GetAllDiagNW' (At _ Nat9) = Empty
+    GetAllDiagNW' (At A row) = Single (At A row)
+    GetAllDiagNW' (At B row) = At B row :< GetAllDiagNW' (At A (S row))
+    GetAllDiagNW' (At C row) = At C row :< GetAllDiagNW' (At B (S row))
+    GetAllDiagNW' (At D row) = At D row :< GetAllDiagNW' (At C (S row))
+    GetAllDiagNW' (At E row) = At E row :< GetAllDiagNW' (At D (S row))
+    GetAllDiagNW' (At F row) = At F row :< GetAllDiagNW' (At E (S row))
+    GetAllDiagNW' (At G row) = At G row :< GetAllDiagNW' (At F (S row))
+    GetAllDiagNW' (At H row) = At H row :< GetAllDiagNW' (At G (S row))
 
 data GetAllDiagSW :: Position -> Exp (FingerTree Position)
 type instance Eval (GetAllDiagSW pos) = GetAllDiagSW' pos
 
 type family GetAllDiagSW' (p :: Position) :: FingerTree Position where
-    GetAllDiagSW' (At col Nat1) = '[ At col Nat1 ]
-    GetAllDiagSW' (At _ Z) = '[]
-    GetAllDiagSW' (At _ Nat9) = '[]
-    GetAllDiagSW' (At A row) = '[ At A row ]
-    GetAllDiagSW' (At B (S row)) = (At B (S row)) ': GetAllDiagSW' (At A row)
-    GetAllDiagSW' (At C (S row)) = (At C (S row)) ': GetAllDiagSW' (At B row)
-    GetAllDiagSW' (At D (S row)) = (At D (S row)) ': GetAllDiagSW' (At C row)
-    GetAllDiagSW' (At E (S row)) = (At E (S row)) ': GetAllDiagSW' (At D row)
-    GetAllDiagSW' (At F (S row)) = (At F (S row)) ': GetAllDiagSW' (At E row)
-    GetAllDiagSW' (At G (S row)) = (At G (S row)) ': GetAllDiagSW' (At F row)
-    GetAllDiagSW' (At H (S row)) = (At H (S row)) ': GetAllDiagSW' (At G row)
+    GetAllDiagSW' (At col Nat1) = Single (At col Nat1)
+    GetAllDiagSW' (At _ Z) = Empty
+    GetAllDiagSW' (At _ Nat9) = Empty
+    GetAllDiagSW' (At A row) = Single (At A row)
+    GetAllDiagSW' (At B (S row)) = (At B (S row)) :< GetAllDiagSW' (At A row)
+    GetAllDiagSW' (At C (S row)) = (At C (S row)) :< GetAllDiagSW' (At B row)
+    GetAllDiagSW' (At D (S row)) = (At D (S row)) :< GetAllDiagSW' (At C row)
+    GetAllDiagSW' (At E (S row)) = (At E (S row)) :< GetAllDiagSW' (At D row)
+    GetAllDiagSW' (At F (S row)) = (At F (S row)) :< GetAllDiagSW' (At E row)
+    GetAllDiagSW' (At G (S row)) = (At G (S row)) :< GetAllDiagSW' (At F row)
+    GetAllDiagSW' (At H (S row)) = (At H (S row)) :< GetAllDiagSW' (At G row)
 
 data GetAllDiagSE :: Position -> Exp (FingerTree Position)
 type instance Eval (GetAllDiagSE pos) = GetAllDiagSE' pos
 
 type family GetAllDiagSE' (p :: Position) :: FingerTree Position where
-    GetAllDiagSE' (At col Nat1) = '[ At col Nat1 ]
-    GetAllDiagSE' (At _ Z) = '[]
-    GetAllDiagSE' (At _ Nat9) = '[]
-    GetAllDiagSE' (At H row) = '[ At H row ]
-    GetAllDiagSE' (At A (S row)) = (At A (S row)) ': GetAllDiagSE' (At B row)
-    GetAllDiagSE' (At B (S row)) = (At B (S row)) ': GetAllDiagSE' (At C row)
-    GetAllDiagSE' (At C (S row)) = (At C (S row)) ': GetAllDiagSE' (At D row)
-    GetAllDiagSE' (At D (S row)) = (At D (S row)) ': GetAllDiagSE' (At E row)
-    GetAllDiagSE' (At E (S row)) = (At E (S row)) ': GetAllDiagSE' (At F row)
-    GetAllDiagSE' (At F (S row)) = (At F (S row)) ': GetAllDiagSE' (At G row)
-    GetAllDiagSE' (At G (S row)) = (At G (S row)) ': GetAllDiagSE' (At H row)
+    GetAllDiagSE' (At col Nat1) = Single (At col Nat1)
+    GetAllDiagSE' (At _ Z) = Empty
+    GetAllDiagSE' (At _ Nat9) = Empty
+    GetAllDiagSE' (At H row) = Single (At H row)
+    GetAllDiagSE' (At A (S row)) = (At A (S row)) :< GetAllDiagSE' (At B row)
+    GetAllDiagSE' (At B (S row)) = (At B (S row)) :< GetAllDiagSE' (At C row)
+    GetAllDiagSE' (At C (S row)) = (At C (S row)) :< GetAllDiagSE' (At D row)
+    GetAllDiagSE' (At D (S row)) = (At D (S row)) :< GetAllDiagSE' (At E row)
+    GetAllDiagSE' (At E (S row)) = (At E (S row)) :< GetAllDiagSE' (At F row)
+    GetAllDiagSE' (At F (S row)) = (At F (S row)) :< GetAllDiagSE' (At G row)
+    GetAllDiagSE' (At G (S row)) = (At G (S row)) :< GetAllDiagSE' (At H row)
 
 data GetAllDiagNE :: Position -> Exp (FingerTree Position)
 type instance Eval (GetAllDiagNE pos) = GetAllDiagNE' pos
 
 type family GetAllDiagNE' (p :: Position) :: FingerTree Position where
-    GetAllDiagNE' (At col Nat8) = '[ At col Nat8 ]
-    GetAllDiagNE' (At _ Z) = '[]
-    GetAllDiagNE' (At _ Nat9) = '[]
-    GetAllDiagNE' (At H row) = '[ At H row ]
-    GetAllDiagNE' (At A row) = At A row ': GetAllDiagNE' (At B (S row))
-    GetAllDiagNE' (At B row) = At B row ': GetAllDiagNE' (At C (S row))
-    GetAllDiagNE' (At C row) = At C row ': GetAllDiagNE' (At D (S row))
-    GetAllDiagNE' (At D row) = At D row ': GetAllDiagNE' (At E (S row))
-    GetAllDiagNE' (At E row) = At E row ': GetAllDiagNE' (At F (S row))
-    GetAllDiagNE' (At F row) = At F row ': GetAllDiagNE' (At G (S row))
-    GetAllDiagNE' (At G row) = At G row ': GetAllDiagNE' (At H (S row))
+    GetAllDiagNE' (At col Nat8) = Single (At col Nat8)
+    GetAllDiagNE' (At _ Z) = Empty
+    GetAllDiagNE' (At _ Nat9) = Empty
+    GetAllDiagNE' (At H row) = Single (At H row)
+    GetAllDiagNE' (At A row) = At A row :< GetAllDiagNE' (At B (S row))
+    GetAllDiagNE' (At B row) = At B row :< GetAllDiagNE' (At C (S row))
+    GetAllDiagNE' (At C row) = At C row :< GetAllDiagNE' (At D (S row))
+    GetAllDiagNE' (At D row) = At D row :< GetAllDiagNE' (At E (S row))
+    GetAllDiagNE' (At E row) = At E row :< GetAllDiagNE' (At F (S row))
+    GetAllDiagNE' (At F row) = At F row :< GetAllDiagNE' (At G (S row))
+    GetAllDiagNE' (At G row) = At G row :< GetAllDiagNE' (At H (S row))
 
 data GetAllKnightPositions :: Position -> Exp (FingerTree Position)
 type instance Eval (GetAllKnightPositions pos) = Eval (Filter IsValidPosition (Eval (GetKnightAboveBelow pos) ++ Eval (GetKnightLeftRight pos)))
 
+-- TODO: Better implementation
 data GetKnightAboveBelow :: Position -> Exp (FingerTree Position)
-type instance Eval (GetKnightAboveBelow (At col row)) = Eval (Eval (CW (CW2 At) <$> Eval (GetKnightColumns col 1)) <*> Eval (GetKnightRows row Nat2))
+type instance Eval (GetKnightAboveBelow (At col row)) = Eval (FromList (Eval (Eval (CW (CW2 At) <$> Eval (GetKnightColumns col 1)) <*> Eval (GetKnightRows row Nat2))))
 
+-- TODO: Better implementation
 data GetKnightLeftRight :: Position -> Exp (FingerTree Position)
-type instance Eval (GetKnightLeftRight (At col row)) = Eval (Eval (CW (CW2 At) <$> Eval (GetKnightColumns col 2)) <*> Eval (GetKnightRows row Nat1))
+type instance Eval (GetKnightLeftRight (At col row)) = Eval (FromList (Eval (Eval (CW (CW2 At) <$> Eval (GetKnightColumns col 2)) <*> Eval (GetKnightRows row Nat1))))
 
 data GetKnightColumns :: Column -> TL.Nat -> Exp [Column]
 type instance Eval (GetKnightColumns col n) = Eval (GetKnightColumnsNat col (Eval (TLNatToNat n)))
@@ -158,16 +152,16 @@ data GetAdjacent :: Position -> Exp (FingerTree Position)
 type instance Eval (GetAdjacent pos) = GetAdjacent' pos
 
 type family GetAdjacent' (p :: Position) :: FingerTree Position where
-    GetAdjacent' (At _ Z) = '[]
-    GetAdjacent' (At A Nat1) = '[ At B Nat1, At B Nat2, At A Nat2 ]
-    GetAdjacent' (At A Nat8) = '[ At B Nat8, At B Nat7, At A Nat7 ]
-    GetAdjacent' (At A (S row)) = '[ At A (S (S row)), At B (S (S row)), At B (S row), At B row, At A row ] 
-    GetAdjacent' (At H Nat1) = '[ At G Nat1, At G Nat2, At H Nat2 ]
-    GetAdjacent' (At H Nat8) = '[ At G Nat8, At G Nat7, At H Nat7 ]
-    GetAdjacent' (At H (S row)) = '[ At H (S (S row)), At G (S (S row)), At G (S row), At G row, At H row ]
-    GetAdjacent' (At col Nat8) = '[ At (R col) Nat8, At (R col) Nat7, At col Nat7, At (L col) Nat7, At (L col) Nat8 ]
-    GetAdjacent' (At col Nat1) = '[ At (R col) Nat1, At (R col) Nat2, At col Nat2, At (L col) Nat2, At (L col) Nat1 ]
-    GetAdjacent' (At col (S row)) = '[ At (R col) (S row), At (R col) row, At (R col) (S (S row)), At col row, At col (S (S row)), At (L col) row, At (L col) (S row), At (L col) (S (S row)) ]
+    GetAdjacent' (At _ Z) = Empty
+    GetAdjacent' (At A Nat1) = Empty :> At B Nat1 :> At B Nat2 :> At A Nat2
+    GetAdjacent' (At A Nat8) = Empty :> At B Nat8 :> At B Nat7 :> At A Nat7
+    GetAdjacent' (At A (S row)) = Empty :> At A (S (S row)) :> At B (S (S row)) :> At B (S row) :> At B row :> At A row 
+    GetAdjacent' (At H Nat1) = Empty :> At G Nat1 :> At G Nat2 :> At H Nat2
+    GetAdjacent' (At H Nat8) = Empty :> At G Nat8 :> At G Nat7 :> At H Nat7
+    GetAdjacent' (At H (S row)) = Empty :> At H (S (S row)) :> At G (S (S row)) :> At G (S row) :> At G row :> At H row
+    GetAdjacent' (At col Nat8) = Empty :> At (R col) Nat8 :> At (R col) Nat7 :> At col Nat7 :> At (L col) Nat7 :> At (L col) Nat8
+    GetAdjacent' (At col Nat1) = Empty :> At (R col) Nat1 :> At (R col) Nat2 :> At col Nat2 :> At (L col) Nat2 :> At (L col) Nat1
+    GetAdjacent' (At col (S row)) = Empty :> At (R col) (S row) :> At (R col) row :> At (R col) (S (S row)) :> At col row :> At col (S (S row)) :> At (L col) row :> At (L col) (S row) :> At (L col) (S (S row))
 
 type family L (c :: Column) :: Column where
     L B = A
@@ -189,9 +183,6 @@ type family R (c :: Column) :: Column where
     R G = H
     R H = TL.TypeError (TL.Text "Cannot go right from column H.")
 
-data GetAdjacentColumns :: Column -> Exp [Column]
-type instance Eval (GetAdjacentColumns col) = col ': Eval (Map FromJust (Eval (Filter IsJust '[Eval (Nat1 :+ col), Eval (Nat1 :- col)])))
-
 data HasRow :: Nat -> Position -> Exp Bool
 type instance Eval (HasRow x (At _ y)) = Eval ((x <=? y) :&&: ID (y <=? x))
 
@@ -212,7 +203,11 @@ data AllReachableBelow :: Team -> BoardDecorator -> Position -> Exp (FingerTree 
 type instance Eval (AllReachableBelow team boardDec pos) = Eval (AllReachableFunc team boardDec pos GetAllBelow)
 
 data AllReachableStraightLine :: Team -> BoardDecorator -> Position -> Exp (FingerTree Position)
-type instance Eval (AllReachableStraightLine team boardDec pos) = Eval (Concat (Eval (Map (AllReachableFunc team boardDec pos) '[ GetAllLeft, GetAllRight, GetAllAbove, GetAllBelow ])))
+type instance Eval (AllReachableStraightLine team boardDec pos)
+    = Eval (AllReachableFunc team boardDec pos GetAllLeft)
+      ++ Eval (AllReachableFunc team boardDec pos GetAllRight)
+      ++ Eval (AllReachableFunc team boardDec pos GetAllAbove)
+      ++ Eval (AllReachableFunc team boardDec pos GetAllBelow)
 
 data AllReachableLineAndDiag :: Team -> BoardDecorator -> Position -> Exp (FingerTree Position)
 type instance Eval (AllReachableLineAndDiag team boardDec pos) = (Eval (AllReachableStraightLine team boardDec pos)) ++ (Eval (AllReachableDiag team boardDec pos))
@@ -220,7 +215,11 @@ type instance Eval (AllReachableLineAndDiag team boardDec pos) = (Eval (AllReach
 -- Reachable square type families for all diagonal directions at once: helpful
 -- for Bishops and Queens!
 data AllReachableDiag :: Team -> BoardDecorator -> Position -> Exp (FingerTree Position)
-type instance Eval (AllReachableDiag team boardDec pos) = Eval (Concat (Eval (Map (AllReachableFunc team boardDec pos) '[ GetAllDiagNW, GetAllDiagSW, GetAllDiagSE, GetAllDiagNE ])))
+type instance Eval (AllReachableDiag team boardDec pos)
+    = Eval (AllReachableFunc team boardDec pos GetAllDiagNW)
+      ++ Eval (AllReachableFunc team boardDec pos GetAllDiagSW)
+      ++ Eval (AllReachableFunc team boardDec pos GetAllDiagSE)
+      ++ Eval (AllReachableFunc team boardDec pos GetAllDiagNE)
 
 -- type family AllReachableDiag (t :: Team) (b :: BoardDecorator) (p :: Position) :: FingerTree Position where
 
@@ -246,8 +245,9 @@ type instance Eval (AllReachableGivenList team boardDec list) = Eval (Filter (Fr
 -- General function, for taking the first N reachable positions from a particular direction.
 -- NOTE: Relies on each directional function giving them in order of distance from the player
 -- NOTE: Does not work with AllReachableDiag, as that will only be in one direction.
+-- TODO: Better definition
 data NReachableFunc :: Team -> BoardDecorator -> Position -> (Team -> BoardDecorator -> Position -> Exp (FingerTree Position)) -> TL.Nat -> Exp (FingerTree Position)
-type instance Eval (NReachableFunc team boardDec pos f n) = Eval (Take n (Eval (f team boardDec pos)))
+type instance Eval (NReachableFunc team boardDec pos f n) = Eval (FromList (Eval (Take n (Eval (ToList (Eval (f team boardDec pos)))))))
 
 data NReachableDiagNW :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
 type instance Eval (NReachableDiagNW team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableDiagNW n)
@@ -273,12 +273,6 @@ type instance Eval (NReachableLeft team boardDec pos n) = Eval (NReachableFunc t
 data NReachableRight :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
 type instance Eval (NReachableRight team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableRight n)
 
-data GetOneLeft :: Position -> Exp (Maybe Position)
-type instance Eval (GetOneLeft (At col row)) = Eval (Eval (Nat1 :- col) >>= ((CW Just) . ((Flip (CW2 At)) row)))
-
-data GetOneRight :: Position -> Exp (Maybe Position)
-type instance Eval (GetOneRight (At col row)) = Eval (Eval (Nat1 :+ col) >>= ((CW Just) . ((Flip (CW2 At)) row)))
-
 -- The pawn is the only piece whose attack rules differ from its' movement rules;
 -- so it requires a special case.
 data PawnReachableAbove :: BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
@@ -300,18 +294,25 @@ data IsQueenAt :: BoardDecorator -> Position -> Exp Bool
 type instance Eval (IsQueenAt boardDec pos) = Eval (FromMaybe False IsQueen (Eval (GetPieceAtDec boardDec pos)))
 
 data GetFreePositions :: FingerTree Position -> BoardDecorator -> Exp (FingerTree Position)
-type instance Eval (GetFreePositions '[] _) = '[]
-type instance Eval (GetFreePositions (p ': ps) boardDec) = If' (Eval ((Eval (IsPieceAt boardDec p)) :||: ((Not . IsValidPosition) p))) (GetFreePositions ps boardDec) (ID (p ': (Eval (GetFreePositions ps boardDec))))
+type instance Eval (GetFreePositions tree boardDec) = GetFreePositions' tree boardDec
+
+type family GetFreePositions' (f :: FingerTree Position) (b :: BoardDecorator) :: FingerTree Position where
+    GetFreePositions' Empty _ = Empty
+    GetFreePositions' tree  boardDec
+        = If' (Eval ((Eval (IsPieceAt boardDec (Head tree))) :||: ((Not . IsValidPosition) (Head tree))))
+            (GetFreePositions (Tail' tree) boardDec)
+            (ID ((Head tree) :< (Eval (GetFreePositions (Tail' tree) boardDec))))
 
 -- :k Foldr :: (Row -> [Pos] -> Exp [Pos]) -> [Pos] -> [Row] -> Exp [Pos]
 data GetUnderAttackPositions :: Team -> BoardDecorator -> Exp (FingerTree Position)
-type instance Eval (GetUnderAttackPositions team boardDec) = Eval (Foldr (AddRowMovesToList team boardDec) '[] (GetBoard boardDec))
+type instance Eval (GetUnderAttackPositions team boardDec) = Eval (Foldr (AddRowMovesToList team boardDec) Empty (GetBoard boardDec))
 
 data AddRowMovesToList :: Team -> BoardDecorator -> Row -> FingerTree Position -> Exp (FingerTree Position)
 type instance Eval (AddRowMovesToList team boardDec row list) = Eval (Foldr (AddMovesToList team boardDec) list row)
 
 data AddMovesToList :: Team -> BoardDecorator -> Maybe Piece -> FingerTree Position -> Exp (FingerTree Position)
-type instance Eval (AddMovesToList team boardDec maybePiece list) = Eval (FromMaybe '[] ((Flip PieceAttackList) boardDec) (If' (Eval (MaybeIf (HasTeam team) maybePiece)) (ID maybePiece) (ID Nothing))) ++ list
+type instance Eval (AddMovesToList team boardDec maybePiece list)
+    = Eval (FromMaybe Empty ((Flip PieceAttackList) boardDec) (If' (Eval (MaybeIf (HasTeam team) maybePiece)) (ID maybePiece) (ID Nothing))) ++ list
 
 type family NoKingError (b :: BoardDecorator) (team :: Team) where
     NoKingError boardDec team = TL.TypeError ((TL.Text ("There is no " ++ TypeShow team ++ " King on the board!")) TL.:$$: (TL.Text ("Error at move: " ++ TypeShow (GetNoOfMoves boardDec))))
@@ -397,8 +398,8 @@ type family CanCastleToEitherRook (t :: Team) (b :: BoardDecorator) :: (Bool, Bo
 
 -- TODO: Replace with RangeBetweenExclusive or something like that??
 type family BetweenKingAndRook (t :: Team) :: (FingerTree Position, FingerTree Position) where
-    BetweenKingAndRook White = '( SpacesBetweenInc (At D Nat1) (At B Nat1), '[ (At F Nat1), (At G Nat1) ])
-    BetweenKingAndRook Black = '( SpacesBetweenInc (At D Nat8) (At B Nat8), '[ (At F Nat8), (At G Nat8) ])
+    BetweenKingAndRook White = '( SpacesBetweenInc (At D Nat1) (At B Nat1), Single (At F Nat1) :> (At G Nat1) )
+    BetweenKingAndRook Black = '( SpacesBetweenInc (At D Nat8) (At B Nat8), Single (At F Nat8) :> (At G Nat8) )
 
 type family HasKingMoved (t :: Team) (b :: BoardDecorator) :: Bool where
     HasKingMoved team boardDec = Eval (IsPieceAtWhichDec boardDec (GetKingPosition team boardDec) (Not . PieceHasMoveCount Z))
@@ -466,12 +467,13 @@ type instance Eval (CastleSpacesToTestHelper pos)
     = '(SpacesBetweenInc pos (TwoLeft pos), SpacesBetweenInc pos (TwoRight pos))
 
 -- :kind! Eval (((Flip (CW2 At)) Z) A) = At A Z
+-- TODO: Improve with faster definition
 type family SpacesBetween (x :: Position) (y :: Position) :: FingerTree Position where
-    SpacesBetween (At col row1) (At col row2) = Eval (CW (At col) <$> Eval (RangeBetweenDTNat row1 row2))
-    SpacesBetween (At col1 row) (At col2 row) = Eval (((Flip (CW2 At)) row) <$> Eval (ColRangeBetween col1 col2))
+    SpacesBetween (At col row1) (At col row2) = Eval (CW (At col) <$> Eval (FromList ( Eval (RangeBetweenDTNat row1 row2))))
+    SpacesBetween (At col1 row) (At col2 row) = Eval (((Flip (CW2 At)) row) <$> Eval (FromList ( Eval (ColRangeBetween col1 col2))))
 
 type family SpacesBetweenInc (x :: Position) (y :: Position) :: FingerTree Position where
-    SpacesBetweenInc pos1 pos2 = pos1 ': SpacesBetween pos1 pos2
+    SpacesBetweenInc pos1 pos2 = pos1 :< SpacesBetween pos1 pos2
 
 -- First boolean argument determines the reach - the King check occurs if it is true,
 -- and it does not if it is False.
@@ -508,7 +510,7 @@ type family PawnReachableDiagNE (c :: Bool) (t :: Team) (p :: Position) (b :: Bo
     PawnReachableDiagNE False team (At col row) boardDec = Single (At (R col) (S row))
     PawnReachableDiagNE True team (At col row) boardDec =
         If' (Eval (IsPieceAtWhichDec boardDec (At (R col) (S row)) (HasTeam (OppositeTeam' team))))
-            (ID Single (At (R col) (S row)))
+            (ID (Single (At (R col) (S row))))
             (ID Empty)
 
 type family PawnReachableDiagNW (c :: Bool) (t :: Team) (p :: Position) (b :: BoardDecorator) :: FingerTree Position where
@@ -517,7 +519,7 @@ type family PawnReachableDiagNW (c :: Bool) (t :: Team) (p :: Position) (b :: Bo
     PawnReachableDiagNW False team (At col row) boardDec = Single (At (L col) (S row))
     PawnReachableDiagNW True team (At col row) boardDec =
         If' (Eval (IsPieceAtWhichDec boardDec (At (L col) (S row)) (HasTeam (OppositeTeam' team))))
-            (ID Single (At (L col) (S row)) )
+            (ID (Single (At (L col) (S row)) ))
             (ID Empty)
 
 type family PawnReachableDiagSE (c :: Bool) (t :: Team) (p :: Position) (b :: BoardDecorator) :: FingerTree Position where
@@ -526,7 +528,7 @@ type family PawnReachableDiagSE (c :: Bool) (t :: Team) (p :: Position) (b :: Bo
     PawnReachableDiagSE False team (At col (S row)) boardDec = Single (At (R col) row)
     PawnReachableDiagSE True team (At col (S row)) boardDec =
         If' (Eval (IsPieceAtWhichDec boardDec (At (R col) row) (HasTeam (OppositeTeam' team))))
-            (ID Single (At (R col) row))
+            (ID (Single (At (R col) row)))
             (ID Empty)
 
 type family PawnReachableDiagSW (c :: Bool) (t :: Team) (p :: Position) (b :: BoardDecorator) :: FingerTree Position where
@@ -535,7 +537,7 @@ type family PawnReachableDiagSW (c :: Bool) (t :: Team) (p :: Position) (b :: Bo
     PawnReachableDiagSW False team (At col (S row)) boardDec = Single (At (L col) row)
     PawnReachableDiagSW True team (At col (S row)) boardDec =
         If' (Eval (IsPieceAtWhichDec boardDec (At (L col) row) (HasTeam (OppositeTeam' team))))
-            (ID Single (At (L col) row))
+            (ID (Single (At (L col) row)))
             (ID Empty)
 
 -- Pawns can take diagonally in front of themselves: so this gets those positions if a take is possible!
@@ -555,20 +557,25 @@ type instance Eval (PawnTakePositions doIsPieceCheck (MkPiece White Pawn info) b
 data GetEnPassantPosition :: Position -> BoardDecorator -> Exp (FingerTree Position)
 type instance Eval (GetEnPassantPosition pos boardDec) =
     If' (Eval ((GetLastPosition boardDec) `In` Eval (GetLeftRightPositions pos)))
-    (FromMaybe '[] (EnPassantPosition (GetMovingTeam boardDec) . PiecePosition)
+    (FromMaybe Empty (EnPassantPosition (GetMovingTeam boardDec) . PiecePosition)
         (Eval (GetPieceAtWhichDec boardDec (GetLastPosition boardDec) (IsPawn .&. PawnMovedTwoLast))))  -- then
-        (ID '[])  --else
+        (ID Empty)  --else
 
 data EnPassantPosition :: Team -> Position -> Exp (FingerTree Position)
 type instance Eval (EnPassantPosition team pos) = EnPassantPositionNonFCF team pos
 
 type family EnPassantPositionNonFCF (t :: Team) (p :: Position) :: FingerTree Position where
-    EnPassantPositionNonFCF White (At col row)     =  Single (At col (S row))
+    EnPassantPositionNonFCF White (At col row)     = Single (At col (S row))
     EnPassantPositionNonFCF Black (At col (S row)) = Single (At col row)
 
 -- TODO: Non-FCF type family version??
 data GetLeftRightPositions :: Position -> Exp (FingerTree Position)
-type instance Eval (GetLeftRightPositions pos) = Eval (FilterMap IsJust FromJust (Eval ('[GetOneLeft, GetOneRight] <*> '[ pos ])))
+type instance Eval (GetLeftRightPositions pos) = GetLeftRightPositions' pos
+
+type family GetLeftRightPositions' (p :: Position) :: FingerTree Position where
+    GetLeftRightPositions' (At A   row) = Single (At B row)
+    GetLeftRightPositions' (At H   row) = Single (At G row)
+    GetLeftRightPositions' (At col row) = Single (At (L col) row) :> At (R col) row
 
 data PawnMovedTwoLast :: Piece -> Exp Bool
 type instance Eval (PawnMovedTwoLast (MkPiece White Pawn info)) = Eval (((HasRow Nat4 . GetPosition) .&. (Equal Nat1 . GetMoveCount)) info)
@@ -921,10 +928,6 @@ type family ShouldHavePromotedCheck' (t :: Position) (b :: BoardDecorator) :: Bo
             (TE' (TL.Text ("Promotion should have occurred at: " ++ TypeShow (At col Nat1) ++ ". Pawns must be promoted when they reach the opposite end of the board.")))
             (ID boardDec)
     ShouldHavePromotedCheck' _ boardDec = boardDec
-
-data DoChecks :: [ BoardDecorator -> Exp BoardDecorator ] -> BoardDecorator -> Exp BoardDecorator
-type instance Eval (DoChecks '[]       boardDec) = boardDec
-type instance Eval (DoChecks (f ': fs) boardDec) = Eval ((DoChecks fs . f) boardDec)
 
 data MovePieceSwitch :: Piece -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (MovePieceSwitch piece toPos boardDec) = MovePieceSwitch' piece toPos boardDec
