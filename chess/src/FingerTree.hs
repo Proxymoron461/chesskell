@@ -167,3 +167,8 @@ type instance Eval (TakeWhilePlus p q (Deep left middle right))
         (If (Eval (q (Head (Deep left middle right))))
             (ID (Single (Head (Deep left middle right))))
             (ID Empty)))
+
+-- FingerTree instance of TypeShow
+type instance TypeShow Empty = ""
+type instance TypeShow (Single x) = TypeShow x
+type instance TypeShow (Deep left middle right) = TypeShow (Eval (ToList (Deep left middle right)))

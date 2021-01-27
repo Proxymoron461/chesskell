@@ -15,14 +15,14 @@ data GetAllBelow :: Position -> Exp (FingerTree Position)
 type instance Eval (GetAllBelow pos) = GetAllBelow' pos
 
 type family GetAllBelow' (n :: Position) :: FingerTree Position where
-    GetAllBelow' (At col Nat1) = Single (At col Nat1)
-    GetAllBelow' (At col Nat2) = Deep (One (At col Nat2)) Empty (One (At col Nat1))
-    GetAllBelow' (At col Nat3) = Deep (Two (At col Nat3) (At col Nat2)) Empty (One (At col Nat1))
-    GetAllBelow' (At col Nat4) = Deep (Three (At col Nat4) (At col Nat3) (At col Nat2)) Empty (One (At col Nat1))
-    GetAllBelow' (At col Nat5) = Deep (Four (At col Nat5) (At col Nat4) (At col Nat3) (At col Nat2)) Empty (One (At col Nat1))
-    GetAllBelow' (At col Nat6) = Deep (Four (At col Nat6) (At col Nat5) (At col Nat4) (At col Nat3)) Empty (Two (At col Nat2) (At col Nat1))
-    GetAllBelow' (At col Nat7) = Deep (Four (At col Nat7) (At col Nat6) (At col Nat5) (At col Nat4)) Empty (Three (At col Nat3) (At col Nat2) (At col Nat1))
-    GetAllBelow' (At col Nat8) = Deep (Four (At col Nat8) (At col Nat7) (At col Nat6) (At col Nat5)) Empty (Four (At col Nat4) (At col Nat3) (At col Nat2) (At col Nat1))
+    GetAllBelow' (At col Nat1) = Empty
+    GetAllBelow' (At col Nat2) = Single (At col Nat1)
+    GetAllBelow' (At col Nat3) = Deep (One (At col Nat2)) Empty (One (At col Nat1))
+    GetAllBelow' (At col Nat4) = Deep (Two (At col Nat3) (At col Nat2)) Empty (One (At col Nat1))
+    GetAllBelow' (At col Nat5) = Deep (Three (At col Nat4) (At col Nat3) (At col Nat2)) Empty (One (At col Nat1))
+    GetAllBelow' (At col Nat6) = Deep (Four (At col Nat5) (At col Nat4) (At col Nat3) (At col Nat2)) Empty (One (At col Nat1))
+    GetAllBelow' (At col Nat7) = Deep (Four (At col Nat6) (At col Nat5) (At col Nat4) (At col Nat3)) Empty (Two (At col Nat2) (At col Nat1))
+    GetAllBelow' (At col Nat8) = Deep (Four (At col Nat7) (At col Nat6) (At col Nat5) (At col Nat4)) Empty (Three (At col Nat3) (At col Nat2) (At col Nat1))
 
 -- Takes in x and y, and performs x - y with a lower bound of 0
 data SafeMinus :: TL.Nat -> TL.Nat -> Exp TL.Nat
@@ -37,30 +37,32 @@ data GetAllAbove :: Position -> Exp (FingerTree Position)
 type instance Eval (GetAllAbove pos) = GetAllAbove' pos
 
 type family GetAllAbove' (n :: Position) :: FingerTree Position where
-    GetAllAbove' (At col Nat8) = Single (At col Nat8)
-    GetAllAbove' (At col Nat7) = Deep (One (At col Nat7)) Empty (One (At col Nat8))
-    GetAllAbove' (At col Nat6) = Deep (Two (At col Nat6) (At col Nat7)) Empty (One (At col Nat8))
-    GetAllAbove' (At col Nat5) = Deep (Three (At col Nat5) (At col Nat6) (At col Nat7)) Empty (One (At col Nat8))
-    GetAllAbove' (At col Nat4) = Deep (Four (At col Nat4) (At col Nat5) (At col Nat6) (At col Nat7)) Empty (One (At col Nat8))
-    GetAllAbove' (At col Nat3) = Deep (Four (At col Nat3) (At col Nat4) (At col Nat5) (At col Nat6)) Empty (Two (At col Nat7) (At col Nat8))
-    GetAllAbove' (At col Nat2) = Deep (Four (At col Nat2) (At col Nat3) (At col Nat4) (At col Nat5)) Empty (Three (At col Nat6) (At col Nat7) (At col Nat8))
-    GetAllAbove' (At col Nat1) = Deep (Four (At col Nat1) (At col Nat2) (At col Nat3) (At col Nat4)) Empty (Four (At col Nat5) (At col Nat6) (At col Nat7) (At col Nat8))
+    GetAllAbove' (At col Nat8) = Empty
+    GetAllAbove' (At col Nat7) = Single (At col Nat8)
+    GetAllAbove' (At col Nat6) = Deep (One (At col Nat7)) Empty (One (At col Nat8))
+    GetAllAbove' (At col Nat5) = Deep (Two (At col Nat6) (At col Nat7)) Empty (One (At col Nat8))
+    GetAllAbove' (At col Nat4) = Deep (Three (At col Nat5) (At col Nat6) (At col Nat7)) Empty (One (At col Nat8))
+    GetAllAbove' (At col Nat3) = Deep (Four (At col Nat4) (At col Nat5) (At col Nat6) (At col Nat7)) Empty (One (At col Nat8))
+    GetAllAbove' (At col Nat2) = Deep (Four (At col Nat3) (At col Nat4) (At col Nat5) (At col Nat6)) Empty (Two (At col Nat7) (At col Nat8))
+    GetAllAbove' (At col Nat1) = Deep (Four (At col Nat2) (At col Nat3) (At col Nat4) (At col Nat5)) Empty (Three (At col Nat6) (At col Nat7) (At col Nat8))
 
 data GetAllRight :: Position -> Exp (FingerTree Position)
 type instance Eval (GetAllRight pos) = GetAllRight' pos
 
 -- TODO: Optimise with base cases!
 type family GetAllRight' (n :: Position) :: FingerTree Position where
-    GetAllRight' (At H row) = Single (At H row)
-    GetAllRight' (At col row) = (At col row) :< GetAllRight' (At (R col) row)
+    GetAllRight' (At H row) = Empty
+    GetAllRight' (At G row) = Single (At G row)
+    GetAllRight' (At col row) = (At (R col) row) :< GetAllRight' (At (R col) row)
 
 data GetAllLeft :: Position -> Exp (FingerTree Position)
 type instance Eval (GetAllLeft pos) = GetAllLeft' pos
 
 -- TODO: Optimise with base cases!
 type family GetAllLeft' (n :: Position) :: FingerTree Position where
-    GetAllLeft' (At A row) = Single (At A row)
-    GetAllLeft' (At col row) = (At col row) :< GetAllLeft' (At (L col) row)
+    GetAllLeft' (At A row) = Empty
+    GetAllLeft' (At B row) = Single (At A row)
+    GetAllLeft' (At col row) = (At (L col) row) :< GetAllLeft' (At (L col) row)
 
 data GetAllDiagNW :: Position -> Exp (FingerTree Position)
 type instance Eval (GetAllDiagNW pos) = GetAllDiagNW' pos
