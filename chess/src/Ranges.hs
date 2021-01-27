@@ -2,6 +2,7 @@ module Ranges where
 
 import ChessTypes
 import FirstClassFunctions
+import FingerTree
 import Data.Type.Nat hiding (SNat(..))
 import qualified GHC.TypeLits as TL
 
@@ -86,3 +87,62 @@ data IsGTEQ :: Ordering -> Exp Bool
 type instance Eval (IsGTEQ LT) = False
 type instance Eval (IsGTEQ EQ) = True
 type instance Eval (IsGTEQ GT) = True
+
+type family BetweenColumns (x :: Column) (y :: Column) :: FingerTree Column where
+    BetweenColumns x x = Empty
+    BetweenColumns A B = Single B
+    BetweenColumns A C = Deep (One B) Empty (One C)
+    BetweenColumns A D = Deep (Two B C) Empty (One D)
+    BetweenColumns A E = Deep (Two B C) Empty (Two D E)
+    BetweenColumns A F = Deep (Three B C D) Empty (Two E F)
+    BetweenColumns A G = Deep (Three B C D) Empty (Three E F G)
+    BetweenColumns A H = Deep (Four B C D E) Empty (Three F G H)
+    BetweenColumns B C = Single C
+    BetweenColumns B D = Deep (One C) Empty (One D)
+    BetweenColumns B E = Deep (Two C D) Empty (One E)
+    BetweenColumns B F = Deep (Two C D) Empty (Two E F)
+    BetweenColumns B G = Deep (Two C D) Empty (Three E F G)
+    BetweenColumns B H = Deep (Three C D E) Empty (Three F G H)
+    BetweenColumns C D = Single D
+    BetweenColumns C E = Deep (One D) Empty (One E)
+    BetweenColumns C F = Deep (Two D E) Empty (One F)
+    BetweenColumns C G = Deep (Two D E) Empty (Two F G)
+    BetweenColumns C H = Deep (Three D E F) Empty (Two G H)
+    BetweenColumns D E = Single E
+    BetweenColumns D F = Deep (One E) Empty (One F)
+    BetweenColumns D G = Deep (One E) Empty (Two F G)
+    BetweenColumns D H = Deep (Two E F) Empty (Two G H)
+    BetweenColumns E F = Single F
+    BetweenColumns E G = Deep (One F) Empty (One G)
+    BetweenColumns E H = Deep (One F) Empty (Two G H)
+    BetweenColumns F G = Single G
+    BetweenColumns F H = Deep (One G) Empty (One H)
+    BetweenColumns G H = Single H
+    BetweenColumns H G = Single G
+    BetweenColumns H F = Deep (One G) Empty (One F)
+    BetweenColumns H E = Deep (Two G F) Empty (One E)
+    BetweenColumns H D = Deep (Two G F) Empty (Two E D)
+    BetweenColumns H C = Deep (Three G F E) Empty (Two D C)
+    BetweenColumns H B = Deep (Three G F E) Empty (Three D C B)
+    BetweenColumns H A = Deep (Four G F E D) Empty (Three C B A)
+    BetweenColumns G F = Single F
+    BetweenColumns G E = Deep (One F) Empty (One E)
+    BetweenColumns G D = Deep (Two F E) Empty (One D)
+    BetweenColumns G C = Deep (Two F E) Empty (Two D C)
+    BetweenColumns G B = Deep (Two F E) Empty (Three D C B)
+    BetweenColumns G A = Deep (Three F E D) Empty (Three C B A)
+    BetweenColumns F E = Single E
+    BetweenColumns F D = Deep (One E) Empty (One D)
+    BetweenColumns F C = Deep (Two E D) Empty (One C)
+    BetweenColumns F B = Deep (Two E D) Empty (Two C B)
+    BetweenColumns F A = Deep (Three E D C) Empty (Two B A)
+    BetweenColumns E D = Single D
+    BetweenColumns E C = Deep (One D) Empty (One C)
+    BetweenColumns E B = Deep (One D) Empty (Two C B)
+    BetweenColumns E A = Deep (Two D C) Empty (Two B A)
+    BetweenColumns D C = Single C
+    BetweenColumns D B = Deep (One C) Empty (One B)
+    BetweenColumns D A = Deep (One C) Empty (Two B A)
+    BetweenColumns C B = Single B
+    BetweenColumns C A = Deep (One B) Empty (One A)
+    BetweenColumns B A = Single A
