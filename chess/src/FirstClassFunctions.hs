@@ -302,13 +302,14 @@ type instance Eval (Filter p (x ': xs)) = Eval (If (Eval (p x)) (ID (x ': Eval (
 data FilterCount :: (a -> Exp Bool) -> [a] -> Exp Nat
 type instance Eval (FilterCount p xs) = Eval (Length (Eval (Filter p xs)))
 
-data Take :: TL.Nat -> [a] -> Exp [a]
-type instance Eval (Take n xs) = Eval (TakeNat (Eval (TLNatToNat n)) xs)
+data Take :: TL.Nat -> f a -> Exp (f a)
+type instance Eval (Take _ '[]) = '[]
+type instance Eval (Take n (x ': xs)) = Eval (TakeList (Eval (TLNatToNat n)) (x ': xs))
 
-data TakeNat :: Nat -> [a] -> Exp [a]
-type instance Eval (TakeNat Z     _)         = '[]
-type instance Eval (TakeNat (S n) '[])       = '[]
-type instance Eval (TakeNat (S n) (x ': xs)) = x ': Eval (TakeNat n xs)
+data TakeList :: Nat -> [a] -> Exp [a]
+type instance Eval (TakeList Z     _)         = '[]
+type instance Eval (TakeList (S n) '[])       = '[]
+type instance Eval (TakeList (S n) (x ': xs)) = x ': Eval (TakeList n xs)
 
 data TakeWhile :: (a -> Exp Bool) -> f a -> Exp (f a)
 type instance Eval (TakeWhile p xs) = Eval (TakeWhilePlus p (Const False) xs)
