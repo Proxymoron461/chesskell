@@ -244,44 +244,29 @@ type instance Eval (AllReachableDiagNE team boardDec pos) = Eval (AllReachableFu
 data AllReachableGivenList :: Team -> BoardDecorator -> FingerTree Position -> Exp (FingerTree Position)
 type instance Eval (AllReachableGivenList team boardDec list) = Eval (Filter (FromMaybe True (Not . HasTeam team) . GetPieceAtDec boardDec) list)
 
--- General function, for taking the first N reachable positions from a particular direction.
--- NOTE: Relies on each directional function giving them in order of distance from the player
--- NOTE: Does not work with AllReachableDiag, as that will only be in one direction.
--- TODO: Better definition
-data NReachableFunc :: Team -> BoardDecorator -> Position -> (Team -> BoardDecorator -> Position -> Exp (FingerTree Position)) -> TL.Nat -> Exp (FingerTree Position)
-type instance Eval (NReachableFunc team boardDec pos f n) = Eval (FromList (Eval (Take n (Eval (ToList (Eval (f team boardDec pos)))))))
-
-data NReachableDiagNW :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
-type instance Eval (NReachableDiagNW team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableDiagNW n)
-
-data NReachableDiagNE :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
-type instance Eval (NReachableDiagNE team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableDiagNE n)
-
-data NReachableDiagSW :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
-type instance Eval (NReachableDiagSW team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableDiagSW n)
-
-data NReachableDiagSE :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
-type instance Eval (NReachableDiagSE team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableDiagSE n)
-
-data NReachableBelow :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
-type instance Eval (NReachableBelow team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableBelow n)
-
-data NReachableAbove :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
-type instance Eval (NReachableAbove team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableAbove n)
-
-data NReachableLeft :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
-type instance Eval (NReachableLeft team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableLeft n)
-
-data NReachableRight :: Team -> BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
-type instance Eval (NReachableRight team boardDec pos n) = Eval (NReachableFunc team boardDec pos AllReachableRight n)
-
 -- The pawn is the only piece whose attack rules differ from its' movement rules;
 -- so it requires a special case.
 data PawnReachableAbove :: BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
-type instance Eval (PawnReachableAbove boardDec pos n) = Eval (GetFreePositions (Eval (NReachableAbove White boardDec pos n)) boardDec)
+type instance Eval (PawnReachableAbove boardDec pos n) = Eval (GetFreePositions (PawnReachableAbove' pos n) boardDec)
+
+type family PawnReachableAbove' (p :: Position) (n :: TL.Nat) :: FingerTree Position where
+    PawnReachableAbove' (At col Nat8) 1 = Empty
+    PawnReachableAbove' (At col row) 1 = Single (At col (S row))
+    PawnReachableAbove' (At col Nat8) 2 = Empty
+    PawnReachableAbove' (At col Nat7) 2 = Single (At col Nat8)
+    PawnReachableAbove' (At col row) 2 = Deep (One (At col (S row))) Empty (One (At col (S (S row))))
+    PawnReachableAbove' _ n = TL.TypeError (TL.Text "Pawn cannot move anything other than 1 or 2 spaces!")
 
 data PawnReachableBelow :: BoardDecorator -> Position -> TL.Nat -> Exp (FingerTree Position)
-type instance Eval (PawnReachableBelow boardDec pos n) = Eval (GetFreePositions (Eval (NReachableBelow Black boardDec pos n)) boardDec)
+type instance Eval (PawnReachableBelow boardDec pos n) = Eval (GetFreePositions (PawnReachableBelow' pos n) boardDec)
+
+type family PawnReachableBelow' (p :: Position) (n :: TL.Nat) :: FingerTree Position where
+    PawnReachableBelow' (At col Nat1) 1 = Empty
+    PawnReachableBelow' (At col (S row)) 1 = Single (At col row)
+    PawnReachableBelow' (At col Nat1) 2 = Empty
+    PawnReachableBelow' (At col Nat2) 2 = Single (At col Nat1)
+    PawnReachableBelow' (At col (S (S row))) 2 = Deep (One (At col (S row))) Empty (One (At col row))
+    PawnReachableBelow' _ n = TL.TypeError (TL.Text "Pawn cannot move anything other than 1 or 2 spaces!")
 
 data IsPieceAt :: BoardDecorator -> Position -> Exp Bool
 type instance Eval (IsPieceAt boardDec pos) = Eval (IsJust (Eval (GetPieceAtDec boardDec pos)))
@@ -400,8 +385,8 @@ type family CanCastleToEitherRook (t :: Team) (b :: BoardDecorator) :: (Bool, Bo
 
 -- TODO: Replace with RangeBetweenExclusive or something like that??
 type family BetweenKingAndRook (t :: Team) :: (FingerTree Position, FingerTree Position) where
-    BetweenKingAndRook White = '( SpacesBetweenInc (At D Nat1) (At B Nat1), Single (At F Nat1) :> (At G Nat1) )
-    BetweenKingAndRook Black = '( SpacesBetweenInc (At D Nat8) (At B Nat8), Single (At F Nat8) :> (At G Nat8) )
+    BetweenKingAndRook White = '( Deep (Two (At D Nat1) (At C Nat1)) Empty (One (At B Nat1)), Deep (One (At F Nat1)) Empty (One (At G Nat1)) )
+    BetweenKingAndRook Black = '( Deep (Two (At D Nat8) (At C Nat8)) Empty (One (At B Nat8)), Deep (One (At F Nat8)) Empty (One (At G Nat8)) )
 
 type family HasKingMoved (t :: Team) (b :: BoardDecorator) :: Bool where
     HasKingMoved team boardDec = Eval (IsPieceAtWhichDec boardDec (GetKingPosition team boardDec) (Not . PieceHasMoveCount Z))
@@ -462,20 +447,11 @@ type family GetCastlePositionsHelper (x :: (Bool, Bool)) (p :: Position) :: Fing
 
 data CastleSpacesToTest :: Team -> BoardDecorator -> Exp (FingerTree Position, FingerTree Position)
 type instance Eval (CastleSpacesToTest team boardDec)
-    = Eval (CastleSpacesToTestHelper (GetKingPosition team boardDec))
+    = CastleSpacesToTestHelper' (GetKingPosition team boardDec)
 
-data CastleSpacesToTestHelper :: Position -> Exp (FingerTree Position, FingerTree Position)
-type instance Eval (CastleSpacesToTestHelper pos)
-    = '(SpacesBetweenInc pos (TwoLeft pos), SpacesBetweenInc pos (TwoRight pos))
-
--- :kind! Eval (((Flip (CW2 At)) Z) A) = At A Z
--- TODO: Improve with faster definition
-type family SpacesBetween (x :: Position) (y :: Position) :: FingerTree Position where
-    SpacesBetween (At col row1) (At col row2) = Eval (CW (At col) <$> Eval (FromList ( Eval (RangeBetweenDTNat row1 row2))))
-    SpacesBetween (At col1 row) (At col2 row) = Eval (((Flip (CW2 At)) row) <$> Eval (FromList ( Eval (ColRangeBetween col1 col2))))
-
-type family SpacesBetweenInc (x :: Position) (y :: Position) :: FingerTree Position where
-    SpacesBetweenInc pos1 pos2 = pos1 :< SpacesBetween pos1 pos2
+type family CastleSpacesToTestHelper' (p :: Position) where
+    CastleSpacesToTestHelper' (At E row) = '( Deep (One (At D row)) Empty (One (At C row)), Deep (One (At F row)) Empty (One (At G row)) )
+    CastleSpacesToTestHelper' _ = '( Empty, Empty )
 
 -- First boolean argument determines the reach - the King check occurs if it is true,
 -- and it does not if it is False.

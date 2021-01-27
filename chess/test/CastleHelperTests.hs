@@ -17,6 +17,14 @@ import MakeSingletons
 
 import TestTypes
 
+-- TODO: Improve with faster definition
+type family SpacesBetween (x :: Position) (y :: Position) :: FingerTree Position where
+    SpacesBetween (At col row1) (At col row2) = Eval (CW (At col) <$> Eval (FromList ( Eval (RangeBetweenDTNat row1 row2))))
+    SpacesBetween (At col1 row) (At col2 row) = Eval (((Flip (CW2 At)) row) <$> ColumnsBetween col1 col2)
+
+type family SpacesBetweenInc (x :: Position) (y :: Position) :: FingerTree Position where
+    SpacesBetweenInc pos1 pos2 = pos1 :< SpacesBetween pos1 pos2
+
 -- data AnySpaceInCheck :: BoardDecorator -> [Position] -> Exp Bool
 anySpaceInCheckTest1 :: False :~: Eval (AnySpaceInCheck White JustKingsDec (SpacesBetweenInc (At A Nat5) (At H Nat5)))
 anySpaceInCheckTest1 = Refl
