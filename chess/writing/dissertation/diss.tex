@@ -1,0 +1,221 @@
+\documentclass[12pt, a4paper, bibliography=totocnumbered]{scrreprt}
+\usepackage[utf8]{inputenc}
+\usepackage[hidelinks]{hyperref}
+\usepackage{listings}
+\usepackage{charter}
+\usepackage{xcolor}
+\usepackage{parskip}
+\usepackage[multiple]{footmisc}
+
+\definecolor{background}{rgb}{0.97, 0.97, 0.97}
+\definecolor{comments}{rgb}{0.0, 0.64, 0.0}
+\definecolor{keywords}{rgb}{0.0, 0.0, 0.64}
+\definecolor{identifiers}{rgb}{0.63, 0.81, 0.94}
+\definecolor{strings}{rgb}{1.0, 0.6, 0.4}
+
+\lstset{
+    language=haskell,
+    basicstyle=\small\ttfamily,
+    backgroundcolor=\color{background},
+    keywordstyle=\color{keywords}\bfseries,
+    commentstyle=\color{comments}\textit,
+    stringstyle=\color{strings},
+    % identifierstyle=\color{identifiers},
+    breakatwhitespace=true,
+    breaklines=true,
+    keepspaces=true,
+    captionpos=b,
+    frame=tlbr,    % Margin at all 4 sides
+    framesep=4pt,  % Margin size
+    framerule=0pt
+}
+
+% Change abstract appearance
+\renewenvironment{abstract}
+ {\small
+  \begin{center}
+  \bfseries \textit{\abstractname}\vspace{-.5em}\vspace{0pt}
+  \end{center}
+  \quotation}
+ {\endquotation}
+
+% Custom command for all inline code styling
+\newcommand{\inline}[1]{\lstinline[basicstyle=\ttfamily]{#1}}
+
+\title{Chesskell: Embedding a Two-Player Game in Haskell's type system}
+\subtitle{University of Warwick Dissertation}
+\author{Toby Bailey}
+\date{\today}
+
+\begin{document}
+
+\begin{titlepage}
+    \maketitle
+    \tableofcontents
+\end{titlepage}
+
+\begin{abstract}
+    Type-level programming, a relatively recent phenomenon, allows programmers to express computation during the compilation of their programs. Through the use of type-level constructs, rules can be imposed on code to ensure that if it compiles, then it behaves in a certain way. However, there is still plenty of room to push the boundaries of what can be achieved with type-level programming.
+
+    Chess has a well-defined ruleset, and has not been expressed at the type level before. This dissertation describes the development of Chesskell, a Haskell-Embedded Domain-Specific Language to notate chess games within. If the Chesskell code compiles, then the match described obeys the full International Chess Federation ruleset for chess. Despite difficulties during development, including memory issues, the final version of Chesskell is feature-complete and supports Chess games of up to 10 moves.
+
+    \textbf{\textit{Keywords:}} Type-level Programming, Haskell, Chess, EDSL.
+\end{abstract}
+
+\part{Introduction}
+
+\chapter{Motivation}
+
+In 2021, video games are more popular than ever. In the US alone, a 2020 ESA report\footnote{\url{https://www.theesa.com/wp-content/uploads/2020/07/Final-Edited-2020-ESA_Essential_facts.pdf}} estimated that there were more than 214 million individuals who play games. Considering this, it's surprising how many games are released with major bugs in their software---some of which end up being so notable that news and footage of them appear on mainstream media\footnote{\url{https://www.bbc.co.uk/news/technology-50156033}}.
+
+As programming languages have evolved, many have begun to address more errors at compile time. Features similar to optional types have been added to languages such as Java\footnote{\url{https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html}} and C\#\footnote{\url{https://docs.microsoft.com/en-us/dotnet/csharp/nullable-references}}, and languages like Rust have pioneered ways of safely handling dynamic allocation through ownership types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions.
+
+However, catching logical errors in imperative languages is almost always done at runtime. Many software systems use runtime features such as exceptions to discover and deal with errors and misuse of APIs. Enforcement of invariants and rules is typically dynamic; if a check fails, an exception is thrown and potentially handled. However, if a programmer forgets to implement such a check, the behaviour is unpredictable. A 2007 study \cite{exceptionsusedpoorly} on Java and .NET codebases indicates that exceptions are rarely used to recover from errors, and a 2016 analysis of Java codebases \cite{badjavaexceptions} reveals that exceptions are commonly misused in Java.
+
+Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values \cite{yorgey2012giving}, using \emph{type families} \cite{opentfs} \cite{closedtfs} that emulate functions at the type-level. These computations run at compile time, before the compiler generates an executable of the source code, allowing programmers to transform logic errors into type errors \cite{twt}. The exception misuse described above could be avoided by employing logical invariant checks at the type-level, rather than at runtime.
+
+Since these are relatively recent developments, there are few examples of their usage in complex applications. In this project, we show how to utilise type-level programming features in Haskell in order to model the classic board game Chess in Haskell's type system, ruling out invalid moves at the type-level. A Haskell-Embedded Domain-Specific Language (DSL), for describing games of Chess, will interact with the type-level model. This Embedded DSL (EDSL) will be modelled on Algebraic Notation, a method of writing down the moves associated with a particular match of Chess. We implement the full, official International Chess Federation (FIDE) ruleset for Chess.
+
+\chapter{History}
+
+Programming languages have \emph{type systems} for the main purpose of avoiding errors \cite{cardellitypes}. A \emph{type error} is an instance of attempting to perform a computation on something which does not support that computation. For example, it makes no logical sense to add the number 3 to a dog. This stems from the fact that "3" and "dog" support different behaviours\footnote{For instance, dogs can bark, but the number 3 cannot.}. Therefore, in a programming context, "3" and "dog" have distinct types; 3 is a number, and a dog is an animal.
+
+A notable area in which languages differ is \emph{when} they detect type errors. A \emph{static} type system is one in which type errors are detected before the program is run (during compilation), and a \emph{dynamic} type system is one in which type errors are detected while the program is running. A static type system is preferable for runtime safety, since it ensures that any running program will avoid (at least some) type errors.
+
+Some languages have a distinction between types and runtime values, but others do not. The latter support \emph{Dependent types}, in which the types themselves depend on runtime values, and can in many languages be treated as such. The programming language Idris is similar to Haskell, but allows the programmer to pass around types at runtime as if they were normal values. Many of Haskell's language extensions have been adding to its type system, moving the language closer and closer towards dependently typed programming \cite{singletons}. Such a type system has various benefits, since constraining the types means constraining the values without dynamic runtime checks. (For example, runtime array bounds checks can be eliminated at runtime through being expressed solely in the type system \cite{dependentarray}.)
+
+Chess was chosen as a suitable game to model at the type-level due to its well-defined ruleset. Programming language type systems will evolve through usage, and so programs will and should be written to test what's possible to express at the type level. Chess is a widely understood, popular, and rigorously documented game, making it a natural fit to help push the boundaries of type-level programming.
+
+\chapter{Objectives}
+
+The objective of this project is to develop an EDSL, nicknamed Chesskell, with which to express games of chess. Through compilation, the game of chess will be simulated, such that any invalid move (or the lack of a move where one should have occurred) will result in a type error. The main goals are thus:
+
+\begin{itemize}
+    \item Develop a type-level model of a Chess board;
+    \item Develop a type-level move-wise simulation of a Chess game;
+    \item Develop an EDSL to express these type-level Chess games in;
+    \item Ensure (through testing) that valid Chess games compile, and invalid Chess games do not.
+\end{itemize}
+
+During the course of the project, a "valid chess game" will be any game that adheres to the FIDE 2018 Laws of Chess\footnote{\url{https://handbook.fide.com/chapter/E012018}}. The FIDE laws also describe rules for the players themselves to adhere to; but these are outside the scope of the project, since they are not directly concerning the game of chess itself.
+
+\part{Background}
+
+\chapter{Related Work}
+
+\section{Type-level Rule Checking}
+
+\section{Embedded Domain-Specific Languages}
+
+\chapter{The Basics of Chess}
+
+\chapter{Programming for Chess}
+
+\section{Chess Programs}
+
+\section{Chess Data Structures}
+
+\section{Why is Chesskell different?}
+
+
+\part{Design}
+
+\chapter{Type-level Programming}
+
+\section{Type Families}
+
+\section{First-Class Families}
+
+\section{Type-Level Data Structures}
+
+\chapter{Giving Runtime Information to the Compiler}
+
+\chapter{Development Approach}
+
+\section{Methodology}
+
+\section{Testing}
+
+
+\part{Implementation}
+
+\chapter{Type-Level Chess}
+
+\section{Chess Types and Kinds}
+
+\subsection{The Pieces}
+
+\subsection{The Board}
+
+\subsection{Miscellaneous Types}
+
+\section{Chess Rules}
+
+\subsection{Movement Rules}
+
+\subsection{Attack/Capture Rules}
+
+\subsection{Checking For Violations}
+
+\subsection{Exceptions}
+
+\subsubsection{Castling}
+
+\subsubsection{Pawn Capture and En Passant}
+
+\chapter{The EDSL}
+
+\section{Minimum Viable Product}
+
+\section{Flat Builders}
+
+\section{Moving the pieces}
+
+\section{Setting up a board}
+
+\chapter{Testing}
+
+\section{Type-level Unit Testing}
+
+\section{Testing Chesskell Games}
+
+
+\part{Evaluation}
+
+\chapter{Difficulties}
+
+\section{Session-typed Chesskell}
+
+\section{Compile Time and Memory Usage}
+
+\subsection{Optimisation Attempts}
+
+\subsubsection{Board Decorators}
+
+\subsubsection{Finger Trees}
+
+\subsection{GHC Bug Report}
+
+\section{Descriptive Error Messages}
+
+\subsection{Move Number}
+
+\chapter{Chesskell EDSL vs Other Chess Notations}
+
+
+\part{Conclusion}
+
+\chapter{Results and Accomplishments}
+
+\chapter{Future Work}
+
+
+\part{Appendix}
+
+
+
+\bibliographystyle{ieeetr}
+
+\bibliography{diss}
+
+\end{document}
