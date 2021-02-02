@@ -103,19 +103,47 @@ During the course of the project, a "valid Chess game" is any game that adheres 
 
 \chapter{Related Work}
 
+Chesskell is, at the time of writing, unique; we are aware of no other type-level chess implementations. There have been allusions to Chess at the type-level through solving the N-queens problem in dependently typed languages, such as Idris\footnote{\url{https://github.com/ExNexu/nqueens-idris}}. The N-queens problem makes use of some chess rules, including the Queen's attack positions\footnote{A Queen can attack in a straight line in any direction.}; but as the end goal is not to successfully model a game of chess, it is not a full type-level chess implementation.
+
+However, Chesskell draws from many well-established research areas, including type-level rule checking, EDSLs, and chess programming in general. This section of the report will detail related work, and how Chesskell differs from existing literature.
+
 \section{Type-level Rule Checking}
+
+The idea of using types to enforce rules on behaviour is hardly specific to Haskell; C and C-like languages ensure that you only apply the correct operations on types, after all. However, with the advent of more complex type systems and type-level programming, more and more rules can be expressed in the types, to ensure that compiled programs follow those rules.
+
+The programming language Rust\footnote{\url{https://www.rust-lang.org/}} has been voted the most loved language (by StackOverflow developers) 5 years running\footnote{\url{https://insights.stackoverflow.com/survey/2020\#technology-most-loved-dreaded-and-wanted-languages}}. Rust is touted as a systems language that guarantees memory safety and thread safety; and it achieves this through its type system. By enforcing strict ownership rules, Rust can guarantee that your programs avoid data races and that all memory is freed once and not used after being freed. This is a clear example of types enforcing runtime behaviour; but instead of Chess rules, a series of memory rules are being enforced. In fact, Haskell type-level constructs can be used to enforce basic ownership rules through a method colloquially known as the "ST Trick" \cite{twt}.
+
+Examples of type-level rule checking in more Functional languages include... % TODO: This
 
 \section{Embedded Domain-Specific Languages}
 
+Despite the apparent lack of work on Chess at the type level specifically, there is work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. Mezzo \cite{mezzohaskellsymposium} is an EDSL for music composition, which checks if the described piece of music conforms to some musical ruleset during compilation of the program. This EDSL is similar to Chesskell in aim, if not in application domain; performing compile-time checks of rulesets that are commonly checked at runtime.
+
+As another example, BioShake \cite{bioshake} is an EDSL for creating performant bioinformatics computational workflows. The correctness of these workflows is checked during compilation, preventing any from being created if their execution would result in certain errors. For bioinformatics workflows especially, this is ideal since many of these workflows are lengthy. BioShake goes further, however; providing tools to allow parallel execution of these workflows. While it is encouraging to see BioShake and other EDSLs \cite{aplite} focus on (and achieve) high performance, Chesskell will have no such focus. This is primarily because very few parts of the rule-checking process can be parallelised; much of the move handling and order of rule checks must be done sequentially.
+
 \chapter{The Basics of Chess}
 
-\chapter{Programming for Chess}
+\section{The Board}
+
+\subsection{The Pieces}
+
+\section{The Game}
+
+\section{Chess Notation}
+
+\chapter{Chess In Computer Science}
 
 \section{Chess Programs}
 
+Chess has a rich history in Computer Science. Getting computers to play Chess was a concern back in 1949 \cite{1949chess}, and since then many developments have been made in the field. Chess has been used to educate \cite{chesseducation}, to entertain, and to test out machine learning approaches \cite{chessml}. Due to its status as a widely known game of logic, with a well-defined rule set, it is a prime candidate to act as the general setting for programming problems. Indeed, the famous NP-Complete problem referenced above, the N-Queens Problem \cite{nqueensnp}, relies on the rules of Chess.
+
+Many of these chess-related programs are written in Haskell, and are publicly available\footnote{\url{https://github.com/mlang/chessIO}}\footnote{\url{https://github.com/nionita/Barbarossa}}. Many of them are chess engines, which take in a board state and output the move(s) which are strongest, and so therefore perform move checking at the value-level to ensure that the moves that it outputs are valid. Chesskell differs from these in function, in that the end software will not output a list of strong moves; it will simply take in the moves performed, and state whether they are valid chess moves or not. We are not aware of any such type-level chess implementations in Haskell, or any other language.
+
+Game development, as a more general field in Computer Science, has many Chess-based or Chess-related games available. However, the intention in these cases is usually to facilitate real-time play between multiple players (or indeed a single player with a competitive AI), rather than to teach or program a machine to consistently beat players. There is overlap with Chesskell; Chess as a computer game must necessarily perform move validation (to disallow cheating) and ensure that players take turns. However, Chesskell is intended to check over a complete game, rather than to enable people to conduct a game in real-time with Chesskell as a mediator.
+
 \section{Chess Data Structures}
 
-\section{Why is Chesskell different?}
+An important part of any good chess program is its board representation, since all other parts of the program come from this; move generation, move evaluation, and the entire search space are all defined or influenced by the board representation. A great deal of work has gone into defining memory- or time-efficient chess boards \cite{bitboard} \cite{searchtables}, including combinations of multiple representations to yield greater speed \cite{bitandccr}. While there is value to be gleaned from examining these representations, Chesskell serves a different purpose; it does not need to search through the valid set of moves to determine which are the best, and speed is not its focus. Chesskell's board representation must be relatively efficient, but it would be naive to expect similar levels of performance from type-level constraint solving computation as from optimised term-level code.
 
 
 \part{Design}
