@@ -12,3 +12,4 @@ stack.yaml.lock
 .stack-work/*
 chess/chess.cabal
 chess/stack.yaml.lock
+chess/writing/dissertation/notes.md
