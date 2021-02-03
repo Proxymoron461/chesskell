@@ -2,7 +2,8 @@
 \usepackage[utf8]{inputenc}
 \usepackage[hidelinks]{hyperref}
 \usepackage{listings}
-\usepackage{charter}
+\usepackage{FiraSans}
+\usepackage{palatino}
 \usepackage{xcolor}
 \usepackage{parskip}
 \usepackage[multiple]{footmisc}
@@ -30,6 +31,8 @@
     framerule=0pt
 }
 
+\setkomafont{sectioning}{\firamedium}
+
 % Change abstract appearance
 \renewenvironment{abstract}
  {\small
@@ -49,10 +52,13 @@
 
 \begin{document}
 
+{
+\renewcommand{\normalfont}{\usekomafont{sectioning}}
 \begin{titlepage}
     \maketitle
-    \tableofcontents
+    \usekomafont{sectioning}{\tableofcontents}
 \end{titlepage}
+}
 
 \begin{abstract}
     Type-level programming, a relatively recent phenomenon, allows programmers to express computation during the compilation of their programs. Through the use of type-level constructs, rules can be imposed on code to ensure that if it compiles, then it behaves in a certain way. However, there is still plenty of room to push the boundaries of what can be achieved with type-level programming.
