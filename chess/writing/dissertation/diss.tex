@@ -18,7 +18,7 @@
 
 \lstset{
     language=haskell,
-    basicstyle=\small\ttfamily,
+    basicstyle=\footnotesize\ttfamily,
     backgroundcolor=\color{background},
     keywordstyle=\color{keywords}\bfseries,
     commentstyle=\color{comments}\textit,
@@ -45,23 +45,20 @@
  {\endquotation}
 
 % Custom command for all inline code styling
-\newcommand{\inline}[1]{\lstinline[basicstyle=\ttfamily]{#1}}
+\newcommand{\inline}[1]{\lstinline[basicstyle=\ttfamily\footnotesize]{#1}}
 
 \title{Chesskell: Embedding a Two-Player Game in Haskell's type system}
-\subtitle{University of Warwick Dissertation}
 \author{Toby Bailey}
 \date{\today}
 
 \begin{document}
 
-{
-\renewcommand{\normalfont}{\usekomafont{sectioning}}
 \begin{titlepage}
     \maketitle
-    \usekomafont{sectioning}{\tableofcontents}
 \end{titlepage}
-}
 
+\phantomsection
+\addcontentsline{toc}{chapter}{Abstract}
 \begin{abstract}
     Type-level programming, a relatively recent phenomenon, allows programmers to express computation during the compilation of their programs. Through the use of type-level constructs, rules can be imposed on code to ensure that if it compiles, then it behaves in a certain way. However, there is still plenty of room to push the boundaries of what can be achieved with type-level programming.
 
@@ -70,157 +67,349 @@
     \textbf{\textit{Keywords:}} Type-level Programming, Haskell, Chess, EDSL.
 \end{abstract}
 
-\part{Introduction}
+{
+\newpage  % So that \phantomsection lines up nicely
+\phantomsection
+\addcontentsline{toc}{chapter}{Contents}
+\renewcommand{\normalfont}{\usekomafont{sectioning}}
+\usekomafont{sectioning}{\tableofcontents}
+}
 
-\chapter{Motivation}
+\chapter{Introduction}
 
-In 2021, video games are more popular than ever. In the US alone, a 2020 ESA report\footnote{\url{https://www.theesa.com/wp-content/uploads/2020/07/Final-Edited-2020-ESA_Essential_facts.pdf}} estimated that there were more than 214 million individuals who play games. Considering this, it's surprising how many games are released with major bugs in their software---some of which end up being so notable that news and footage of them appear on mainstream media\footnote{\url{https://www.bbc.co.uk/news/technology-50156033}}.
-
-As programming languages have evolved, many have begun to address more errors at compile time. Features similar to optional types have been added to languages such as Java\footnote{\url{https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html}} and C\#\footnote{\url{https://docs.microsoft.com/en-us/dotnet/csharp/nullable-references}}, and languages like Rust have pioneered ways of safely handling dynamic allocation through ownership types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions.
-
-However, catching logical errors in imperative languages is almost always done during execution. Many software systems use runtime features such as exceptions to discover and deal with errors and misuse of APIs. Enforcement of invariants and rules is typically dynamic; if a check fails, an exception is thrown and potentially handled. However, if a programmer forgets to implement such a check, the behaviour is unpredictable. A 2007 study \cite{exceptionsusedpoorly} on Java and .NET codebases indicates that exceptions are rarely used to recover from errors, and a 2016 analysis of Java codebases \cite{badjavaexceptions} reveals that exceptions are commonly misused in Java.
-
-Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values \cite{yorgey2012giving}, using \emph{type families} \cite{opentfs} \cite{closedtfs} that emulate functions at the type-level. These computations run at compile time, before the compiler generates an executable of the source code, allowing programmers to transform logic errors into type errors \cite{twt}. The exception misuse described above could be avoided by employing logical invariant checks at the type-level, rather than at runtime.
-
-Since these are relatively recent developments, there are few examples of their usage in complex applications. In this project, we show how to utilise type-level programming features in Haskell in order to model the classic board game Chess in Haskell's type system, ruling out invalid moves at the type-level. A Haskell-Embedded Domain-Specific Language (DSL), for describing games of Chess, will interact with the type-level model. This Embedded DSL (EDSL) will be modelled on Algebraic Notation, a method of writing down the moves associated with a particular match of Chess. We implement the full, official International Chess Federation (FIDE) ruleset for Chess.
-
-\chapter{History}
+The study of programming languages in Computer Science involves, in large part, the study of type systems. Many of the interesting differences between programming languages lie not in their syntax, but in their semantics; in their behaviour. Since types govern the behaviour of languages, it is fair to say that the difference in type systems between languages forms the basis of what individuals like or dislike about programming in a specific language. Part of why assembly language can be so difficult to reason about at scale is because it is untyped; everything is a byte. C, and other higher-level languages, have been introduced for the programmer's benefit. With higher levels of abstraction, and more complex type systems, can come more safety, as well as clearer program behaviour.
 
 Programming languages have \emph{type systems} for the main purpose of avoiding errors \cite{cardellitypes}. A \emph{type error} is an instance of attempting to perform a computation on something which does not support that computation. For example, it makes no logical sense to add the number 3 to a dog. This stems from the fact that "3" and "dog" support different behaviours\footnote{For instance, dogs can bark, but the number 3 cannot.}. Therefore, in a programming context, "3" and "dog" have distinct types; 3 is a number, and a dog is an animal. By assigning a type to values, programmers and the languages they use have an easier way to determine the valid operations on a value, and avoid type errors through misuse.
 
 A notable area in which languages differ is \emph{when} they detect type errors. A \emph{static} type system is one in which type errors are detected before the program is run (during compilation), and a \emph{dynamic} type system is one in which type errors are detected while the program is running. A static type system is preferable for runtime safety, since it ensures that any running program will avoid (at least some) type errors.
 
+Of course, as programming languages evolve, many have begun to address more and more errors at compile time (i.e. through the type system). Features similar to optional types have been added to languages such as Java\footnote{\url{https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html}} and C\#\footnote{\url{https://docs.microsoft.com/en-us/dotnet/csharp/nullable-references}}, and languages like Rust have pioneered ways of safely handling dynamic allocation through ownership types\footnote{\url{https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html}}. Many compilers now force the developer to handle classes of errors that previously could only be encountered at runtime, such as null pointer exceptions.
+
+However, one type of error that typically evades the type system is a \emph{logical error}---some (typically domain-specific) behaviour that is not guarded against by a language's type system. Catching logical errors in imperative languages is almost always done during execution. Many software systems use runtime features such as exceptions to discover and deal with errors and misuse of APIs. Enforcement of invariants and rules is typically dynamic; if a check fails, an exception is thrown and potentially handled. However, if a programmer forgets to implement such a check, the behaviour is unpredictable. A 2007 study \cite{exceptionsusedpoorly} on Java and .NET codebases indicates that exceptions are rarely used to recover from errors, and a 2016 analysis of Java codebases \cite{badjavaexceptions} reveals that exceptions are commonly misused in Java.
+
+Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values \cite{yorgey2012giving}, using \emph{type families} \cite{opentfs} \cite{closedtfs} that emulate functions at the type-level. These computations run at compile time, before the compiler generates an executable of the source code, allowing programmers to transform logic errors into type errors \cite{twt}. The exception misuse described above could be avoided by employing logical invariant checks at the type-level, rather than at runtime.
+
+Since these are relatively recent developments, there are few examples of their usage in complex applications. It is worth pushing the boundaries of existing type systems, and seeing what kind of logical behaviour can be modelled (and enforced) through type-level checks. In this project, we show how to utilise type-level programming features in Haskell in order to model the classic board game Chess in Haskell's type system, ruling out invalid moves at the type-level. A Haskell-Embedded Domain-Specific Language (DSL), for describing games of Chess, will interact with the type-level model. This Embedded DSL (EDSL) will be modelled on Algebraic Notation, a method of writing down the moves associated with a particular match of Chess. We implement the full, official International Chess Federation (FIDE) ruleset for Chess.
+
 A growing number of new languages have type systems which support \emph{Dependent types}, in which the types themselves depend on runtime values, and can be treated as values. The programming language Idris is similar to Haskell, but allows the programmer to pass around types at runtime, and write functions which operate on those types. Many of Haskell's language extensions have been adding to its type system, moving the language closer and closer towards dependently typed programming \cite{singletons}. Such a type system has various benefits, since constraining the types means constraining the values without dynamic runtime checks. (For example, in a dependently typed environment, runtime array bounds checks can be eliminated at runtime through being expressed solely in the type system \cite{dependentarray}.)
 
 Chess was chosen as a suitable game to model at the type-level due to its well-defined ruleset. Programming language type systems will evolve through usage, and so programs will and should be written to test what's possible to express at the type level. Chess is a widely understood, popular, and rigorously documented game, making it a natural fit to help push the boundaries of type-level programming. Simulating, and checking for rule violations within, a Chess game has a much wider scope than using type-level programming to avoid some dynamic checks. This project uses Chess as a case study for complex rule systems, to determine if such a thing can be modelled at the type level.
 
-\chapter{Objectives}
+\section{Related Work}
 
-The objective of this project is to develop an EDSL, nicknamed Chesskell, with which to express games of Chess. During compilation, the game of Chess will be simulated, such that any invalid move (or the lack of a move where one should have occurred) will result in a type error. The main goals are thus:
+Chesskell is, at the time of writing, unique; we are aware of no other type-level chess implementations. There have been allusions to Chess at the type-level through solving the N-queens problem in dependently typed languages, such as Idris\footnote{\url{https://github.com/ExNexu/nqueens-idris}}. The N-queens problem makes use of some chess rules, including the Queen's attack positions\footnote{A Queen can attack in a straight line in any direction.}; but as the end goal is not to successfully model a game of chess, it is not a full type-level chess implementation.
+
+However, Chesskell draws from, and owes much to, many well-established research areas, including type-level rule checking, EDSLs, and chess programming in general. This section of the report will detail related work, and how Chesskell differs from existing literature.
+
+\subsection{Type-level Rule Checking}
+
+The idea of using types to enforce rules on behaviour is hardly specific to Haskell; C and C-like languages ensure that you only apply the correct operations on types, after all. The programming language Rust\footnote{\url{https://www.rust-lang.org/}} has been voted the most loved language (by StackOverflow developers) 5 years running\footnote{\url{https://insights.stackoverflow.com/survey/2020\#technology-most-loved-dreaded-and-wanted-languages}}. Rust is touted as a systems language that guarantees memory safety and thread safety; and it achieves this through its type system. By enforcing strict ownership rules, Rust can guarantee that your programs avoid data races and that all memory is freed once and not used after being freed. This is a clear example of types enforcing runtime behaviour; but instead of Chess rules, a series of memory rules are being enforced. In fact, Haskell type-level constructs can be used to enforce basic ownership rules through a method colloquially known as the "ST Trick" \cite{twt}.
+
+An example of type-level rule checking in Haskell is a specific implementation of merge sort \cite{hasochism}. Through clever use of types, Lindley and McBride's merge sort implementation is guaranteed to produce sorted outputs. Unit tests for the sorting implementation become unnecessary, since the GHC type checker is used to ensure that the sort itself behaves correctly. The type system is used to enforce the rule that sorted data should be in sort order.
+
+The above examples may seem simple when compared to the ruleset of Chess, but they demonstrate the fact that type-level behaviour enforcement is neither new nor specific to Haskell. Though type systems can be complex, since many languages are designed to be general-purpose their type systems are also designed to be so. Chesskell represents an attempt at capturing domain-specific knowledge at the type level, and using that knowledge to maintain safe behaviour. Chesskell, and other type-level behaviour checkers, are not common simply because logic errors are usually dealt with through dynamic checks (it is certainly easier to write dynamic unit tests than it is to model your application domain with types).
+
+\subsection{Haskell-Embedded Domain-Specific Languages}
+
+Despite the apparent lack of work on Chess at the type level specifically, there is work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. DSLs exist for the purpose of modelling some domain in a language; so Haskell-Embedded DSLs are a natural use case for domain-specific modelling with types. If an EDSL comes with the guarantee that all valid programs written in that language will not exhibit invalid behaviour, then the EDSL becomes an attractive way to interact with that domain.
+
+Mezzo \cite{mezzohaskellsymposium} is an EDSL for music composition, which checks if the described piece of music conforms to a given musical ruleset during compilation of the program. For instance, one can apply classical harmony rules to ensure that the piece of music you compose would not go against the rules of the musical period. This EDSL is similar to Chesskell in aim, if not in application domain; performing compile-time checks of rulesets that are commonly checked dynamically. Mezzo is an example of a complex domain with complex rules (classical harmony) being modelled and enforced at the type-level. This is similar to Chesskell's objectives, and was a direct inspiration for the project.
+
+As another example, BioShake \cite{bioshake} is an EDSL for creating performant bioinformatics computational workflows. The correctness of these workflows is checked during compilation, preventing any from being created if their execution would result in certain errors. For bioinformatics workflows especially, this is ideal since many of these workflows are lengthy. BioShake goes further, however; providing tools to allow parallel execution of these workflows. While it is encouraging to see BioShake and other EDSLs \cite{aplite} focus on (and achieve) high performance, Chesskell has no such focus. This is primarily because very few parts of the rule-checking process can be parallelised; much of the move handling and order of rule checks must be done sequentially.
+
+\subsection{Chess in Computer Science}
+
+Chess has a rich history as a study area of Computer Science. Getting computers to play Chess was a concern back in 1949 \cite{1949chess}, and since then many developments have been made in the field. Chess has been used to educate \cite{chesseducation}, to entertain, and to test out machine learning approaches \cite{chessml}. Due to its status as a widely known game of logic, with a well-defined rule set, it is a prime candidate to act as the general setting for programming problems. Indeed, the famous NP-Complete problem referenced above, the N-Queens Problem \cite{nqueensnp}, relies on the rules of Chess.
+
+Many of these chess-related programs are written in Haskell, and are publicly available\footnote{\url{https://github.com/mlang/chessIO}}\footnote{\url{https://github.com/nionita/Barbarossa}}. Many of them are chess engines, which take in a board state and output the move(s) which are strongest, and so therefore perform move checking at the value-level to ensure that the moves that it outputs are valid. Chesskell differs from these in function, in that the end software does not output a list of strong moves; it simply takes in the moves performed, and state whether they are valid chess moves or not. We are not aware of any such type-level chess implementations in Haskell, or any other language.
+
+Game development, as a more general field in Computer Science, has many Chess-based or Chess-related games available. However, the intention in these cases is usually to facilitate real-time play between multiple players (or indeed a single player with a competitive AI), rather than to teach or program a machine to consistently beat players. There is overlap with Chesskell; Chess as a computer game must necessarily perform move validation (to disallow cheating) and ensure that players take turns. However, Chesskell is intended to check over a complete game, rather than to enable people to conduct a game in real-time with Chesskell as a mediator.
+
+\subsection{Why Haskell?}
+
+Given the previous discussion on dependent type systems, and how Haskell is inching towards one, it begs the question; why not use a dependently typed language, like Idris, to write Chesskell in? The simple answer is because it would be trivial. Writing type-level code in Idris (or any other dependently typed language) would be near indistinguishable from writing a chess validity checker, bundled within an EDSL, at the term-level. Such a feat is both simple and unoriginal.
+
+However, choosing to write Chesskell in Haskell means figuring out how to perform term-level computation at the type-level. Indeed, the majority of the code for Chesskell is reusable, since much of it is not specifically about expressing the rules of Chess, but building components to enable complex computation with types. The project is both more difficult, and more interesting, for having been completed in a language without a full dependent type system.
+
+\section{Objectives}
+
+The objective of this project is to develop a model of Chess at the type level, which will compile a given program if and only if it is a valid game of chess. The user-facing method of working with this type level model will be via a custom EDSL, through which Chess games are expressed. During compilation, the game of Chess will be simulated, such that any invalid move (or the lack of a move where one should have occurred) will result in a type error. The main goals are thus:
 
 \begin{itemize}
     \item Develop a type-level model of a Chess board;
-    \item Develop a type-level move-wise simulation of a Chess game;
+    \item Develop a type-level move-wise model of a Chess game;
     \item Develop an EDSL to express these type-level Chess games in;
     \item Ensure (through testing) that valid Chess games compile, and invalid Chess games do not.
 \end{itemize}
 
 During the course of the project, a "valid Chess game" is any game that adheres to the FIDE 2018 Laws of Chess\footnote{\url{https://handbook.fide.com/chapter/E012018}}. The FIDE laws also contain rules for the players themselves to adhere to; but these are outside the scope of the project, since they are not directly concerning the game of Chess itself.
 
-\part{Background}
 
-\chapter{Related Work}
+\chapter{Background}
 
-Chesskell is, at the time of writing, unique; we are aware of no other type-level chess implementations. There have been allusions to Chess at the type-level through solving the N-queens problem in dependently typed languages, such as Idris\footnote{\url{https://github.com/ExNexu/nqueens-idris}}. The N-queens problem makes use of some chess rules, including the Queen's attack positions\footnote{A Queen can attack in a straight line in any direction.}; but as the end goal is not to successfully model a game of chess, it is not a full type-level chess implementation.
+Haskell is a pure functional language, based upon lambda calculus with the addition of a type system\footnote{\url{https://www.haskell.org/}}. All Haskell expressions have a type, which is inferred at compile time. Programs go through \emph{type erasure}---the executable output of the compiler has no notion of types. In other words, Haskell has a clear separation between dynamic values, and the static types those values are members of.
 
-However, Chesskell draws from many well-established research areas, including type-level rule checking, EDSLs, and chess programming in general. This section of the report will detail related work, and how Chesskell differs from existing literature.
+As such, passing information between the type system and the runtime values (as is common in dependently typed languages) is made more difficult. This section summarises notable aspects of Haskell's type system, explaining how programmers can use Haskell extensions and advanced features to perform computation at the type level.
 
-\section{Type-level Rule Checking}
+\emph{A short note}: Haskell has an interactive Read-Eval-Print-Loop interpreter, named GHCi. The below section contains several GHCi snippets, to aid in understanding. \inline{\$>} represents a terminal input line, and anything following it can be assumed to have been typed into GHCi. A programmer can query the type of a value with \inline{:t}. So, \inline{\$> :t True} denotes an attempt to discover the type of the value \inline{True}, which is of course \inline{Bool}. Additionally, \inline{::} means "has type", so \inline{3 :: Int} reads as "the value \inline{3} has type \inline{Int}".
 
-The idea of using types to enforce rules on behaviour is hardly specific to Haskell; C and C-like languages ensure that you only apply the correct operations on types, after all. However, with the advent of more complex type systems and type-level programming, more and more rules can be expressed in the types, to ensure that compiled programs follow those rules.
+\section{Types in Haskell}
 
-The programming language Rust\footnote{\url{https://www.rust-lang.org/}} has been voted the most loved language (by StackOverflow developers) 5 years running\footnote{\url{https://insights.stackoverflow.com/survey/2020\#technology-most-loved-dreaded-and-wanted-languages}}. Rust is touted as a systems language that guarantees memory safety and thread safety; and it achieves this through its type system. By enforcing strict ownership rules, Rust can guarantee that your programs avoid data races and that all memory is freed once and not used after being freed. This is a clear example of types enforcing runtime behaviour; but instead of Chess rules, a series of memory rules are being enforced. In fact, Haskell type-level constructs can be used to enforce basic ownership rules through a method colloquially known as the "ST Trick" \cite{twt}.
+Programs written in Haskell make use of \emph{types} and \emph{terms} (colloquially known as values). That is, a type can be viewed as a (potentially infinite) set of valid terms, and each term has a type. The primary Haskell compiler, GHC, is responsible for inferring types, and for generating type errors when a given term does not match its recorded or inferred type.
 
-Examples of type-level rule checking in more Functional languages include... % TODO: This
+For instance, as in many other languages, \inline{3} has type \inline{Int}. It would be incorrect to declare an expression of a different type, and to give it a value of \inline{3}, as below:
 
-\section{Embedded Domain-Specific Languages}
+\begin{lstlisting}
+x :: Bool
+x = 3  -- error: Couldn't match expected type 'Bool' with actual type 'Int'
+\end{lstlisting}
 
-Despite the apparent lack of work on Chess at the type level specifically, there is work on Haskell-Embedded DSLs in other domains to enforce certain behaviour at compile time. Mezzo \cite{mezzohaskellsymposium} is an EDSL for music composition, which checks if the described piece of music conforms to some musical ruleset during compilation of the program. This EDSL is similar to Chesskell in aim, if not in application domain; performing compile-time checks of rulesets that are commonly checked at runtime.
+However, Haskell has support for \emph{polymorphism}; firstly, ad-hoc polymorphism, whereby functions can be specialised to operate on specific types, with separate definitions for each type.
 
-As another example, BioShake \cite{bioshake} is an EDSL for creating performant bioinformatics computational workflows. The correctness of these workflows is checked during compilation, preventing any from being created if their execution would result in certain errors. For bioinformatics workflows especially, this is ideal since many of these workflows are lengthy. BioShake goes further, however; providing tools to allow parallel execution of these workflows. While it is encouraging to see BioShake and other EDSLs \cite{aplite} focus on (and achieve) high performance, Chesskell will have no such focus. This is primarily because very few parts of the rule-checking process can be parallelised; much of the move handling and order of rule checks must be done sequentially.
+Secondly, parametric polymorphism, where a value's type is dependent on one or more \emph{type variables}. Consider the list type; it would be nonsensical to define an entire new list data type for each potential inhabitant. As such, the list type in Haskell is more general, in that it can hold any value with a type that can be unified with a type variable:
 
-\chapter{The Basics of Chess}
+\begin{lstlisting}
+$> :t [True, False]
+[True, False] :: [Bool]
+$> :t []
+[] :: [a]
+\end{lstlisting}
 
-\section{The Board}
+In Haskell, type variables are typically named alphabetically; so the first general type in an type annotation is \inline{a}, followed by \inline{b}, \inline{c}, and so on. In fact, all Haskell types start with a capital letter, so any lowercase string is a valid type variable name.
 
-\subsection{The Pieces}
+Haskell functions all have type \inline{a -> b}, where the type variables \inline{a} and \inline{b} extend to more types, including other function types. The rightmost type in a function definition is the return type. For instance, Boolean logical AND would have the type \inline{Bool -> Bool -> Bool}, while logical NOT would have the type \inline{Bool -> Bool}. Haskell functions can be partially applied; the below code snippet assumes the definition of a function \inline{and}, which performs logical AND on its two inputs:
 
-\section{The Game}
+\begin{lstlisting}
+$> :t and
+and :: Bool -> Bool -> Bool
+$> :t and True
+and True :: Bool -> Bool
+$> and True False
+and True False :: Bool
+\end{lstlisting}
 
-\section{Chess Notation}
+Haskell allows the programmer to define their own data type with the keyword \inline{data}. These data types are \emph{algebraic}, meaning that it is a type comprised of other types. For instance, to define a "Hand" type, where someone can hold something on each finger, the definition would be something like as follows:
 
-\chapter{Chess In Computer Science}
+\begin{lstlisting}
+data Hand a = One a
+            | Two a a
+            | Three a a a
+            | Four a a a a
+            | Five a a a a a
+\end{lstlisting}
 
-\section{Chess Programs}
+However, this definition syntax has limitations; all of the return values of the type constructors above must be \inline{Hand a}. A Haskell extension allows the definition of \emph{Generalised Algebraic Data Types} (GADTs) which allows more complex type constructor definitions \cite{gadts}. The above \inline{Hand} datatype could be expressed thus:
 
-Chess has a rich history in Computer Science. Getting computers to play Chess was a concern back in 1949 \cite{1949chess}, and since then many developments have been made in the field. Chess has been used to educate \cite{chesseducation}, to entertain, and to test out machine learning approaches \cite{chessml}. Due to its status as a widely known game of logic, with a well-defined rule set, it is a prime candidate to act as the general setting for programming problems. Indeed, the famous NP-Complete problem referenced above, the N-Queens Problem \cite{nqueensnp}, relies on the rules of Chess.
+\begin{lstlisting}
+data Hand a where
+    One   :: a -> Hand a
+    Two   :: a -> a -> Hand a
+    Three :: a -> a -> a -> Hand a
+    Four  :: a -> a -> a -> a -> Hand a
+    Five  :: a -> a -> a -> a -> a -> Hand a
+\end{lstlisting}
 
-Many of these chess-related programs are written in Haskell, and are publicly available\footnote{\url{https://github.com/mlang/chessIO}}\footnote{\url{https://github.com/nionita/Barbarossa}}. Many of them are chess engines, which take in a board state and output the move(s) which are strongest, and so therefore perform move checking at the value-level to ensure that the moves that it outputs are valid. Chesskell differs from these in function, in that the end software will not output a list of strong moves; it will simply take in the moves performed, and state whether they are valid chess moves or not. We are not aware of any such type-level chess implementations in Haskell, or any other language.
+Furthermore, if you wished to modify \inline{Hand} to ensure that it always stored \inline{Int} values on odd fingers, and \inline{Bool} values on even fingers, you can achieve that with GADTs like so:
 
-Game development, as a more general field in Computer Science, has many Chess-based or Chess-related games available. However, the intention in these cases is usually to facilitate real-time play between multiple players (or indeed a single player with a competitive AI), rather than to teach or program a machine to consistently beat players. There is overlap with Chesskell; Chess as a computer game must necessarily perform move validation (to disallow cheating) and ensure that players take turns. However, Chesskell is intended to check over a complete game, rather than to enable people to conduct a game in real-time with Chesskell as a mediator.
+\begin{lstlisting}
+data Hand a where
+    One   :: Int  -> Hand Int
+    Two   :: Bool -> Int  -> Hand Bool
+    Three :: Int  -> Bool -> Int  -> Hand Int
+    Four  :: Bool -> Int  -> Bool -> Int  -> Hand Bool
+    Five  :: Int  -> Bool -> Int  -> Bool -> Int  -> Hand Int
+\end{lstlisting}
 
-\section{Chess Data Structures}
+\section{Type-level Programming}
+
+While the above is certainly useful in day-to-day programming, it is not enough to achieve dependent types. Luckily, there are many more Haskell extensions, a large number of which bring the language closer to dependent types.
+
+\subsection{Kind Promotion}
+
+A key concept in type-level programming in Haskell is that of \emph{promotion}. The data types that programmers define (as we explain above) can be promoted to \emph{kinds}. Kinds are, conceptually, the types of types; that is, terms have types, and types have kinds. A type of kind \inline{*} takes no type variables, and a type of kind \inline{* -> * -> *} takes in two type variables and returns a type. Consider an empty list, which takes a type variable; it has kind \inline{* -> *}, which can be verified using GHCi with the \inline{:k} directive, or the \inline{:kind!} directive which additionally evaluates the type to a normal form:
+
+\begin{lstlisting}
+$> :k []
+[] :: * -> *
+$> :k [Int]
+[Int] :: *
+\end{lstlisting}
+
+The kind \inline{*} is commonly aliased as \inline{Type}, since it is the kind of types which have runtime values. That distinction becomes important when promotion is involved; programmers can define their own kinds with the \inline{-XDataKinds} extension enabled. Consider a custom \inline{Book} data type, which is either \inline{Fiction} or \inline{NonFiction}. A type definition may look as follows:
+
+\begin{lstlisting}
+data Book = Fiction | NonFiction
+-- With GADT syntax
+data Book where
+    Fiction :: Book
+    NonFiction :: Book
+\end{lstlisting}
+
+With the \inline{-XDataKinds} extension enabled, the above code not only produces the two values \inline{Fiction} and \inline{NonFiction} with type \inline{Book}, but also the \emph{types} \inline{'Fiction} and \inline{'NonFiction}, of kind \inline{Book}. The key point of understanding is that there are no values of type \inline{'Fiction} or \inline{'NonFiction}---they exist solely at the type level.
+
+The syntax for "has type" and "has kind" is in both cases \inline{::}, which is unfortunate; however, in the rest of the document, where the distinction is unclear, it shall be made so. Additionally, the prefix \inline{'} for promoted types is optional, and is left out where the compiler can unambiguously state whether an expression should be a type or a value.
+
+\subsection{Type Families}
+
+Another key extension introduces \emph{type families}. Type families allow the programmer to compute over types just as functions compute over values; they are the type-level analogue to functions, and come with their own syntax. Following on from the \inline{Book} example above, consider a type family \inline{IsFiction}, which states whether a given \inline{Book} is fiction or not. A term-level definition could be as follows:
+
+\begin{lstlisting}
+isFiction :: Book -> Bool
+isFiction Fiction    = True
+isFiction NonFiction = False
+\end{lstlisting}
+
+And the type family analogue is thus, where \inline{::} below means "has kind":
+
+\begin{lstlisting}
+type family IsFiction (x :: Book) :: Bool where
+    IsFiction 'Fiction    = True
+    IsFiction 'NonFiction = False
+\end{lstlisting}
+
+Both function and family use pattern-matching, and although the type family syntax is a little more verbose, it is still clear. However, the above is a \emph{closed} type family; programmers can define \emph{open} type families which can be extended beyond their initial definition. This mimics ad-hoc polymorphism, in that different implementations of the same type family can be offered with different types as input.
+
+There are more notable differences between (closed) type families and functions beyond syntax. The most important is that type families cannot be partially applied in the same way that functions can. Consider a function (and closed type family) \inline{IsEitherFiction}, which takes in two books and states whether either of them are fiction or not. A function definition, and a closed type family definition, are below:
+
+\begin{lstlisting}
+isEitherFiction :: Book -> Book -> Book
+isEitherFiction Fiction _ = True
+isEitherFiction NonFiction Fiction = True
+isEitherFiction NonFiction NonFiction = False
+
+type family IsEitherFiction (x :: Book) (y :: Book) :: Bool where
+    IsEitherFiction 'Fiction _ = True
+    IsEitherFiction 'NonFiction 'Fiction = True
+    IsEitherFiction 'NonFiction 'NonFiction = False
+\end{lstlisting}
+
+While the function \inline{isEitherFiction} can be partially applied, the type family \inline{IsEitherFiction} cannot. One could feasibly map \inline{isEitherFiction} over a list of books, but mapping with the type family \inline{IsEitherFiction} is impossible:
+
+\begin{lstlisting}
+$> map (isEitherFiction NonFiction) [NonFiction, Fiction]
+= [False, True]
+$> kind! Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ]
+error: The type family 'IsEitherFiction' should have 2 arguments, but has been given 1
+\end{lstlisting}
+
+Sadly, lots of functional programming relies on partial application, and these facilities simply aren't available when using Haskell's Type Families.
+
+\subsection{First-Class Families}
+
+The above problem is still an open one in type-level programming, but one solution comes from Li-yao Xia, who put together a Haskell library named First Class Families\footnote{\url{https://github.com/Lysxia/first-class-families}}. First Class Families allow the programmer to map over structures, and specialise type families (a la ad-hoc polymorphism), similar to value-level functions. Sadly, First Class Families is not supported by any formal literature on the topic at the time of writing; so we briefly introduce and explain the concept below.
+
+It relies on a type, \inline{Exp}, and an open type family, \inline{Eval}. They are defined as so:
+
+\begin{lstlisting}
+type Exp a = a -> *
+type family Eval (e :: Exp a) :: a
+\end{lstlisting}
+
+Using these two definitions, a type-level interpreter becomes available for use. While type families cannot be partially applied, type and kind constructors have no such restriction; and so passing around the types as \inline{Exp} types allow the programmer to partially apply, and to evaluate whenever they choose by calling \inline{Eval}. For instance, consider the \inline{IsEitherFiction} type family, but defined in "First Class Family" style instead:
+
+\begin{lstlisting}
+data IsEitherFiction :: Book -> Book -> Exp Bool
+type instance Eval (IsEitherFiction Fiction Fiction) = True
+type instance Eval (IsEitherFiction Fiction NonFiction) = True
+type instance Eval (IsEitherFiction NonFiction Fiction) = True
+type instance Eval (IsEitherFiction NonFiction NonFiction) = False
+\end{lstlisting}
+
+When combined with a definition of \inline{Map}, mapping (and general Functor behaviour) at the type level becomes possible:
+
+\begin{lstlisting}
+    
+\end{lstlisting}
+
+However, due to their implementation via an open type family, First Class Families have the restriction that they cannot have overlapping definitions. For instance, the below will not compile:
+
+\begin{lstlisting}
+data IsEitherFiction :: Book -> Book -> Exp Bool
+type instance Eval (IsEitherFiction Fiction _) = True
+type instance Eval (IsEitherFiction x Fiction) = True
+type instance Eval (IsEitherFiction x NonFiction) = False
+\end{lstlisting}
+
+It will not compile because when determining which definition to use for \inline{IsEitherFiction Fiction Fiction} (or \inline{IsEitherFiction Fiction NonFiction}), the compiler is unable to tell whether to bind the first argument (\inline{Fiction}) to the \inline{x} or to use the first definition. When using a closed type family, or a term-level function, the definitions written are implicitly ordered, so if it is unclear, the behaviour is to default to the first definition written. Luckily, this can be leveraged; by using a combination of First Class Families and closed type families, both partial application and ordered definitions can be used:
+
+\begin{lstlisting}
+data IsEitherFiction :: Book -> Book -> Exp Bool
+type instance Eval (IsEitherFiction x y) = IsEitherFiction' x y
+
+type family IsEitherFiction' (x :: Book) (y :: Book) :: Bool where
+    IsEitherFiction' 'Fiction _ = True
+    IsEitherFiction' x 'Fiction = True
+    IsEitherFiction' x 'NonFiction = False
+\end{lstlisting}
+
+\subsection{Proxies and Singletons}
+
+% TODO
+
+
+\chapter{Design}
+
+\section{The Basics of Chess}
+
+\subsection{The Board}
+
+\subsubsection{The Pieces}
+
+\subsection{The Game}
+
+\subsection{Chess Notation}
+
+\section{Type-Level Data Structures}
+
+\subsection{Chess Data Structures}
 
 An important part of any good chess program is its board representation, since all other parts of the program come from this; move generation, move evaluation, and the entire search space are all defined or influenced by the board representation. A great deal of work has gone into defining memory- or time-efficient chess boards \cite{bitboard} \cite{searchtables}, including combinations of multiple representations to yield greater speed \cite{bitandccr}. While there is value to be gleaned from examining these representations, Chesskell serves a different purpose; it does not need to search through the valid set of moves to determine which are the best, and speed is not its focus. Chesskell's board representation must be relatively efficient, but it would be naive to expect similar levels of performance from type-level constraint solving computation as from optimised term-level code.
 
 
-\part{Design}
+\chapter{Implementation}
 
-\chapter{Type-level Programming}
+\section{Type-Level Chess}
 
-\section{Type Families}
+\subsection{Chess Types and Kinds}
 
-\section{First-Class Families}
+\subsubsection{The Pieces}
 
-\section{Type-Level Data Structures}
+\subsubsection{The Board}
 
-\chapter{Giving Runtime Information to the Compiler}
+\subsubsection{Miscellaneous Types}
 
-\chapter{Development Approach}
+\subsection{Chess Rules}
 
-\section{Methodology}
+\subsubsection{Movement Rules}
+
+\subsubsection{Attack/Capture Rules}
+
+\subsubsection{Checking For Violations}
+
+\subsubsection{Exceptions}
+
+\paragraph{Castling}
+
+\paragraph{Pawn Capture and En Passant}
+
+\section{The EDSL}
+
+\subsection{Minimum Viable Product}
+
+\subsection{Flat Builders}
+
+\subsection{Moving the pieces}
+
+\subsection{Setting up a board}
+
+
+\chapter{Evaluation}
 
 \section{Testing}
 
+\subsection{Type-level Unit Testing}
 
-\part{Implementation}
-
-\chapter{Type-Level Chess}
-
-\section{Chess Types and Kinds}
-
-\subsection{The Pieces}
-
-\subsection{The Board}
-
-\subsection{Miscellaneous Types}
-
-\section{Chess Rules}
-
-\subsection{Movement Rules}
-
-\subsection{Attack/Capture Rules}
-
-\subsection{Checking For Violations}
-
-\subsection{Exceptions}
-
-\subsubsection{Castling}
-
-\subsubsection{Pawn Capture and En Passant}
-
-\chapter{The EDSL}
-
-\section{Minimum Viable Product}
-
-\section{Flat Builders}
-
-\section{Moving the pieces}
-
-\section{Setting up a board}
-
-\chapter{Testing}
-
-\section{Type-level Unit Testing}
-
-\section{Testing Chesskell Games}
-
-
-\part{Evaluation}
-
-\chapter{Difficulties}
-
-\section{Session-typed Chesskell}
+\subsection{Testing Chesskell Games}
 
 \section{Compile Time and Memory Usage}
 
@@ -232,26 +421,29 @@ An important part of any good chess program is its board representation, since a
 
 \subsection{GHC Bug Report}
 
-\section{Descriptive Error Messages}
+\subsection{Descriptive Error Messages}
 
-\subsection{Move Number}
+\subsubsection{Move Number}
 
-\chapter{Chesskell EDSL vs Other Chess Notations}
-
-
-\part{Conclusion}
-
-\chapter{Results and Accomplishments}
-
-\chapter{Future Work}
+\section{Chesskell EDSL vs Other Chess Notations}
 
 
-\part{Appendix}
+\chapter{Conclusions}
 
+Chesskell is a successful project. ...
 
+\section{Results and Accomplishments}
+
+\section{Future Work}
+
+\subsection{Session-typed Chesskell}
 
 \bibliographystyle{ieeetr}
 
 \bibliography{diss}
+
+\chapter{Appendix}
+
+
 
 \end{document}
