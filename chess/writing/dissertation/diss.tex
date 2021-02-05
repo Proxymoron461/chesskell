@@ -31,7 +31,9 @@
     captionpos=b,
     frame=tlbr,    % Margin at all 4 sides
     framesep=4pt,  % Margin size
-    framerule=0pt
+    framerule=0pt,
+    otherkeywords={:k, :t, :kind!, @, \$>},
+    morekeywords={:k, :t, :kind!, @, \$>, Eval, Exp}
 }
 
 \setkomafont{sectioning}{\firamedium}
@@ -88,7 +90,7 @@ Of course, as programming languages evolve, many have begun to address more and 
 
 However, one type of error that typically evades the type system is a \emph{logical error}---some (typically domain-specific) behaviour that is not guarded against by a language's type system. Catching logical errors in imperative languages is almost always done during execution. Many software systems use runtime features such as exceptions to discover and deal with errors and misuse of APIs. Enforcement of invariants and rules is typically dynamic; if a check fails, an exception is thrown and potentially handled. However, if a programmer forgets to implement such a check, the program behaviour becomes unpredictable. A 2007 study \cite{exceptionsusedpoorly} on Java and .NET codebases indicates that exceptions are rarely used to recover from errors, and a 2016 analysis of Java codebases \cite{badjavaexceptions} reveals that exceptions are commonly misused in Java.
 
-Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values \cite{yorgey2012giving}, using \emph{type families} \cite{opentfs} \cite{closedtfs} that emulate functions at the type-level. These computations run at compile time, before the compiler generates an executable of the source code, allowing programmers to transform logic errors into type errors \cite{twt}. The exception misuse described above could be avoided by employing logical invariant checks at the type-level, rather than at runtime.
+Recent versions of the \emph{Glasgow Haskell Compiler} (GHC) support programming at the type level, allowing programmers to compute with types in the same way that languages like C or Python compute with values \cite{givingpromotion}, using \emph{type families} \cite{opentfs} \cite{closedtfs} that emulate functions at the type-level. These computations run at compile time, before the compiler generates an executable of the source code, allowing programmers to transform logic errors into type errors \cite{twt}. The exception misuse described above could be avoided by employing logical invariant checks at the type-level, rather than at runtime.
 
 Since these are relatively recent developments, there are few examples of their usage in complex applications. It is worth pushing the boundaries of existing type systems, and seeing what kind of logical behaviour can be modelled (and enforced) through type-level checks. In this project, we show how to utilise type-level programming features in Haskell in order to model the classic board game Chess in Haskell's type system, ruling out invalid moves at the type-level. A Haskell-Embedded Domain-Specific Language (DSL), for describing games of Chess, will interact with the type-level model. This Embedded DSL (EDSL) will be modelled on Algebraic Notation, a method of writing down the moves associated with a particular match of Chess. We implement the full, official International Chess Federation (FIDE) ruleset for Chess.
 
@@ -216,7 +218,7 @@ data Hand a = One a
             | Five a a a a a
 \end{lstlisting}
 
-However, this definition syntax has limitations; all of the return values of the type constructors above must be \inline{Hand a}. A Haskell extension allows the definition of \emph{Generalised Algebraic Data Types} (GADTs) which allows more complex type constructor definitions \cite{gadts}. The above \inline{Hand} datatype could be expressed thus:
+However, this definition syntax has limitations; all of the return values of the type constructors above must be \inline{Hand a}. A Haskell extension allows the definition of \emph{Generalised Algebraic Data Types} (GADTs) \cite{gadts} which allows more complex type constructor definitions. The above \inline{Hand} datatype could be expressed thus:
 
 \begin{lstlisting}
 data Hand a where
@@ -244,7 +246,7 @@ While the above is certainly useful in day-to-day programming, it is not enough 
 
 \subsection{Kind Promotion}
 
-A key concept in type-level programming in Haskell is that of \emph{promotion}. The data types that programmers define (as we explain above) can be promoted to \emph{kinds}. Kinds are, conceptually, the types of types; that is, terms have types, and types have kinds. A type of kind \inline{*} takes no type variables, and a type of kind \inline{* -> * -> *} takes in two type variables and returns a type. Consider an empty list, which takes a type variable; it has kind \inline{* -> *}, which can be verified using GHCi with the \inline{:k} directive, or the \inline{:kind!} directive which additionally evaluates the type to a normal form:
+A key concept in type-level programming in Haskell is that of \emph{promotion} \cite{givingpromotion}. The data types that programmers define (as we explain above) can be promoted to \emph{kinds}. Kinds are, conceptually, the types of types; that is, terms have types, and types have kinds. A type of kind \inline{*} takes no type variables, and a type of kind \inline{* -> * -> *} takes in two type variables and returns a type. Consider an empty list, which takes a type variable; it has kind \inline{* -> *}, which can be verified using GHCi with the \inline{:k} directive, or the \inline{:kind!} directive which additionally evaluates the type to a normal form:
 
 \begin{lstlisting}
 $> :k []
@@ -269,7 +271,7 @@ The syntax for "has type" and "has kind" is in both cases \inline{::}, which is 
 
 \subsection{Type Families}
 
-Another key extension introduces \emph{type families}. Type families allow the programmer to compute over types just as functions compute over values; they are the type-level analogue to functions, and come with their own syntax. Following on from the \inline{Book} example above, consider a type family \inline{IsFiction}, which states whether a given \inline{Book} is fiction or not. A term-level definition could be as follows:
+Another key extension introduces \emph{type families} \cite{opentfs} \cite{closedtfs}. Type families allow the programmer to compute over types just as functions compute over values; they are the type-level analogue to functions, and come with their own syntax. Following on from the \inline{Book} example above, consider a type family \inline{IsFiction}, which states whether a given \inline{Book} is fiction or not. A term-level definition could be as follows:
 
 \begin{lstlisting}
 isFiction :: Book -> Bool
@@ -365,9 +367,57 @@ type family IsEitherFiction' (x :: Book) (y :: Book) :: Bool where
     IsEitherFiction' x 'NonFiction = False
 \end{lstlisting}
 
+\subsection{Type Applications}
+
+The \inline{-XTypeApplications} Haskell syntax provides a way for the programmer to directly specify type variables \cite{typeapplication}. Consider an empty list, with type \inline{[a]}. Using type application syntax, where you prefix a type name with \inline{@}, one can specify the type of an empty list by stating what type should inhabit type variable \inline{a}:
+
+\begin{lstlisting}
+$> :t []
+[] :: [a]
+$> :t [] @Int
+[] @Int :: [Int]
+$> :t [] @Bool
+[] @Bool :: [Bool]
+\end{lstlisting}
+
 \subsection{Proxies and Singletons}
 
+While promotion and type families allow the programmer to compute at the type level, there must be some way to pass information between the value level and the type level for this to be useful. For Chesskell, this communication only needs to be one-way; the term-level EDSL passes information up to the type system, which either compiles successfully or throws a type error. There are two widely used methods of passing information from values to types; \emph{proxies} and \emph{singletons}.
 
+\subsubsection{Proxy Types}
+
+Proxy types provide a wrapper to allow arbitrary types to have kind \inline{*}. As we explain above, all term-level functions take in values, and all values have types with kind \inline{*}. Term-level functions cannot operate on types of another kind, since they have no runtime values.
+
+The \inline{Proxy} type constructor takes in a single type variable, and exposes a polymorphic value \inline{Proxy}. The \inline{Proxy} type constructor, when applied to some type, has kind \inline{*}. To follow on from the previous \inline{Book} example, while \inline{'NonFiction} has kind \inline{Book}, \inline{Proxy 'NonFiction} has kind \inline{*}, and so values of type \inline{Proxy 'NonFiction} can be passed around at the type level.
+
+By making use of the type application syntax we explain above, we can demonstrate how term-level \inline{Proxy} values can be used to pass around type variables with arbitrary kinds:
+
+\begin{lstlisting}
+$> :k 'NonFiction
+'NonFiction :: Book
+$> :t Proxy
+Proxy :: forall k (t :: k). Proxy t
+$> :t Proxy @NonFiction
+Proxy @NonFiction :: Proxy 'NonFiction
+$> :k Proxy 'NonFiction
+Proxy 'NonFiction :: *
+\end{lstlisting}
+
+\subsubsection{Singletons}
+
+As helpful as proxy types can be, their data flow is one-way; there is no way, at the term-level, to ascertain the type of a \inline{Proxy} value. However, singletons \cite{singletons} provide a two-way flow. Each singleton type has a single inhabitant, and each individual value has a single unambiguous type. In other words, it's a large step towards dependently typed programming.
+
+This is achieved through, for each defined type, running it through the Richard Eisenberg's singletons library's Template Haskell definitions\footnote{\url{https://hackage.haskell.org/package/singletons}}. Template Haskell is a compile-time meta-programming system, similar to macros in that it allows programmers to define programs to modify and generate Haskell source code \cite{templatehaskell}. The singletons library uses Template Haskell to define new data types, given data type definitions. Should singletons be given the definition of the \inline{Book} datatype which we detail above, it will generate a new \inline{SBook} datatype, defined as below:
+
+\begin{lstlisting}
+data SBook :: Book -> * where
+    SFiction    :: SBook 'Fiction
+    SNonFiction :: SBook 'NonFiction
+\end{lstlisting}
+
+Due to datatype promotion, this introduces new values, types, and kinds. The runtime value \inline{SFiction} has the type \inline{SBook 'Fiction}, and the type \inline{'SFiction} has kind \inline{SBook Fiction}. These definitions are designed to enable the programmer to perform term-level computation which takes types into account, as well as pass type variables around much as with proxy types.
+
+The type of \inline{SNonFiction} can only be \inline{SBook 'NonFiction}, and so term-level code now has some intuition of types; and conversely, when given a type \inline{SBook a}, type families can use the type variable \inline{a} which will be either \inline{'Fiction} or \inline{'NonFiction}.
 
 
 \chapter{Design}
