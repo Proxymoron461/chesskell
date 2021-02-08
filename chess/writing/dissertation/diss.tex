@@ -15,7 +15,7 @@
 \definecolor{comments}{rgb}{0.0, 0.64, 0.0}
 \definecolor{keywords}{rgb}{0.0, 0.0, 0.64}
 \definecolor{identifiers}{rgb}{0.63, 0.81, 0.94}
-\definecolor{strings}{rgb}{1.0, 0.6, 0.4}
+\definecolor{strings}{rgb}{1.0, 0.3, 0.0}
 
 \lstset{
     language=haskell,
@@ -33,7 +33,7 @@
     framesep=4pt,  % Margin size
     framerule=0pt,
     morekeywords={Eval, Exp, family, instance},
-    deletekeywords={map, and}
+    deletekeywords={map, and, error}
 }
 
 \setkomafont{sectioning}{\firamedium}
@@ -156,7 +156,7 @@ As such, passing information between the type system and the runtime values (as 
 
 \emph{A short note}: Haskell has an interactive Read-Eval-Print-Loop interpreter, named GHCi. The below section contains several GHCi snippets, to aid in understanding. \inline{\$>} represents a terminal input line, and anything following it can be assumed to have been typed into GHCi. A programmer can query the type of a value with \inline{:t}. So, \inline{\$> :t True} denotes an attempt to discover the type of the value \inline{True}, which is of course \inline{Bool}. Additionally, \inline{::} means "has type", so \inline{3 :: Int} reads as "the value \inline{3} has type \inline{Int}".
 
-\section{Types in Haskell}
+\section{Behaviour in Haskell}
 
 Programs written in Haskell make use of \emph{types} and \emph{terms} (colloquially known as values). That is, a type can be viewed as a (potentially infinite) set of valid terms, and each term has a type. The primary Haskell compiler, GHC, is responsible for inferring types, and for generating type errors when a given term does not match its recorded or inferred type.
 
@@ -240,6 +240,33 @@ data Hand a where
     Five  :: Int  -> Bool -> Int  -> Bool -> Int  -> Hand Int
 \end{lstlisting}
 
+\subsection{Lazy Evaluation}
+
+Haskell is a \emph{lazily evaluated} language, which means that values are computed on-demand. This contrasts with \emph{eagerly evaluated languages} like C or Java, which evaluate their arguments before applying functions. A good example of this behaviour is with infinite list types. Trivially, if a program tries to fully evaluate an infinite list, then it will never terminate. However, in a lazily evaluated environment, an infinite list can be used for computation. Consider the below example, where the \inline{(:)} operator adds an element to the beginning of a list, and \inline{take n list} takes \inline{n} elements from the start of \inline{list}:
+
+\begin{lstlisting}
+$> infiniteList = 1 : infiniteList
+$> take 5 infiniteList
+[1,1,1,1,1]
+\end{lstlisting}
+
+Another example demonstrates lazy evaluation: in Haskell, the \inline{undefined} value simply throws an error whenever encountered. However, it can be used (in the below two examples) to demonstrate Haskell lazy evaluation:
+
+\begin{lstlisting}
+$> list = [1,2,3,undefined]
+$> take 3 list
+[1,2,3]
+$> take 4 list
+Exception: Prelude.undefined
+-- ...
+$> if True then 3 else undefined
+3
+$> if False then 3 else undefined
+Exception: Prelude.undefined
+\end{lstlisting}
+
+All values in Haskell are lazily evaluated (unless explicitly set otherwise in code). The expression \inline{5 + 2 * 3} will only be evaluated to \inline{11} when that value is required somewhere in code, and if it is never required, it is never evaluated.
+
 \section{Type-level Programming}
 
 While the above is certainly useful in day-to-day programming, it is not enough to achieve dependent types. Luckily, there are many more Haskell extensions, a large number of which bring the language closer to dependent types.
@@ -312,7 +339,21 @@ $> kind! Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ]
 error: The type family 'IsEitherFiction' should have 2 arguments, but has been given 1
 \end{lstlisting}
 
-Sadly, lots of functional programming relies on partial application, and these facilities simply aren't available when using Haskell's Type Families.
+Sadly, lots of functional programming relies on partial application, and these facilities simply aren't available when using Haskell's Type Families. Additionally, Type Families are not lazily evaluated, but are eagerly evaluated; we demonstrate with the definition of a custom \inline{If} type family, combined with a type error:
+
+\begin{lstlisting}
+type family If (x :: Bool) (t :: k) (e :: k) :: k where
+    If True  x _ = x
+    If False _ y = y
+
+$> kind! If True 3 4
+If True 3 4 :: Nat
+= 3
+$> :kind! If True 3 (TypeError (Text "Not lazily evaluating!"))
+error: Not lazily evaluating!
+\end{lstlisting}
+
+Compared with the behaviour of Haskell's term-level \inline{if}, it is clear that type families are eagerly evaluated rather than lazily evaluated.
 
 \subsection{First-Class Families}
 
@@ -366,6 +407,49 @@ type family IsEitherFiction' (x :: Book) (y :: Book) :: Bool where
     IsEitherFiction' x 'Fiction = True
     IsEitherFiction' x 'NonFiction = False
 \end{lstlisting}
+
+\subsubsection{Type-level Lazy Evaluation}
+
+First Class Families introduce more than partial application; they can be used to perform type-level lazy evaluation. Consider a First Class Family, \inline{TE}, which takes in an \inline{ErrorMessage} and returns a \inline{TypeError}:
+
+\begin{lstlisting}
+data TE :: ErrorMessage -> Exp a
+type instance Eval (TE msg) = TypeError msg
+\end{lstlisting}
+
+When combined with \inline{Eval}, \inline{TE} can be used to return a type error:
+
+\begin{lstlisting}
+$> :kind! Eval (TE (Text "Custom error!"))
+error: Custom error!
+\end{lstlisting}
+
+By guarding the actual type error behind \inline{Eval} calls, type errors can be lazily evaluated, as can other type level constructs. Consider another First Class Family for if statements:
+
+\begin{lstlisting}
+data If :: Bool -> Exp a -> Exp a -> Exp a
+type instance Eval (If True  x y) = Eval x
+type instance Eval (If False x y) = Eval y
+\end{lstlisting}
+
+Alongside a First Class Family version of the identity function:
+
+\begin{lstlisting}
+data ID :: a -> Exp a
+type instance Eval (ID x) = x
+\end{lstlisting}
+
+The First Class Family version of \inline{If} supports lazy evaluation; as can be demonstrated by placing an unevaluated type error in the else branch:
+
+\begin{lstlisting}
+$> :kind! Eval (If True (ID 3) (TE (Text "Not lazily evaluated!")))
+Eval (If True (ID 3) (TE (Text "Not lazily evaluated!"))) :: Nat
+= 3
+$> :kind! Eval (If False (ID 3) (TE (Text "Not lazily evaluated!")))
+error: Not lazily evaluated!
+\end{lstlisting}
+
+The behaviour of the First Class Family definition is different from that of the regular type family definition; the type error is never evaluated, as the \inline{Eval} call on the else branch is never made. As such, First Class Families can be used to perform lazy evaluation at the type level.
 
 \subsection{Type Applications}
 
