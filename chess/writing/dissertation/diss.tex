@@ -10,6 +10,7 @@
 \usepackage{xcolor}
 \usepackage{parskip}
 \usepackage[multiple]{footmisc}
+\usepackage{skak}
 
 \definecolor{background}{rgb}{0.97, 0.97, 0.97}
 \definecolor{comments}{rgb}{0.0, 0.64, 0.0}
@@ -506,9 +507,15 @@ The type of \inline{SNonFiction} can only be \inline{SBook 'NonFiction}, and so 
 
 \chapter{Design}
 
+This section of the dissertation details the general design of Chesskell, including some basics on chess to aid in explanation. Broadly, Chesskell is split into two main sections; the type-level chess model and ruleset, and the value-level EDSL which acts as an interface for the type-level chess model.
+
 \section{The Basics of Chess}
 
+Chess is a two-player game, played in alternating moves by players typically named \emph{Black} and \emph{White}, after the colours of their pieces. In each turn, the player will move a single piece, and cannot abstain from making a move (or move a piece from its position to that same position). Each piece is governed by its own movement rules, which depend on the state of the board and, in some cases, the history of that piece or other pieces' movements.
+
 \subsection{The Board}
+
+The board is an 8x8 grid of 64 square tiles, each of which is coloured Black or White such that each square is next to tiles of the opposite colour (See Figure \ref{chessboard}). The pieces move within this board, and cannot take moves that would wrap around it or take them off of the board.
 
 \subsubsection{The Pieces}
 
@@ -518,9 +525,44 @@ The type of \inline{SNonFiction} can only be \inline{SBook 'NonFiction}, and so 
 
 \section{Type-Level Data Structures}
 
+As helpful as type families and First Class Families are in enabling computation at the type level, this computation is useless without something to compute on. Chesskell requires some central repository of information for the state of the board, as well as general data structures for passing around information while validating the Chess ruleset. This section describes the type-level data structures in Chesskell.
+
 \subsection{Chess Data Structures}
 
 An important part of any good Chess program is its board representation, since all other parts of the program come from this; move generation, move evaluation, and the entire search space are all defined or influenced by the board representation. A great deal of work has gone into defining memory- or time-efficient Chess boards \cite{bitboard} \cite{searchtables}, including combinations of multiple representations to yield greater speed \cite{bitandccr}. While there is value to be gleaned from examining these representations, Chesskell serves a different purpose; it does not need to search through the valid set of moves to determine which are the best, and speed is not its focus. Chesskell's board representation must be relatively efficient, but it would be naive to expect similar levels of performance from type-level constraint solving computation as from optimised term-level code.
+
+\subsection{Singly-linked Lists}
+
+In Chesskell, Haskell's built-in type-level lists are not used as the primary board type. These lists are singly linked, and so have a variable length which is checkable in $O(n)$ time. Ensuring that the chess board remains an 8x8 grid at all times would incur a repeated cost on the compile time of the program. However, these lists are used for data which can be of variable length; such as the list of available moves for a piece in a specific position.
+
+\subsection{Finger Trees}
+
+An alternative to type-level lists would be to use 2-3 Finger Trees \cite{fingertrees}. Unfortunately, singly-linked lists have no quick "append" operation. As such, combining lists of moves takes $O(n)$ time, which could be considerable for pieces like Queens who have many moves available to them at any one time. However, Finger Trees can be combined in $O(log(min(n_{1}, n_{2})))$ time, where $n_{1}$ and $n_{2}$ are the sizes of the respective FingerTrees. Singly linked lists have an $O(1)$ append, while Finger Trees have an \emph{amortized} $O(1)$ append operation.
+
+Finger Trees are so named because while the main portion of the data is in recursive tree form, each tree maintains two "hands" full of data. Essentially, each of these appendages is a small overflow buffer for the tree itself, since inserting into the tree is more costly ($O(log n))$) than inserting into the buffer ($O(1)$). A pleasant side effect of this approach is that not only can you access data at the beginning of the sequence in $O(1)$ time, you can also access data at the end of the sequence in $O(1)$ time; something impossible with Haskell's built in singly linked lists.
+
+Disappointingly, there exists an implementation of Chesskell using Finger Trees as opposed to lists for variable length data, but as we discuss in the Evaluation section, there was no significant increase in compile time relative to the effort spent implementing Finger Trees at the type level.
+
+\subsection{Length-indexed Vectors}
+
+To implement the board, a desirable data structure would be one that had a fixed type, which could be guaranteed to remain at 8. As such, a variant of singly-linked lists, named length-indexed vectors. A length-indexed vector is a singly linked list which contains its' length in its' type. That is, a length-indexed vector of size 0 has a different type than a length-indexed vector of size 3. The GADT data type definition is below:
+
+\begin{lstlisting}
+data Vec (n :: Nat) (a :: *) where
+    VEnd   :: Vec 0 a
+    (:->)  :: a -> Vec n a -> Vec (n + 1) a
+\end{lstlisting}
+
+If the programmer should require the input vector to be of length 5, then all they must do is include its length in the function definition:
+
+\begin{lstlisting}
+someFunc :: Vec 5 a -> b
+someFunc vec = -- ...
+\end{lstlisting}
+
+This makes it a perfect candidate to act as the central chess board type, containing all pieces. To guarantee that a board is an 8x8 grid, it simply needs to contain 8 length-indexed vectors of length 8. Due to the use of the \inline{-XDataKinds} extension to enable promotion, this length-indexed vector definition immediately also defines a type-level length-indexed vector.
+
+Almost all operations available on lists are available on length indexed vectors. However, since length-indexed vectors have an additional type variable (their length), they cannot be dynamically created without some length type variable. That is, a function \inline{f :: a -> Vec n b} cannot exist, since the type variable \inline{n} will have nothing to unify with when \inline{f} is called.
 
 
 \chapter{Implementation}
@@ -600,6 +642,13 @@ Chesskell is a successful project. ...
 \bibliography{diss}
 
 \chapter{Appendix}
+
+\begin{figure}
+    \fenboard{8/8/8/8/8/8/8/8 w - - 0 1}
+    \showboard
+    \caption{An empty chess board.}
+    \label{chessboard}
+\end{figure}
 
 
 
