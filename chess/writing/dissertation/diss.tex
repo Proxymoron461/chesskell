@@ -507,7 +507,9 @@ The type of \inline{SNonFiction} can only be \inline{SBook 'NonFiction}, and so 
 
 \chapter{Design}
 
-This section of the dissertation details the general design of Chesskell, including some basics on chess to aid in explanation. Broadly, Chesskell is split into two main sections; the type-level chess model and ruleset, and the value-level EDSL which acts as an interface for the type-level chess model.
+This section of the dissertation details the general design of Chesskell. Broadly, Chesskell is split into two main sections; the type-level chess model and ruleset, and the value-level EDSL which acts as an interface for the type-level chess model.
+
+Additionally, we explain some basic Chess knowledge in this section, to aid in understanding. However, we tackle the more complex rules when they become relevant; this section is not a formal introduction to Chess, but a simple summary to make the design of Chesskell clear.
 
 \section{The Basics of Chess}
 
@@ -515,13 +517,25 @@ Chess is a two-player game, played in alternating moves by players typically nam
 
 \subsection{The Board}
 
-The board is an 8x8 grid of 64 square tiles, each of which is coloured Black or White such that each square is next to tiles of the opposite colour (See Figure \ref{chessboard}). The pieces move within this board, and cannot take moves that would wrap around it or take them off of the board.
+The board is an 8x8 grid of 64 square tiles, each of which is coloured Black or White such that each square is next to tiles of the opposite colour (see Figure \ref{chessboard}). The pieces move within this board, and cannot take moves that would wrap around it or take them off of the board.
+
+At the beginning of the game, all Chess pieces lie in a specific arrangement (see Figure \ref{startboard}). All Black and all White pieces are opposite one another, such that their positions are mirrored.
 
 \subsubsection{The Pieces}
 
+While each team has 16 pieces total, there are only 6 types of pieces; Pawns, Rooks, Knights, Bishops, Queens, and Kings (in rough order of value during play). Each have their own strict movement rules, and in all but a single case, pieces of the opposite team can be \emph{captured} by moving to their square. A capture removes a piece from play; there is no way to regain a piece once captured (although there is a way to transform a Pawn into another piece). We give an example of capturing in Figure \ref{capture}.
+
 \subsection{The Game}
 
+A King is in \emph{check} when they are in the attack path of another piece. The objective of the game is to place the opponent's King into \emph{checkmate}, whereby every move the King could make is to a position where they would be in check (see Figure \ref{checkmate} for an example). Additionally, a move by a team that would place that team's King into check is an invalid move, and cannot be made.
+
+There are additional ways in which a Chess game may end, such as when two opponents agree to a draw; however, these additional rules concern the players of Chess rather than the game itself, and so are not a part of the implementation of Chesskell.
+
 \subsection{Chess Notation}
+
+There are two main categories of chess notation; those concerning the state of the game, and those concerning the state of the board.
+
+Chess notation concerning the state of the game tends to be an account of the whole set of moves, starting from the standard start position... % TODO
 
 \section{Type-Level Data Structures}
 
@@ -650,6 +664,28 @@ Chesskell is a successful project. ...
     \label{chessboard}
 \end{figure}
 
+\begin{figure}
+    \newgame
+    \showboard
+    \caption{An standard chess board where all pieces are in their starting position.}
+    \label{startboard}
+\end{figure}
 
+\begin{figure}
+    \fenboard{8/8/2Q5/8/4p3/8/8/8 w - - 0 1}
+    \showboard
+    \quad
+    \hidemoves{1.Qe4}
+    \showboard
+    \caption{The White Queen captures a Black Pawn by moving to its position, and removing it from play.}
+    \label{capture}
+\end{figure}
+
+\begin{figure}
+    \fenboard{8/8/8/8/8/4Q3/8/R3k3 w - - 0 1}
+    \showboard
+    \caption{The White Queen and White Rook place the Black King into checkmate.}
+    \label{checkmate}
+\end{figure}
 
 \end{document}
