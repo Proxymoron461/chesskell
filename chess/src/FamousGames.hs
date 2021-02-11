@@ -17,9 +17,9 @@ import Lib
 --     pawn _d2 to _d4 -- end
 --     pawn _c5 to _d4 -- end  -- FIXME: Too much memory usage.
 --     knight _f3 to _d4
---     pawn _a7 to _a6 end  -- Finishes compiling in about 3 minutes!
-    -- bishop _c1 to _g5 end
-    -- pawn _e7 to _e6
+--     pawn _a7 to _a6 -- end  -- Finishes compiling in about 3 minutes!
+--     bishop _c1 to _g5 -- end
+--     pawn _e7 to _e6 end  -- FIXME: Crashes after 2m57
     -- pawn _f2 to _f4
     -- bishop _f8 to _e7
     -- queen _d1 to _f3
@@ -29,3 +29,12 @@ import Lib
     -- pawn _g2 to _g4  -- Move 10 - absolutely tanks compiler
     -- pawn _b7 to _b5
 -- end
+
+-- kholmovVsBronsteinShort = chess
+--     p _e4 p _c5
+--     n _f3 n _f6
+--     n _c3 p _d6
+--     p _d4 p _d4
+--     n _d4 p _a6
+--     b _g5 p _e6 end  -- Successfully compiles in 1m44 - WHAT
+    -- p _f4 b _e7 end -- FIXME: Also crashes
