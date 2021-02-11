@@ -151,24 +151,24 @@ During the course of the project, a "valid Chess game" is any game that adheres 
 
 \chapter{Background}
 
-Haskell is a pure functional language, based upon lambda calculus with the addition of a type system\footnote{\url{https://www.haskell.org/}}. All Haskell expressions have a type, which is inferred at compile time. Programs go through \emph{type erasure}---the executable output of the compiler has no notion of types. In other words, Haskell has a clear separation between dynamic values, and the static types those values are members of.
+Haskell is a purely functional language, based upon lambda calculus with the addition of a type system\footnote{\url{https://www.haskell.org/}}. All Haskell expressions have a type, which is inferred at compile time. Programs go through \emph{type erasure}---the executable output of the compiler has no notion of types. In other words, Haskell has a clear separation between dynamic values, and the static types those values are members of.
 
-As such, passing information between the type system and the runtime values (as is common in dependently typed languages) is made more difficult. This section summarises notable aspects of Haskell's type system, explaining how programmers can use Haskell extensions and advanced features to perform computation at the type level.
+As such, passing information between the type system and the runtime values (as is common in dependently typed languages) is made more difficult. This section summarises key aspects of Haskell's type system, including how programmers can use GHC extensions and advanced features to perform computation at the type level in Haskell.
 
-\emph{A short note}: Haskell has an interactive Read-Eval-Print-Loop interpreter, named GHCi. The below section contains several GHCi snippets, to aid in understanding. \inline{\$>} represents a terminal input line, and anything following it can be assumed to have been typed into GHCi. A programmer can query the type of a value with \inline{:t}. So, \inline{\$> :t True} denotes an attempt to discover the type of the value \inline{True}, which is of course \inline{Bool}. Additionally, \inline{::} means "has type", so \inline{3 :: Int} reads as "the value \inline{3} has type \inline{Int}".
+\emph{A short note}: Haskell has an interactive Read-Eval-Print-Loop interpreter, named GHCi. The below chapter contains several GHCi snippets, to aid in understanding. \inline{\$>} represents a terminal input line, and anything following it can be assumed to have been typed into GHCi. A programmer can query the type of a value with \inline{:t}. So, \inline{\$> :t True} denotes an attempt to discover the type of the value \inline{True}, which is of course \inline{Bool}. Additionally, \inline{::} means "has type", so \inline{3 :: Int} reads as "the value \inline{3} has type \inline{Int}".
 
-\section{Behaviour in Haskell}
+\section{Types in Haskell}
 
-Programs written in Haskell make use of \emph{types} and \emph{terms} (colloquially known as values). That is, a type can be viewed as a (potentially infinite) set of valid terms, and each term has a type. The primary Haskell compiler, GHC, is responsible for inferring types, and for generating type errors when a given term does not match its recorded or inferred type.
+For a Haskell compiler, such as GHC, to accept a program, it must be well-typed (that is, every expression has a valid type). In some cases, the type of an expression can be inferred, or it can be manually annotated by the programmer (in which case the compiler must unify the annotated type with the inferred type). If the expression has no permissible type, or its' inferred type does not match its programmer-annotated type, then the compiler is responsible for generating a type error.
 
-For instance, as in many other languages, \inline{3} has type \inline{Int}. It would be incorrect to declare an expression of a different type, and to give it a value of \inline{3}, as below:
+For instance, as in many other languages, one of the possible types for \inline{3} is \inline{Int}. It would be incorrect to declare an expression of a different type, and to give it a value of \inline{3}, as below:
 
 \begin{lstlisting}
 x :: Bool
 x = 3  -- error: Couldn't match expected type 'Bool' with actual type 'Int'
 \end{lstlisting}
 
-However, Haskell has support for \emph{polymorphism}; firstly, ad-hoc polymorphism, whereby functions can be specialised to operate on specific types, with separate definitions for each type. Haskell achieves this through \emph{type classes}, a novel feature which is akin to interfaces in object oriented languages. We give an example below, involving the basic equality operator in Haskell (which has the \inline{Eq} typeclass). Example definitions for both \inline{Bool} and \inline{Int} are given to demonstrate how different definitions can be used for the same function:
+However, Haskell has support for \emph{polymorphism}; firstly, ad-hoc polymorphism, whereby functions can be specialised to operate on specific types, with separate definitions for each type. Haskell achieves this through \emph{type classes}, a feature which is akin to interfaces in object oriented languages. We give an example below, involving the basic equality operator in Haskell (which is a member of the \inline{Eq} typeclass). Example definitions for both \inline{Bool} and \inline{Int} are given to demonstrate how different definitions can be used for the same function:
 
 \begin{lstlisting}
 class Eq a where
@@ -187,7 +187,7 @@ instance Eq Int where
     x == y = if x > 0 then (x - 1 == y - 1) else (x + 1 == y + 1)
 \end{lstlisting}
 
-Secondly, Haskell supports parametric polymorphism, where a value's type is dependent on one or more \emph{type variables}. Consider the list type; it would be nonsensical to define an entire new list data type for each potential inhabitant. As such, the list type in Haskell is more general, in that it can hold any value with a type that can be unified with a type variable:
+Secondly, Haskell supports parametric polymorphism, where a value's type is dependent on one or more \emph{type variables}. Consider the list type; it would be nonsensical to define an entire new list data type for each potential inhabitant. As such, the list type in Haskell is more general, in that it can hold any value of any type, provided that all elements of the list are of the same type. For instance, a list of booleans, such as \inline{[True, False]}, has type \inline{[Bool]}, which is notated as \inline{[True, False] :: [Bool]}. % TODO: Do the same for [a] example
 
 \begin{lstlisting}
 $> :t [True, False]
@@ -196,9 +196,9 @@ $> :t []
 [] :: [a]
 \end{lstlisting}
 
-In Haskell, type variables are typically named alphabetically; so the first general type in an type annotation is \inline{a}, followed by \inline{b}, \inline{c}, and so on. In fact, all Haskell types start with a capital letter, so any lowercase string is a valid type variable name.
+In Haskell, type variables are conventionally named as lowercase single letters in alphabetical order; so the first general type in an type annotation is typically \inline{a}, followed by \inline{b}, \inline{c}, and so on. In fact, all Haskell types start with a capital letter, so any lowercase string is a valid type variable name.
 
-Haskell functions all have type \inline{a -> b}, where the type variables \inline{a} and \inline{b} extend to more types, including other function types. The rightmost type in a function definition is the return type. For instance, Boolean logical AND would have the type \inline{Bool -> Bool -> Bool}, while logical NOT would have the type \inline{Bool -> Bool}. Haskell functions can be partially applied; the below code snippet assumes the definition of a function \inline{and}, which performs logical AND on its two inputs:
+Haskell functions are of the form \inline{a -> b}, for some type variables \inline{a} and \inline{b} which can unify with any other type, including function types. For instance, Boolean logical AND would have the type \inline{Bool -> Bool -> Bool}, while logical NOT would have the type \inline{Bool -> Bool}. All Haskell functions can be curried \cite{currying}. The below code snippet assumes the definition of a function \inline{and}, which performs logical AND on its two inputs:
 
 \begin{lstlisting}
 $> :t and
@@ -219,7 +219,7 @@ data Hand a = One a
             | Five a a a a a
 \end{lstlisting}
 
-However, this definition syntax has limitations; all of the return values of the type constructors above must be \inline{Hand a}. A Haskell extension allows the definition of \emph{Generalised Algebraic Data Types} (GADTs) \cite{gadts} which allows more complex type constructor definitions. The above \inline{Hand} datatype could be expressed thus:
+However, this definition syntax has limitations; all of the return values of the type constructors above must be \inline{Hand a}. A GHC extension allows the definition of \emph{Generalised Algebraic Data Types} (GADTs) \cite{gadts} which allows more complex type constructor definitions. The above \inline{Hand} datatype could be expressed thus:
 
 \begin{lstlisting}
 data Hand a where
@@ -241,7 +241,7 @@ data Hand a where
     Five  :: Int  -> Bool -> Int  -> Bool -> Int  -> Hand Int
 \end{lstlisting}
 
-\subsection{Lazy Evaluation}
+\section{Lazy Evaluation}
 
 Haskell is a \emph{lazily evaluated} language, which means that values are computed on-demand. This contrasts with \emph{eagerly evaluated languages} like C or Java, which evaluate their arguments before applying functions. A good example of this behaviour is with infinite list types. Trivially, if a program tries to fully evaluate an infinite list, then it will never terminate. However, in a lazily evaluated environment, an infinite list can be used for computation. Consider the below example, where the \inline{(:)} operator adds an element to the beginning of a list, and \inline{take n list} takes \inline{n} elements from the start of \inline{list}:
 
@@ -270,7 +270,7 @@ All values in Haskell are lazily evaluated (unless explicitly set otherwise in c
 
 \section{Type-level Programming}
 
-While the above is certainly useful in day-to-day programming, it is not enough to achieve dependent types. Luckily, there are many more Haskell extensions, a large number of which bring the language closer to dependent types.
+While the above is certainly useful in day-to-day programming, it is not enough to achieve dependent types. Luckily, there are many more GHC extensions, a large number of which bring the language closer to dependent types.
 
 \subsection{Kind Promotion}
 
@@ -509,7 +509,7 @@ The type of \inline{SNonFiction} can only be \inline{SBook 'NonFiction}, and so 
 
 This section of the dissertation details the general design of Chesskell. Broadly, Chesskell is split into two main sections; the type-level chess model and ruleset, and the value-level EDSL which acts as an interface for the type-level chess model.
 
-Additionally, we explain some basic Chess knowledge in this section, to aid in understanding. However, we tackle the more complex rules when they become relevant; this section is not a formal introduction to Chess, but a simple summary to make the design of Chesskell clear.
+Additionally, we explain some basic Chess knowledge in this chapter, to aid in understanding. However, we tackle the more complex rules when they become relevant; this section is not a formal introduction to Chess, but a simple summary to make the design of Chesskell clear.
 
 \section{The Basics of Chess}
 
