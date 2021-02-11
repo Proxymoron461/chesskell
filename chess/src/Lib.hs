@@ -59,69 +59,45 @@ type instance Eval (GetNLeftPositionsNoChecks n (At col row)) = Eval (Map (((Fli
 data GetAllLeft :: Position -> Exp [Position]
 type instance Eval (GetAllLeft pos) = Eval (GetNLeft 8 pos)
 
-data GetAllDiagNW :: Position -> Exp [Position]
+data GetAllDiagNW :: Position -> Exp ([Position])
 type instance Eval (GetAllDiagNW pos) = GetAllDiagNW' pos
 
 type family GetAllDiagNW' (p :: Position) :: [Position] where
-    GetAllDiagNW' (At col Nat8) = '[ At col Nat8 ]
+    GetAllDiagNW' (At col Nat8) = '[]
     GetAllDiagNW' (At _ Z) = '[]
     GetAllDiagNW' (At _ Nat9) = '[]
-    GetAllDiagNW' (At A row) = '[ At A row ]
-    GetAllDiagNW' (At B row) = At B row ': GetAllDiagNW' (At A (S row))
-    GetAllDiagNW' (At C row) = At C row ': GetAllDiagNW' (At B (S row))
-    GetAllDiagNW' (At D row) = At D row ': GetAllDiagNW' (At C (S row))
-    GetAllDiagNW' (At E row) = At E row ': GetAllDiagNW' (At D (S row))
-    GetAllDiagNW' (At F row) = At F row ': GetAllDiagNW' (At E (S row))
-    GetAllDiagNW' (At G row) = At G row ': GetAllDiagNW' (At F (S row))
-    GetAllDiagNW' (At H row) = At H row ': GetAllDiagNW' (At G (S row))
+    GetAllDiagNW' (At A row) = '[]
+    GetAllDiagNW' (At col row) = (At (L col) (S row)) ': GetAllDiagNW' (At (L col) (S row))
 
-data GetAllDiagSW :: Position -> Exp [Position]
+data GetAllDiagSW :: Position -> Exp ([Position])
 type instance Eval (GetAllDiagSW pos) = GetAllDiagSW' pos
 
 type family GetAllDiagSW' (p :: Position) :: [Position] where
-    GetAllDiagSW' (At col Nat1) = '[ At col Nat1 ]
+    GetAllDiagSW' (At col Nat1) = '[]
     GetAllDiagSW' (At _ Z) = '[]
     GetAllDiagSW' (At _ Nat9) = '[]
-    GetAllDiagSW' (At A row) = '[ At A row ]
-    GetAllDiagSW' (At B (S row)) = (At B (S row)) ': GetAllDiagSW' (At A row)
-    GetAllDiagSW' (At C (S row)) = (At C (S row)) ': GetAllDiagSW' (At B row)
-    GetAllDiagSW' (At D (S row)) = (At D (S row)) ': GetAllDiagSW' (At C row)
-    GetAllDiagSW' (At E (S row)) = (At E (S row)) ': GetAllDiagSW' (At D row)
-    GetAllDiagSW' (At F (S row)) = (At F (S row)) ': GetAllDiagSW' (At E row)
-    GetAllDiagSW' (At G (S row)) = (At G (S row)) ': GetAllDiagSW' (At F row)
-    GetAllDiagSW' (At H (S row)) = (At H (S row)) ': GetAllDiagSW' (At G row)
+    GetAllDiagSW' (At A row) = '[]
+    GetAllDiagSW' (At col (S row)) = (At (L col) row) ': GetAllDiagSW' (At (L col) row)
 
-data GetAllDiagSE :: Position -> Exp [Position]
+data GetAllDiagSE :: Position -> Exp ([Position])
 type instance Eval (GetAllDiagSE pos) = GetAllDiagSE' pos
 
 type family GetAllDiagSE' (p :: Position) :: [Position] where
-    GetAllDiagSE' (At col Nat1) = '[ At col Nat1 ]
+    GetAllDiagSE' (At col Nat1) = '[]
     GetAllDiagSE' (At _ Z) = '[]
     GetAllDiagSE' (At _ Nat9) = '[]
-    GetAllDiagSE' (At H row) = '[ At H row ]
-    GetAllDiagSE' (At A (S row)) = (At A (S row)) ': GetAllDiagSE' (At B row)
-    GetAllDiagSE' (At B (S row)) = (At B (S row)) ': GetAllDiagSE' (At C row)
-    GetAllDiagSE' (At C (S row)) = (At C (S row)) ': GetAllDiagSE' (At D row)
-    GetAllDiagSE' (At D (S row)) = (At D (S row)) ': GetAllDiagSE' (At E row)
-    GetAllDiagSE' (At E (S row)) = (At E (S row)) ': GetAllDiagSE' (At F row)
-    GetAllDiagSE' (At F (S row)) = (At F (S row)) ': GetAllDiagSE' (At G row)
-    GetAllDiagSE' (At G (S row)) = (At G (S row)) ': GetAllDiagSE' (At H row)
+    GetAllDiagSE' (At H row) = '[]
+    GetAllDiagSE' (At col (S row)) = (At (R col) row) ': GetAllDiagSE' (At (R col) row)
 
-data GetAllDiagNE :: Position -> Exp [Position]
+data GetAllDiagNE :: Position -> Exp ([Position])
 type instance Eval (GetAllDiagNE pos) = GetAllDiagNE' pos
 
 type family GetAllDiagNE' (p :: Position) :: [Position] where
-    GetAllDiagNE' (At col Nat8) = '[ At col Nat8 ]
+    GetAllDiagNE' (At col Nat8) = '[]
     GetAllDiagNE' (At _ Z) = '[]
     GetAllDiagNE' (At _ Nat9) = '[]
-    GetAllDiagNE' (At H row) = '[ At H row ]
-    GetAllDiagNE' (At A row) = At A row ': GetAllDiagNE' (At B (S row))
-    GetAllDiagNE' (At B row) = At B row ': GetAllDiagNE' (At C (S row))
-    GetAllDiagNE' (At C row) = At C row ': GetAllDiagNE' (At D (S row))
-    GetAllDiagNE' (At D row) = At D row ': GetAllDiagNE' (At E (S row))
-    GetAllDiagNE' (At E row) = At E row ': GetAllDiagNE' (At F (S row))
-    GetAllDiagNE' (At F row) = At F row ': GetAllDiagNE' (At G (S row))
-    GetAllDiagNE' (At G row) = At G row ': GetAllDiagNE' (At H (S row))
+    GetAllDiagNE' (At H row) = '[]
+    GetAllDiagNE' (At col row) = At (R col) (S row) ': GetAllDiagNE' (At (R col) (S row))
 
 data GetAllKnightPositions :: Position -> Exp [Position]
 type instance Eval (GetAllKnightPositions pos) = Eval (Filter IsValidPosition (Eval (GetKnightAboveBelow pos) ++ Eval (GetKnightLeftRight pos)))
