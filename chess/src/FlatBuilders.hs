@@ -122,3 +122,27 @@ endGetBoard (Proxy :: Proxy (b :: BoardDecorator)) = Proxy @(GetBoard b)
     -- Checkmate (compile or don't compile?)
     -- Draw (can only move into check)
     -- Trapped pieces
+
+data Fen (n :: Nat) where
+    (:/) :: Fen Nat0
+    F1   :: Fen n -> Fen (S n)
+    F2   :: Fen n -> Fen (S (S n))
+    F3   :: Fen n -> Fen (S (S (S n)))
+    F4   :: Fen n -> Fen (S (S (S (S n))))
+    F5   :: Fen n -> Fen (S (S (S (S (S n)))))
+    F6   :: Fen n -> Fen (S (S (S (S (S (S n))))))
+    F7   :: Fen n -> Fen (S (S (S (S (S (S (S n)))))))
+    F8   :: Fen Nat8
+    P    :: Fen n -> Fen (S n)
+    N    :: Fen n -> Fen (S n)
+    Q    :: Fen n -> Fen (S n)
+    K    :: Fen n -> Fen (S n)
+    B    :: Fen n -> Fen (S n)
+    R    :: Fen n -> Fen (S n)
+    Pb   :: Fen n -> Fen (S n)
+    Nb   :: Fen n -> Fen (S n)
+    Qb   :: Fen n -> Fen (S n)
+    Kb   :: Fen n -> Fen (S n)
+    Bb   :: Fen n -> Fen (S n)
+    Rb   :: Fen n -> Fen (S n)
+
