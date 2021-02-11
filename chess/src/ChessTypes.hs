@@ -391,6 +391,8 @@ type StartInfo = 'Info Z (At A Z) False
 type EmptyRow   = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
 
+type EmptyDec = Dec EmptyBoard Black (At A Nat1) '(At E Nat1, At E Nat8) Nat1
+
 type JustKingsDec = Dec JustKings Black (At A Nat1) '(At E Nat1, At E Nat8) Nat1
 type JustKings = (Nothing :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1) False))) :-> Nothing :-> Nothing :<> Nothing)
                  :-> EmptyRow

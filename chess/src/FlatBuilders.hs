@@ -52,6 +52,25 @@ to :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) ->
 to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: SPosition toPos)  cont
     = cont (Proxy @(Eval (IfPieceThenMove n fromPos toPos b)))
 
+-- Shorthands
+p :: Proxy (b :: BoardDecorator) -> SPosition toPos -> Spec (Proxy (MoveTo Pawn toPos b))
+p (dec :: Proxy b) (to :: SPosition toPos) cont = cont (Proxy @(MoveTo Pawn toPos b))
+
+n :: Proxy (b :: BoardDecorator) -> SPosition toPos -> Spec (Proxy (MoveTo Knight toPos b))
+n (dec :: Proxy b) (to :: SPosition toPos) cont = cont (Proxy @(MoveTo Knight toPos b))
+
+r :: Proxy (b :: BoardDecorator) -> SPosition toPos -> Spec (Proxy (MoveTo Rook toPos b))
+r (dec :: Proxy b) (to :: SPosition toPos) cont = cont (Proxy @(MoveTo Rook toPos b))
+
+b :: Proxy (b :: BoardDecorator) -> SPosition toPos -> Spec (Proxy (MoveTo Bishop toPos b))
+b (dec :: Proxy b) (to :: SPosition toPos) cont = cont (Proxy @(MoveTo Bishop toPos b))
+
+q :: Proxy (b :: BoardDecorator) -> SPosition toPos -> Spec (Proxy (MoveTo Queen toPos b))
+q (dec :: Proxy b) (to :: SPosition toPos) cont = cont (Proxy @(MoveTo Queen toPos b))
+
+k :: Proxy (b :: BoardDecorator) -> SPosition toPos -> Spec (Proxy (MoveTo King toPos b))
+k (dec :: Proxy b) (to :: SPosition toPos) cont = cont (Proxy @(MoveTo King toPos b))
+
 -- Even though it's a Proxy TypeError, it will split out errors just fine!
 end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
