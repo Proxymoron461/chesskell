@@ -124,25 +124,118 @@ endGetBoard (Proxy :: Proxy (b :: BoardDecorator)) = Proxy @(GetBoard b)
     -- Trapped pieces
 
 data Fen (n :: Nat) where
-    (:/) :: Fen Nat0
-    F1   :: Fen n -> Fen (S n)
-    F2   :: Fen n -> Fen (S (S n))
-    F3   :: Fen n -> Fen (S (S (S n)))
-    F4   :: Fen n -> Fen (S (S (S (S n))))
-    F5   :: Fen n -> Fen (S (S (S (S (S n)))))
-    F6   :: Fen n -> Fen (S (S (S (S (S (S n))))))
-    F7   :: Fen n -> Fen (S (S (S (S (S (S (S n)))))))
-    F8   :: Fen Nat8
-    P    :: Fen n -> Fen (S n)
-    N    :: Fen n -> Fen (S n)
-    Q    :: Fen n -> Fen (S n)
-    K    :: Fen n -> Fen (S n)
-    B    :: Fen n -> Fen (S n)
-    R    :: Fen n -> Fen (S n)
-    Pb   :: Fen n -> Fen (S n)
-    Nb   :: Fen n -> Fen (S n)
-    Qb   :: Fen n -> Fen (S n)
-    Kb   :: Fen n -> Fen (S n)
-    Bb   :: Fen n -> Fen (S n)
-    Rb   :: Fen n -> Fen (S n)
+    FF  :: Fen Nat0
+    F1  :: Fen n -> Fen (S n)
+    F2  :: Fen n -> Fen (S (S n))
+    F3  :: Fen n -> Fen (S (S (S n)))
+    F4  :: Fen n -> Fen (S (S (S (S n))))
+    F5  :: Fen n -> Fen (S (S (S (S (S n)))))
+    F6  :: Fen n -> Fen (S (S (S (S (S (S n))))))
+    F7  :: Fen n -> Fen (S (S (S (S (S (S (S n)))))))
+    F8  :: Fen Nat8
+    Pw  :: Fen n -> Fen (S n)
+    Nw  :: Fen n -> Fen (S n)
+    Qw  :: Fen n -> Fen (S n)
+    Kw  :: Fen n -> Fen (S n)
+    Bw  :: Fen n -> Fen (S n)
+    Rw  :: Fen n -> Fen (S n)
+    Pb  :: Fen n -> Fen (S n)
+    Nb  :: Fen n -> Fen (S n)
+    Qb  :: Fen n -> Fen (S n)
+    Kb  :: Fen n -> Fen (S n)
+    Bb  :: Fen n -> Fen (S n)
+    Rb  :: Fen n -> Fen (S n)
+
+f0 :: Term (Proxy (b :: Fen n)) (Proxy (b :: Fen n))
+f0 = id
+
+f1 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F1 b))
+f1 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F1 b))
+
+f2 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F2 b))
+f2 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F2 b))
+
+f3 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F3 b))
+f3 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F3 b))
+
+f4 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F4 b))
+f4 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F4 b))
+
+f5 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F5 b))
+f5 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F5 b))
+
+f6 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F6 b))
+f6 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F6 b))
+
+f7 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F7 b))
+f7 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F7 b))
+
+ff :: Spec (Proxy FF)
+ff cont = cont (Proxy @FF)
+
+f8 :: Term (Proxy (b :: Fen Nat8)) (Proxy (b :: Fen Nat8))
+f8 = id
+
+wP :: (Proxy (b :: Fen n)) -> Spec (Proxy (Pw b))
+wP (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Pw b))
+
+wQ :: (Proxy (b :: Fen n)) -> Spec (Proxy (Qw b))
+wQ (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Qw b))
+
+wN :: (Proxy (b :: Fen n)) -> Spec (Proxy (Nw b))
+wN (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Nw b))
+
+wK :: (Proxy (b :: Fen n)) -> Spec (Proxy (Kw b))
+wK (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Kw b))
+
+wB :: (Proxy (b :: Fen n)) -> Spec (Proxy (Bw b))
+wB (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Bw b))
+
+wR :: (Proxy (b :: Fen n)) -> Spec (Proxy (Rw b))
+wR (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Rw b))
+
+bP :: (Proxy (b :: Fen n)) -> Spec (Proxy (Pb b))
+bP (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Pb b))
+
+bQ :: (Proxy (b :: Fen n)) -> Spec (Proxy (Qb b))
+bQ (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Qb b))
+
+bN :: (Proxy (b :: Fen n)) -> Spec (Proxy (Nb b))
+bN (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Nb b))
+
+bK :: (Proxy (b :: Fen n)) -> Spec (Proxy (Kb b))
+bK (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Kb b))
+
+bB :: (Proxy (b :: Fen n)) -> Spec (Proxy (Bb b))
+bB (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Bb b))
+
+bR :: (Proxy (b :: Fen n)) -> Spec (Proxy (Rb b))
+bR (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Rb b))
+
+-- data Fen (n :: Nat) where
+--     FF  :: Fen Nat0 -> Fen Nat0
+--     F1  :: (Fen (S m) -> Fen n) -> Fen n
+--     F2  :: (Fen (S (S m)) -> Fen n) -> Fen n
+--     F3  :: (Fen (S (S (S m))) -> Fen n) -> Fen n
+--     F4  :: (Fen (S (S (S (S m)))) -> Fen n) -> Fen n
+--     F5  :: (Fen (S (S (S (S (S m))))) -> Fen n) -> Fen n
+--     F6  :: (Fen (S (S (S (S (S (S m)))))) -> Fen n) -> Fen n
+--     F7  :: (Fen (S (S (S (S (S (S (S m))))))) -> Fen n) -> Fen n
+--     F8  :: Fen Nat8 -> Fen Nat8
+--     P   :: Fen n -> Fen (S n)
+--     N   :: Fen n -> Fen (S n)
+--     Q   :: Fen n -> Fen (S n)
+--     K   :: Fen n -> Fen (S n)
+--     B   :: Fen n -> Fen (S n)
+--     R   :: Fen n -> Fen (S n)
+--     Pb  :: Fen n -> Fen (S n)
+--     Nb  :: Fen n -> Fen (S n)
+--     Qb  :: Fen n -> Fen (S n)
+--     Kb  :: Fen n -> Fen (S n)
+--     Bb  :: Fen n -> Fen (S n)
+--     Rb  :: Fen n -> Fen (S n)
+
+-- F2 F1 F0 = Fen 3
+-- F2 F1 = ((Fen n) -> Fen m) -> 
+-- F2 = (Fen n) -> Fen 
 
