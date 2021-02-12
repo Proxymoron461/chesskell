@@ -319,6 +319,9 @@ type instance Eval (GetRow board (S n)) = Just $ VecAt board n
 data SetRow :: Board -> Nat -> Row -> Exp Board
 type instance Eval (SetRow board (S n) row) = Eval (PutAt row n board)
 
+type family SetRowDec' (b :: BoardDecorator) (n :: Nat) (r :: Row) :: BoardDecorator where
+   SetRowDec' (Dec board team pos kings move) (S n) row = Dec (Eval (SetRow board (S n) row)) team pos kings move
+
 -- Type families to add an offset to columns!
 data (:+) :: Nat -> Column -> Exp (Maybe Column)
 data (:-) :: Nat -> Column -> Exp (Maybe Column)

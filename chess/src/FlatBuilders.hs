@@ -6,6 +6,7 @@ import Data.Singletons
 import Data.Singletons.Prelude.Bool
 import Data.Type.Nat hiding (SNat(..))
 import Lib
+import Vec
 import FirstClassFunctions
 import qualified GHC.TypeLits as TL
 
@@ -212,30 +213,53 @@ bB (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Bb b))
 bR :: (Proxy (b :: Fen n)) -> Spec (Proxy (Rb b))
 bR (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Rb b))
 
--- data Fen (n :: Nat) where
---     FF  :: Fen Nat0 -> Fen Nat0
---     F1  :: (Fen (S m) -> Fen n) -> Fen n
---     F2  :: (Fen (S (S m)) -> Fen n) -> Fen n
---     F3  :: (Fen (S (S (S m))) -> Fen n) -> Fen n
---     F4  :: (Fen (S (S (S (S m)))) -> Fen n) -> Fen n
---     F5  :: (Fen (S (S (S (S (S m))))) -> Fen n) -> Fen n
---     F6  :: (Fen (S (S (S (S (S (S m)))))) -> Fen n) -> Fen n
---     F7  :: (Fen (S (S (S (S (S (S (S m))))))) -> Fen n) -> Fen n
---     F8  :: Fen Nat8 -> Fen Nat8
---     P   :: Fen n -> Fen (S n)
---     N   :: Fen n -> Fen (S n)
---     Q   :: Fen n -> Fen (S n)
---     K   :: Fen n -> Fen (S n)
---     B   :: Fen n -> Fen (S n)
---     R   :: Fen n -> Fen (S n)
---     Pb  :: Fen n -> Fen (S n)
---     Nb  :: Fen n -> Fen (S n)
---     Qb  :: Fen n -> Fen (S n)
---     Kb  :: Fen n -> Fen (S n)
---     Bb  :: Fen n -> Fen (S n)
---     Rb  :: Fen n -> Fen (S n)
+fen1 :: (Proxy (b :: BoardDecorator)) -> (Proxy (f :: Fen Eight)) -> Spec (Proxy (SetRowDec' b Nat1 (FenToRow f Nat1)))
+fen1 (Proxy :: Proxy (b :: BoardDecorator)) (Proxy :: Proxy (f :: Fen n)) cont = cont (Proxy @(SetRowDec' b Nat1 (FenToRow f Nat1)))
 
--- F2 F1 F0 = Fen 3
--- F2 F1 = ((Fen n) -> Fen m) -> 
--- F2 = (Fen n) -> Fen 
+fen2 :: (Proxy (b :: BoardDecorator)) -> (Proxy (f :: Fen Eight)) -> Spec (Proxy (SetRowDec' b Nat2 (FenToRow f Nat2)))
+fen2 (Proxy :: Proxy (b :: BoardDecorator)) (Proxy :: Proxy (f :: Fen n)) cont = cont (Proxy @(SetRowDec' b Nat2 (FenToRow f Nat2)))
+
+fen3 :: (Proxy (b :: BoardDecorator)) -> (Proxy (f :: Fen Eight)) -> Spec (Proxy (SetRowDec' b Nat3 (FenToRow f Nat3)))
+fen3 (Proxy :: Proxy (b :: BoardDecorator)) (Proxy :: Proxy (f :: Fen n)) cont = cont (Proxy @(SetRowDec' b Nat3 (FenToRow f Nat3)))
+
+fen4 :: (Proxy (b :: BoardDecorator)) -> (Proxy (f :: Fen Eight)) -> Spec (Proxy (SetRowDec' b Nat4 (FenToRow f Nat4)))
+fen4 (Proxy :: Proxy (b :: BoardDecorator)) (Proxy :: Proxy (f :: Fen n)) cont = cont (Proxy @(SetRowDec' b Nat4 (FenToRow f Nat4)))
+
+fen5 :: (Proxy (b :: BoardDecorator)) -> (Proxy (f :: Fen Eight)) -> Spec (Proxy (SetRowDec' b Nat5 (FenToRow f Nat5)))
+fen5 (Proxy :: Proxy (b :: BoardDecorator)) (Proxy :: Proxy (f :: Fen n)) cont = cont (Proxy @(SetRowDec' b Nat5 (FenToRow f Nat5)))
+
+fen6 :: (Proxy (b :: BoardDecorator)) -> (Proxy (f :: Fen Eight)) -> Spec (Proxy (SetRowDec' b Nat6 (FenToRow f Nat6)))
+fen6 (Proxy :: Proxy (b :: BoardDecorator)) (Proxy :: Proxy (f :: Fen n)) cont = cont (Proxy @(SetRowDec' b Nat6 (FenToRow f Nat6)))
+
+fen7 :: (Proxy (b :: BoardDecorator)) -> (Proxy (f :: Fen Eight)) -> Spec (Proxy (SetRowDec' b Nat7 (FenToRow f Nat7)))
+fen7 (Proxy :: Proxy (b :: BoardDecorator)) (Proxy :: Proxy (f :: Fen n)) cont = cont (Proxy @(SetRowDec' b Nat7 (FenToRow f Nat7)))
+
+fen8 :: (Proxy (b :: BoardDecorator)) -> (Proxy (f :: Fen Eight)) -> Spec (Proxy (SetRowDec' b Nat8 (FenToRow f Nat8)))
+fen8 (Proxy :: Proxy (b :: BoardDecorator)) (Proxy :: Proxy (f :: Fen n)) cont = cont (Proxy @(SetRowDec' b Nat8 (FenToRow f Nat8)))
+
+type family FenToRow (f :: Fen Eight) (r :: Nat) :: Row where
+    FenToRow x r = FenHelper x r A
+
+type family FenHelper (f :: Fen n) (r :: Nat) (c :: Column) :: Vec n (Maybe Piece) where
+    FenHelper FF row col = VEnd
+    FenHelper F8 row col = EmptyRow
+    FenHelper (F1 fen) row col = Nothing :-> FenHelper fen row (R col)
+    FenHelper (F2 fen) row col = Nothing :-> Nothing :-> FenHelper fen row (R (R col))
+    FenHelper (F3 fen) row col = Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R col)))
+    FenHelper (F4 fen) row col = Nothing :-> Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R (R col))))
+    FenHelper (F5 fen) row col = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R (R (R col)))))
+    FenHelper (F6 fen) row col = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R (R (R (R col))))))
+    FenHelper (F7 fen) row col = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R (R (R (R (R col)))))))
+    FenHelper (Pw fen) row col = Just (MkPiece White Pawn (Info Z (At col row) False)) :-> FenHelper fen row (R col)
+    FenHelper (Nw fen) row col = Just (MkPiece White Knight (Info Z (At col row) False)) :-> FenHelper fen row (R col)
+    FenHelper (Qw fen) row col = Just (MkPiece White Queen (Info Z (At col row) False)) :-> FenHelper fen row (R col)
+    FenHelper (Kw fen) row col = Just (MkPiece White King (Info Z (At col row) False)) :-> FenHelper fen row (R col)
+    FenHelper (Bw fen) row col = Just (MkPiece White Bishop (Info Z (At col row) False)) :-> FenHelper fen row (R col)
+    FenHelper (Rw fen) row col = Just (MkPiece White Rook (Info Z (At col row) False)) :-> FenHelper fen row (R col)
+    FenHelper (Pb fen) row col = Just (MkPiece Black Pawn (Info Z (At col row) False)) :-> FenHelper fen row (R col)
+    FenHelper (Nb fen) row col = Just (MkPiece Black Knight (Info Z (At col row) False)) :-> FenHelper fen row (R col)
+    FenHelper (Qb fen) row col = Just (MkPiece Black Queen (Info Z (At col row) False)) :-> FenHelper fen row (R col)
+    FenHelper (Kb fen) row col = Just (MkPiece Black King (Info Z (At col row) False)) :-> FenHelper fen row (R col)
+    FenHelper (Bb fen) row col = Just (MkPiece Black Bishop (Info Z (At col row) False)) :-> FenHelper fen row (R col)
+    FenHelper (Rb fen) row col = Just (MkPiece Black Rook (Info Z (At col row) False)) :-> FenHelper fen row (R col)
 
