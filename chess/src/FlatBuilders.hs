@@ -238,11 +238,11 @@ fen8 :: (Proxy (b :: BoardDecorator)) -> (Proxy (f :: Fen Eight)) -> Spec (Proxy
 fen8 (Proxy :: Proxy (b :: BoardDecorator)) (Proxy :: Proxy (f :: Fen n)) cont = cont (Proxy @(SetRowDec' b Nat8 (FenToRow f Nat8)))
 
 type family FenToRow (f :: Fen Eight) (r :: Nat) :: Row where
-    FenToRow x r = FenHelper x r A
+    FenToRow x r = FenHelper (FenReverse' x) r A
 
 type family FenHelper (f :: Fen n) (r :: Nat) (c :: Column) :: Vec n (Maybe Piece) where
-    FenHelper FF row col = VEnd
-    FenHelper F8 row col = EmptyRow
+    FenHelper FF       row col = VEnd
+    FenHelper F8       row col = EmptyRow
     FenHelper (F1 fen) row col = Nothing :-> FenHelper fen row (R col)
     FenHelper (F2 fen) row col = Nothing :-> Nothing :-> FenHelper fen row (R (R col))
     FenHelper (F3 fen) row col = Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R col)))
@@ -263,3 +263,52 @@ type family FenHelper (f :: Fen n) (r :: Nat) (c :: Column) :: Vec n (Maybe Piec
     FenHelper (Bb fen) row col = Just (MkPiece Black Bishop (Info Z (At col row) False)) :-> FenHelper fen row (R col)
     FenHelper (Rb fen) row col = Just (MkPiece Black Rook (Info Z (At col row) False)) :-> FenHelper fen row (R col)
 
+type family FenReverse' (f :: Fen n) :: Fen n where
+    FenReverse' FF = FF
+    FenReverse' F8 = F8
+    FenReverse' (F1 fen) = FenR (F1 FF) fen
+    FenReverse' (F2 fen) = FenR (F2 FF) fen
+    FenReverse' (F3 fen) = FenR (F3 FF) fen
+    FenReverse' (F4 fen) = FenR (F4 FF) fen
+    FenReverse' (F5 fen) = FenR (F5 FF) fen
+    FenReverse' (F6 fen) = FenR (F6 FF) fen
+    FenReverse' (F7 fen) = FenR (F7 FF) fen
+    FenReverse' (Pw fen) = FenR (Pw FF) fen
+    FenReverse' (Nw fen) = FenR (Nw FF) fen
+    FenReverse' (Qw fen) = FenR (Qw FF) fen
+    FenReverse' (Kw fen) = FenR (Kw FF) fen
+    FenReverse' (Bw fen) = FenR (Bw FF) fen
+    FenReverse' (Rw fen) = FenR (Rw FF) fen
+    FenReverse' (Pb fen) = FenR (Pb FF) fen
+    FenReverse' (Nb fen) = FenR (Nb FF) fen
+    FenReverse' (Qb fen) = FenR (Qb FF) fen
+    FenReverse' (Kb fen) = FenR (Kb FF) fen
+    FenReverse' (Bb fen) = FenR (Bb FF) fen
+    FenReverse' (Rb fen) = FenR (Rb FF) fen
+
+type family NAdd (x :: Nat) (y :: Nat) :: Nat where
+    NAdd Z m = m
+    NAdd (S n) m = S (NAdd n m)
+
+type family FenR (x :: Fen n) (y :: Fen m) :: Fen q where
+    FenR sofar FF = sofar
+    FenR sofar F8 = TL.TypeError (TL.Text "Should not be trying to reverse F8!")
+    FenR sofar (F1 fen) = FenR (F1 sofar) fen
+    FenR sofar (F2 fen) = FenR (F2 sofar) fen
+    FenR sofar (F3 fen) = FenR (F3 sofar) fen
+    FenR sofar (F4 fen) = FenR (F4 sofar) fen
+    FenR sofar (F5 fen) = FenR (F5 sofar) fen
+    FenR sofar (F6 fen) = FenR (F6 sofar) fen
+    FenR sofar (F7 fen) = FenR (F7 sofar) fen
+    FenR sofar (Pw fen) = FenR (Pw sofar) fen
+    FenR sofar (Nw fen) = FenR (Nw sofar) fen
+    FenR sofar (Qw fen) = FenR (Qw sofar) fen
+    FenR sofar (Kw fen) = FenR (Kw sofar) fen
+    FenR sofar (Bw fen) = FenR (Bw sofar) fen
+    FenR sofar (Rw fen) = FenR (Rw sofar) fen
+    FenR sofar (Pb fen) = FenR (Pb sofar) fen
+    FenR sofar (Nb fen) = FenR (Nb sofar) fen
+    FenR sofar (Qb fen) = FenR (Qb sofar) fen
+    FenR sofar (Kb fen) = FenR (Kb sofar) fen
+    FenR sofar (Bb fen) = FenR (Bb sofar) fen
+    FenR sofar (Rb fen) = FenR (Rb sofar) fen
