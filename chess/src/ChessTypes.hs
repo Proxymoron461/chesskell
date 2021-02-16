@@ -68,6 +68,7 @@ type instance TypeShow King   = "King"
 -- Holds the number of moves they've made, plus their current position.
 -- While their position is implicit from where they are in the board, it's
 -- helpful!
+-- TODO: Remove Bool entry!!
 data PieceInfo where
     Info :: Nat -> Position -> Bool -> PieceInfo
 
