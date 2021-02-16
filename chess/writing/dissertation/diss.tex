@@ -151,11 +151,11 @@ During the course of the project, a "valid Chess game" is any game that adheres 
 
 \chapter{Background}
 
-Haskell is a purely functional language, based upon lambda calculus with the addition of a type system\footnote{\url{https://www.haskell.org/}}. All Haskell expressions have a type, which is inferred at compile time. Programs go through \emph{type erasure}---the executable output of the compiler has no notion of types. In other words, Haskell has a clear separation between dynamic values, and the static types those values are members of.
+Haskell is a purely functional language, which is statically typed and lazily evaluated\footnote{\url{https://www.haskell.org/}}. The expressions accepted by the compiler are all well-typed; that is, they have some valid type. GHC will not, without the use of extensions, compile an expression that is not well-typed. The type of an expression can be inferred by the compiler in many cases, but can also be annotated manually by the programmer.
 
-As such, passing information between the type system and the runtime values (as is common in dependently typed languages) is made more difficult. This section summarises key aspects of Haskell's type system, including how programmers can use GHC extensions and advanced features to perform computation at the type level in Haskell.
+As we explain above, languages with a dependent type system have no separation between types and values. In Haskell however, programs go through \emph{type erasure}---the executable output of the compiler has no notion of types. In other words, Haskell has a clear separation between dynamic values, and the static types those values have. Haskell cannot be used to write functions on types, in the same way that a dependently typed language like Idris can.
 
-\emph{A short note}: Haskell has an interactive Read-Eval-Print-Loop interpreter, named GHCi. The below chapter contains several GHCi snippets, to aid in understanding. \inline{\$>} represents a terminal input line, and anything following it can be assumed to have been typed into GHCi. A programmer can query the type of a value with \inline{:t}. So, \inline{\$> :t True} denotes an attempt to discover the type of the value \inline{True}, which is of course \inline{Bool}. Additionally, \inline{::} means "has type", so \inline{3 :: Int} reads as "the value \inline{3} has type \inline{Int}".
+This is just one of the differences between Haskell's type system and a dependent type system, but it is an important one; type-level programming in Haskell is made more complex due to type erasure. This chapter summarises key aspects of Haskell's type system, including how programmers can use GHC extensions and advanced features to circumvent type erasure and perform computation at the type level in Haskell.
 
 \section{Types in Haskell}
 
@@ -168,7 +168,11 @@ x :: Bool
 x = 3  -- error: Couldn't match expected type 'Bool' with actual type 'Int'
 \end{lstlisting}
 
-However, Haskell has support for \emph{polymorphism}; firstly, ad-hoc polymorphism, whereby functions can be specialised to operate on specific types, with separate definitions for each type. Haskell achieves this through \emph{type classes}, a feature which is akin to interfaces in object oriented languages. We give an example below, involving the basic equality operator in Haskell (which is a member of the \inline{Eq} typeclass). Example definitions for both \inline{Bool} and \inline{Int} are given to demonstrate how different definitions can be used for the same function:
+However, Haskell has support for \emph{polymorphism}; firstly, parametric polymorphism, where a value's type is dependent on one or more \emph{type variables}. Consider the list type; it would be nonsensical to define an entire new list data type for each potential inhabitant. As such, the list type in Haskell is more general, in that it can hold any value of any type, provided that all elements of the list are of the same type. For instance, a list of booleans, such as \inline{[True, False]}, has type \inline{[Bool]}, which is notated as \inline{[True, False] :: [Bool]}.
+
+In Haskell, type variables are conventionally named as lowercase single letters in alphabetical order; so the first general type in an type annotation is typically \inline{a}, followed by \inline{b}, \inline{c}, and so on. In fact, all Haskell types start with a capital letter, so any lowercase string is a valid type variable name. As such, the polymorphic empty list \inline{[]} has type \inline{[a]}, where the type variable \inline{a} can be unified with other types, such as \inline{Bool} in the example above.
+
+Secondly, Haskell supports ad-hoc polymorphism, whereby functions can be specialised to operate on specific types, with separate definitions for each type. Haskell achieves this through \emph{type classes}, a feature which is akin to interfaces in object oriented languages. We give an example below, involving the basic equality operator in Haskell (which is a member of the \inline{Eq} typeclass). Example definitions for both \inline{Bool} and \inline{Int} are given to demonstrate how different definitions can be used for the same function:
 
 \begin{lstlisting}
 class Eq a where
@@ -187,27 +191,9 @@ instance Eq Int where
     x == y = if x > 0 then (x - 1 == y - 1) else (x + 1 == y + 1)
 \end{lstlisting}
 
-Secondly, Haskell supports parametric polymorphism, where a value's type is dependent on one or more \emph{type variables}. Consider the list type; it would be nonsensical to define an entire new list data type for each potential inhabitant. As such, the list type in Haskell is more general, in that it can hold any value of any type, provided that all elements of the list are of the same type. For instance, a list of booleans, such as \inline{[True, False]}, has type \inline{[Bool]}, which is notated as \inline{[True, False] :: [Bool]}. % TODO: Do the same for [a] example
+Haskell functions are of the form \inline{a -> b}, for some type variables \inline{a} and \inline{b} which can unify with any other type, including function types. For instance, Boolean logical AND would have the type \inline{Bool -> Bool -> Bool}, while logical NOT would have the type \inline{Bool -> Bool}. All Haskell functions can be curried \cite{currying}.
 
-\begin{lstlisting}
-$> :t [True, False]
-[True, False] :: [Bool]
-$> :t []
-[] :: [a]
-\end{lstlisting}
-
-In Haskell, type variables are conventionally named as lowercase single letters in alphabetical order; so the first general type in an type annotation is typically \inline{a}, followed by \inline{b}, \inline{c}, and so on. In fact, all Haskell types start with a capital letter, so any lowercase string is a valid type variable name.
-
-Haskell functions are of the form \inline{a -> b}, for some type variables \inline{a} and \inline{b} which can unify with any other type, including function types. For instance, Boolean logical AND would have the type \inline{Bool -> Bool -> Bool}, while logical NOT would have the type \inline{Bool -> Bool}. All Haskell functions can be curried \cite{currying}. The below code snippet assumes the definition of a function \inline{and}, which performs logical AND on its two inputs:
-
-\begin{lstlisting}
-$> :t and
-and :: Bool -> Bool -> Bool
-$> :t and True
-and True :: Bool -> Bool
-$> and True False
-and True False :: Bool
-\end{lstlisting}
+For example; assume the definition of a function \inline{and}, which performs logical AND on its two inputs. The type of \inline{and} would be \inline{Bool -> Bool -> Bool}, while the type of \inline{and True} would be \inline{Bool -> Bool}, and the type of \inline{and True False} would just be \inline{Bool}. The expression \inline{and True} is well-typed, and would compile; contrasting with other languages such as C or Java, in which functions cannot be partially applied and an analogous expression (e.g. \inline{and(True)}) would fail with a type error.
 
 Haskell allows the programmer to define their own data type with the keyword \inline{data}. These data types are \emph{algebraic}, meaning that it is a type comprised of other types. For instance, to define a "Hand" type, where someone can hold something on each finger, the definition would be something like as follows:
 
@@ -243,28 +229,17 @@ data Hand a where
 
 \section{Lazy Evaluation}
 
-Haskell is a \emph{lazily evaluated} language, which means that values are computed on-demand. This contrasts with \emph{eagerly evaluated languages} like C or Java, which evaluate their arguments before applying functions. A good example of this behaviour is with infinite list types. Trivially, if a program tries to fully evaluate an infinite list, then it will never terminate. However, in a lazily evaluated environment, an infinite list can be used for computation. Consider the below example, where the \inline{(:)} operator adds an element to the beginning of a list, and \inline{take n list} takes \inline{n} elements from the start of \inline{list}:
+Haskell is a \emph{lazily evaluated} language, which means that values are computed on-demand. This contrasts with \emph{eagerly evaluated languages} like C or Java, which evaluate their arguments before applying functions. A good example of this behaviour is with infinite list types. Trivially, if a program tries to fully evaluate an infinite list, then it will never terminate. However, in a lazily evaluated environment, an infinite list can be used for computation.
+
+Consider the following example, where the \inline{(:)} operator adds an element to the beginning of a list, and \inline{take n list} takes \inline{n} elements from the start of \inline{list}. One could define an infinite list as such:
 
 \begin{lstlisting}
-$> infiniteList = 1 : infiniteList
-$> take 5 infiniteList
-[1,1,1,1,1]
+infiniteList = 1 : infiniteList
 \end{lstlisting}
 
-Another example demonstrates lazy evaluation: in Haskell, the \inline{undefined} value simply throws an error whenever encountered. However, it can be used (in the below two examples) to demonstrate Haskell lazy evaluation:
+And the expression \inline{take 5 infiniteList} both terminates and is well-typed, returning the value \inline{[1,1,1,1,1]}.
 
-\begin{lstlisting}
-$> list = [1,2,3,undefined]
-$> take 3 list
-[1,2,3]
-$> take 4 list
-Exception: Prelude.undefined
--- ...
-$> if True then 3 else undefined
-3
-$> if False then 3 else undefined
-Exception: Prelude.undefined
-\end{lstlisting}
+Another example demonstrates lazy evaluation: in Haskell, the \inline{undefined} value simply throws an error whenever encountered. We use it to demonstrate Haskell lazy evaluation: consider an expression \inline{list} defined as \inline{list = [1,2,3,undefined]}. \inline{take 3 list} evaluates to \inline{[1,2,3]}, while \inline{take 4 list} generates an exception. For a non-list example, consider if expressions. \inline{if True then 3 else undefined} evaluates to \inline{3}, since the else branch is not evaluated.
 
 All values in Haskell are lazily evaluated (unless explicitly set otherwise in code). The expression \inline{5 + 2 * 3} will only be evaluated to \inline{11} when that value is required somewhere in code, and if it is never required, it is never evaluated.
 
@@ -274,14 +249,7 @@ While the above is certainly useful in day-to-day programming, it is not enough 
 
 \subsection{Kind Promotion}
 
-A key concept in type-level programming in Haskell is that of \emph{promotion} \cite{givingpromotion}. The data types that programmers define (as we explain above) can be promoted to \emph{kinds}. Kinds are, conceptually, the types of types; that is, terms have types, and types have kinds. A type of kind \inline{*} takes no type variables, and a type of kind \inline{* -> * -> *} takes in two type variables and returns a type. Consider an empty list, which takes a type variable; it has kind \inline{* -> *}, which can be verified using GHCi with the \inline{:k} directive, or the \inline{:kind!} directive which additionally evaluates the type to a normal form:
-
-\begin{lstlisting}
-$> :k []
-[] :: * -> *
-$> :k [Int]
-[Int] :: *
-\end{lstlisting}
+A key concept in type-level programming in Haskell is that of \emph{promotion} \cite{givingpromotion}. The data types that programmers define (as we explain above) can be promoted to \emph{kinds}. Kinds are, conceptually, the types of types; that is, values have types, and types have kinds. A type of kind \inline{*} takes no type variables, and a type of kind \inline{* -> * -> *} takes in two type variables and returns a type. Consider an empty list, which takes a type variable; it has kind \inline{* -> *}, while the kind of a Boolean list (\inline{[Bool]}) is \inline{*}.
 
 The kind \inline{*} is commonly aliased as \inline{Type}, since it is the kind of types which have runtime values. That distinction becomes important when promotion is involved; programmers can define their own kinds with the \inline{-XDataKinds} extension enabled. Consider a custom \inline{Book} data type, which is either \inline{Fiction} or \inline{NonFiction}. A type definition may look as follows, with either regular or GADT syntax:
 
@@ -331,14 +299,7 @@ type family IsEitherFiction (x :: Book) (y :: Book) :: Bool where
     IsEitherFiction 'NonFiction 'NonFiction = False
 \end{lstlisting}
 
-While the function \inline{isEitherFiction} can be partially applied, the type family \inline{IsEitherFiction} cannot. One could feasibly map \inline{isEitherFiction} over a list of books, but mapping with the type family \inline{IsEitherFiction} is impossible:
-
-\begin{lstlisting}
-$> map (isEitherFiction NonFiction) [NonFiction, Fiction]
-= [False, True]
-$> kind! Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ]
-error: The type family 'IsEitherFiction' should have 2 arguments, but has been given 1
-\end{lstlisting}
+While the function \inline{isEitherFiction} can be partially applied, the type family \inline{IsEitherFiction} cannot. One could feasibly map \inline{isEitherFiction} over a list of books, but mapping with the type family \inline{IsEitherFiction} is impossible. Imagine a type family \inline{Map}, of kind \inline{(a -> b) -> [a] -> [b]}, analogous to the value-level function \inline{map}. While the value-level expression \inline{map (isEitherFiction NonFiction) [NonFiction, Fiction]} evaluates to \inline{[False, True]}, the type-level equivalent (\inline{Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ]}) causes a type error.
 
 Sadly, lots of functional programming relies on partial application, and these facilities simply aren't available when using Haskell's Type Families. Additionally, Type Families are not lazily evaluated, but are eagerly evaluated; we demonstrate with the definition of a custom \inline{If} type family, combined with a type error:
 
@@ -346,15 +307,9 @@ Sadly, lots of functional programming relies on partial application, and these f
 type family If (x :: Bool) (t :: k) (e :: k) :: k where
     If True  x _ = x
     If False _ y = y
-
-$> kind! If True 3 4
-If True 3 4 :: Nat
-= 3
-$> :kind! If True 3 (TypeError (Text "Not lazily evaluating!"))
-error: Not lazily evaluating!
 \end{lstlisting}
 
-Compared with the behaviour of Haskell's term-level \inline{if}, it is clear that type families are eagerly evaluated rather than lazily evaluated.
+The type-level expression \inline{If True 3 4} has kind \inline{Nat}, and evaluates to \inline{3}. However, the type-level expression \inline{If True 3 (TypeError (Text "Not lazily evaluating!"))} results in a type error; demonstrating that Type Family arguments are evaluated before application. Compared with the behaviour of Haskell's term-level \inline{if}, it is clear that type families are eagerly evaluated rather than lazily evaluated.
 
 \subsection{First-Class Families}
 
@@ -377,16 +332,7 @@ type instance Eval (IsEitherFiction NonFiction Fiction) = True
 type instance Eval (IsEitherFiction NonFiction NonFiction) = False
 \end{lstlisting}
 
-When combined with a definition of \inline{Map}, mapping (and general Functor behaviour) at the type level becomes possible by calling \inline{Eval}:
-
-\begin{lstlisting}
-$> :kind! Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ]
-Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ] :: Exp [Bool]
-= Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ]
-$> :kind! Eval (Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ])
-Eval (Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ]) :: [Bool]
-= '[ 'False, 'True ]
-\end{lstlisting}
+When combined with a definition of \inline{Map}, mapping (and general Functor behaviour) at the type level becomes possible by calling \inline{Eval}: \inline{Eval (Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ])} evaluates to \inline{'[ 'False, 'True ]}.
 
 However, since an open type family is used to define First Class Families, they cannot have overlapping definitions. For instance, the below will not compile:
 
@@ -397,7 +343,7 @@ type instance Eval (IsEitherFiction x Fiction) = True
 type instance Eval (IsEitherFiction x NonFiction) = False
 \end{lstlisting}
 
-It will not compile because when determining which definition to use for \inline{IsEitherFiction Fiction Fiction} (or \inline{IsEitherFiction Fiction NonFiction}), the compiler is unable to tell whether to bind the first argument (\inline{Fiction}) to the \inline{x} or to use the first definition. When using a closed type family, or a term-level function, the definitions written are implicitly ordered, so if it is unclear, the behaviour is to default to the first definition written. Luckily, this can be leveraged; by using a combination of First Class Families and closed type families, both partial application and ordered definitions can be used:
+When using a closed type family, or a term-level function, the definitions written are implicitly ordered, so if instances overlap, the behaviour is to default to the first definition written. Luckily, this can be leveraged; by using a combination of First Class Families and closed type families, both partial application and ordered definitions can be used:
 
 \begin{lstlisting}
 data IsEitherFiction :: Book -> Book -> Exp Bool
@@ -411,19 +357,14 @@ type family IsEitherFiction' (x :: Book) (y :: Book) :: Bool where
 
 \subsubsection{Type-level Lazy Evaluation}
 
-First Class Families introduce more than partial application; they can be used to perform type-level lazy evaluation. Consider a First Class Family, \inline{TE}, which takes in an \inline{ErrorMessage} and returns a \inline{TypeError}:
+First Class Families introduce more than just partial application; they can be used to perform type-level lazy evaluation. Consider a First Class Family, \inline{TE}, which takes in an \inline{ErrorMessage} and returns a \inline{TypeError}:
 
 \begin{lstlisting}
 data TE :: ErrorMessage -> Exp a
 type instance Eval (TE msg) = TypeError msg
 \end{lstlisting}
 
-When combined with \inline{Eval}, \inline{TE} can be used to return a type error:
-
-\begin{lstlisting}
-$> :kind! Eval (TE (Text "Custom error!"))
-error: Custom error!
-\end{lstlisting}
+When combined with \inline{Eval}, \inline{TE} can be used to return a type error: \inline{Eval (TE (Text "Custom error!"))} generates the type error \inline{error: Custom error!}.
 
 By guarding the actual type error behind \inline{Eval} calls, type errors can be lazily evaluated, as can other type level constructs. Consider another First Class Family for if statements:
 
@@ -440,30 +381,15 @@ data ID :: a -> Exp a
 type instance Eval (ID x) = x
 \end{lstlisting}
 
-The First Class Family version of \inline{If} supports lazy evaluation; as can be demonstrated by placing an unevaluated type error in the else branch:
+The First Class Family version of \inline{If} supports lazy evaluation; as can be demonstrated by placing an unevaluated type error in the else branch. The type-level expression \inline{Eval (If True (ID 3) (TE (Text "Not lazily evaluated!")))} evaluates to \inline{3}, rather than generating a type error.
 
-\begin{lstlisting}
-$> :kind! Eval (If True (ID 3) (TE (Text "Not lazily evaluated!")))
-Eval (If True (ID 3) (TE (Text "Not lazily evaluated!"))) :: Nat
-= 3
-$> :kind! Eval (If False (ID 3) (TE (Text "Not lazily evaluated!")))
-error: Not lazily evaluated!
-\end{lstlisting}
-
-The behaviour of the First Class Family definition is different from that of the regular type family definition; the type error is never evaluated, as the \inline{Eval} call on the else branch is never made. As such, First Class Families can be used to perform lazy evaluation at the type level.
+The behaviour of the First Class Family definition is different from that of the Closed Type Family definition we give above; the type error is never evaluated, as the \inline{Eval} call on the else branch is never made. As such, First Class Families can be used to perform lazy evaluation at the type level.
 
 \subsection{Type Applications}
 
-The \inline{-XTypeApplications} Haskell syntax provides a way for the programmer to directly specify type variables \cite{typeapplication}. Consider an empty list, with type \inline{[a]}. Using type application syntax, where you prefix a type name with \inline{@}, one can specify the type of an empty list by stating what type should inhabit type variable \inline{a}:
+The \inline{-XTypeApplications} Haskell syntax provides a way for the programmer to directly specify type variables \cite{typeapplication}. Consider an empty list, with type \inline{[a]}. Using type application syntax, where we prefix a type name with \inline{@}, one can specify the type of an empty list by stating what type should inhabit type variable \inline{a}.
 
-\begin{lstlisting}
-$> :t []
-[] :: [a]
-$> :t [] @Int
-[] @Int :: [Int]
-$> :t [] @Bool
-[] @Bool :: [Bool]
-\end{lstlisting}
+For example: the empty list \inline{[] @Int} has type \inline{[Int]}, and the empty list \inline{[] @Bool} has type \inline{[Bool]}. Note that the polymorphic empty list type has been used in all cases; the thing that has changed is the type of the list itself.
 
 \subsection{Proxies and Singletons}
 
@@ -475,18 +401,7 @@ Proxy types provide a wrapper to allow arbitrary types to have kind \inline{*}. 
 
 The \inline{Proxy} type constructor takes in a single type variable, and exposes a polymorphic value \inline{Proxy}. The \inline{Proxy} type constructor, when applied to some type, has kind \inline{*}. To follow on from the previous \inline{Book} example, while \inline{'NonFiction} has kind \inline{Book}, \inline{Proxy 'NonFiction} has kind \inline{*}, and so values of type \inline{Proxy 'NonFiction} can be passed around at the type level.
 
-By making use of the type application syntax we explain above, we can demonstrate how term-level \inline{Proxy} values can be used to pass around type variables with arbitrary kinds:
-
-\begin{lstlisting}
-$> :k 'NonFiction
-'NonFiction :: Book
-$> :t Proxy
-Proxy :: forall k (t :: k). Proxy t
-$> :t Proxy @NonFiction
-Proxy @NonFiction :: Proxy 'NonFiction
-$> :k Proxy 'NonFiction
-Proxy 'NonFiction :: *
-\end{lstlisting}
+By making use of the type application syntax we explain above, we can demonstrate how term-level \inline{Proxy} values can be used to pass around type variables with arbitrary kinds. While \inline{'NonFiction} has kind \inline{Book}, \inline{Proxy 'NonFiction} has kind \inline{*}. Additionally, since it has kind \inline{*}, it has a runtime value; \inline{Proxy @NonFiction} is the value of type \inline{Proxy 'NonFiction}.
 
 \subsubsection{Singletons}
 
@@ -576,7 +491,13 @@ someFunc vec = -- ...
 
 This makes it a perfect candidate to act as the central chess board type, containing all pieces. To guarantee that a board is an 8x8 grid, it simply needs to contain 8 length-indexed vectors of length 8. Due to the use of the \inline{-XDataKinds} extension to enable promotion, this length-indexed vector definition immediately also defines a type-level length-indexed vector.
 
-Almost all operations available on lists are available on length indexed vectors. However, since length-indexed vectors have an additional type variable (their length), they cannot be dynamically created without some length type variable. That is, a function \inline{f :: a -> Vec n b} cannot exist, since the type variable \inline{n} will have nothing to unify with when \inline{f} is called.
+Almost all operations available on lists are available on length indexed vectors. However, since length-indexed vectors have an additional type variable (their length), they are difficult to dynamically create without some length type variable. That is, a function \inline{f :: a -> Vec n b} cannot exist, since the type variable \inline{n} will have nothing to unify with when \inline{f} is called.
+
+\section{Modelling Chess with Functions}
+
+% TODO: Talk about function that takes in chess board + the next move, and outputs a chess board
+
+% TODO: Talk about overall structure of Chesskell - type-level model accessible through Move function, which is interfaced with through the EDSL (or just by itself)
 
 
 \chapter{Implementation}
