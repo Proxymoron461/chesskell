@@ -7,35 +7,35 @@ import ChessTypes
 import FirstClassFunctions
 
 -- SUCCESS
--- wrongPieceError = chess rook _a2 to _a3 end
+-- wrongPieceError = chess rook a2 to a3 end
 
 -- SUCCESS
--- invalidMoveErrorCantMoveTo = chess pawn _a2 to _a6 end
+-- invalidMoveErrorCantMoveTo = chess pawn a2 to a6 end
 
 -- SUCCESS
--- invalidMoveErrorEmpty = chess rook _b4 to _b5 end
+-- invalidMoveErrorEmpty = chess rook b4 to b5 end
 
 -- -- SUCCESS - EDSL stops and reports at first error
--- carryError = chess pawn _a2 to _a6 pawn _h7 to _h6 end
+-- carryError = chess pawn a2 to a6 pawn h7 to h6 end
 
 -- -- SUCCESS - test failed
--- errorAfterMoves = chess pawn _a2 to _a3 pawn _a7 to _a6 pawn _a3 to _a5 end
+-- errorAfterMoves = chess pawn a2 to a3 pawn a7 to a6 pawn a3 to a5 end
 
 -- type TestType = TL.TypeError (TL.Text "Bleh")
 
 -- -- SUCCESS - type error
 -- didntPromoteBlack = create
---         put _Wh _P at _h7
---         put _Bl _P at _a2
+--         put _Wh _P at h7
+--         put _Bl _P at a2
 --     startMoves
---         pawn _h7 promoteTo _B _h8
---         pawn _a2 to _a1
+--         pawn h7 promoteTo _B h8
+--         pawn a2 to a1
 --     end
 
 -- -- SUCCESS - type error
 -- didntPromoteWhite = create
---         put _Wh _P at _h7
---         put _Bl _P at _a2
+--         put _Wh _P at h7
+--         put _Bl _P at a2
 --     startMoves
---         pawn _h7 to _h8
+--         pawn h7 to h8
 --     end

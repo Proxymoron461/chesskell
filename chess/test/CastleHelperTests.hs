@@ -23,7 +23,7 @@ anySpaceInCheckTest1 = Refl
 
 anySpaceInCheckTest2 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AnySpaceInCheck (GetMovingTeam b) b '[ At C Nat5 ]))
 anySpaceInCheckTest2 (Proxy :: (Proxy (b :: BoardDecorator))) = Proxy @(Eval (AnySpaceInCheck (GetMovingTeam b) b '[ At C Nat5 ]))
-aSICT2Board = create put _Wh _P at _c4 lastTeam _Wh end
+aSICT2Board = create put _Wh _P at c4 lastTeam _Wh end
 
 anySpaceInCheckTest3 :: Proxy (b :: BoardDecorator) -> Proxy (Eval (AnySpaceInCheck (GetMovingTeam b) b '[ At B Nat5, At D Nat5 ]))
 anySpaceInCheckTest3 (Proxy :: (Proxy (b :: BoardDecorator))) = Proxy @(Eval (AnySpaceInCheck (GetMovingTeam b) b '[ At B Nat5, At D Nat5 ]))
@@ -57,29 +57,29 @@ haveRooksMovedTest2 :: '(False, False) :~: HaveRooksMoved Black StartDec
 haveRooksMovedTest2 = Refl
 
 -- bothWhiteRooksMovedBoard = create
---                                put _Wh _R at _a1
---                                put _Wh _R at _h1
---                                put _Bl _P at _h7
+--                                put _Wh _R at a1
+--                                put _Wh _R at h1
+--                                put _Bl _P at h7
 --                                lastTeam _Bl
---                                lastMoved _e4  -- Set random position, to avoid nasty type errors
+--                                lastMoved e4  -- Set random position, to avoid nasty type errors
 --                            startMoves
---                                rook _a1 to _a2
---                                pawn _h7 to _h6
---                                rook _h1 to _h2
+--                                rook a1 to a2
+--                                pawn h7 to h6
+--                                rook h1 to h2
 --                            end
 
 -- rookBackToStartBoard = create
---                            put _Bl _R at _a8
---                            put _Bl _R at _h8
---                            put _Wh _P at _a2
+--                            put _Bl _R at a8
+--                            put _Bl _R at h8
+--                            put _Wh _P at a2
 --                            lastTeam _Wh
---                            lastMoved _e4  -- Set random position to avoid nasty type errors
+--                            lastMoved e4  -- Set random position to avoid nasty type errors
 --                         startMoves
---                            rook _a8 to _a7
---                            pawn _a2 to _a3
---                            rook _a7 to _a8
---                            pawn _a3 to _a4
---                            rook _h8 to _h7
+--                            rook a8 to a7
+--                            pawn a2 to a3
+--                            rook a7 to a8
+--                            pawn a3 to a4
+--                            rook h8 to h7
 --                         end
 
 
@@ -202,10 +202,10 @@ castleHelperTestSuite = describe "Castle Helper Function Tests" $ do
 -------------------------------------------------------------------------------------------------------
 
 -- onlyRooksAndKings = create
---                         put _Wh _R at _a1
---                         put _Wh _R at _h1
---                         put _Bl _R at _a8
---                         put _Bl _R at _h8
+--                         put _Wh _R at a1
+--                         put _Wh _R at h1
+--                         put _Bl _R at a8
+--                         put _Bl _R at h8
 --                     end
 
 -- Used above EDSL statement to get it in repl, then copied and pasted!
@@ -285,12 +285,12 @@ type OnlyRooksAndKings = 'Dec
           '( 'At 'E Nat1, 'At 'E Nat8) Nat1
 
 -- moveKingsBoard = create
---                      put _Wh _K at _e1
---                      put _Bl _K at _e8
+--                      put _Wh _K at e1
+--                      put _Bl _K at e8
 --                      lastTeam _Bl
 --                   startMoves
---                      king _e1 to _e2
---                      king _e8 to _e7
+--                      king e1 to e2
+--                      king e8 to e7
 --                   end
 
 type MoveKingsDec = 'Dec
@@ -383,15 +383,15 @@ type MoveKingsDec = 'Dec
           '( 'At 'E Nat2, 'At 'E Nat7) Nat1
 
 -- leftWRookRightBRookMovedBoard = create
---                                     put _Wh _R at _a1
---                                     put _Wh _R at _h1
---                                     put _Bl _R at _a8
---                                     put _Bl _R at _h8
+--                                     put _Wh _R at a1
+--                                     put _Wh _R at h1
+--                                     put _Bl _R at a8
+--                                     put _Bl _R at h8
 --                                     lastTeam _Bl
---                                     lastMoved _e4
+--                                     lastMoved e4
 --                                 startMoves
---                                     rook _a1 to _a2
---                                     rook _h8 to _h7
+--                                     rook a1 to a2
+--                                     rook h8 to h7
 --                                 end
 
 type LeftWRookRightBRookDec = 'Dec

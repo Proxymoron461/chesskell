@@ -48,23 +48,23 @@ import TestTypes
 -- enPassantTest6 = Refl
 
 -- enPassantTest1 = chess
---                    pawn _d2 to _d4
---                    pawn _b7 to _b5
---                    pawn _e2 to _e3
---                    pawn _b5 to _b4
---                    pawn _a2 to _a4
---                    pawn _b4 to _a3
+--                    pawn d2 to d4
+--                    pawn b7 to b5
+--                    pawn e2 to e3
+--                    pawn b5 to b4
+--                    pawn a2 to a4
+--                    pawn b4 to a3
 --                  end
 
 -- enPassantTest2 = chess
---                    pawn _d2 to _d4
---                    pawn _b7 to _b5
---                    pawn _e2 to _e3
---                    pawn _b5 to _b4
---                    pawn _e3 to _e4
---                    pawn _b4 to _b3
---                    pawn _a2 to _a3
---                    pawn _b3 to _a2
+--                    pawn d2 to d4
+--                    pawn b7 to b5
+--                    pawn e2 to e3
+--                    pawn b5 to b4
+--                    pawn e3 to e4
+--                    pawn b4 to b3
+--                    pawn a2 to a3
+--                    pawn b3 to a2
 --                  end
 
 -- enPassantTestSuite = describe "En Passant Tests" $ do
