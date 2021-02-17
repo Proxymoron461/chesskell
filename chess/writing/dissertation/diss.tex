@@ -436,7 +436,7 @@ The board is an 8x8 grid of 64 square tiles, each of which is coloured Black or 
 
 At the beginning of the game, all Chess pieces lie in a specific arrangement (see Figure \ref{startboard}). All Black and all White pieces are opposite one another, such that their positions are mirrored.
 
-\subsubsection{The Pieces}
+\subsection{The Pieces}
 
 While each team has 16 pieces total, there are only 6 types of pieces; Pawns, Rooks, Knights, Bishops, Queens, and Kings (in rough order of value during play). Each have their own strict movement rules, and in all but a single case, pieces of the opposite team can be \emph{captured} by moving to their square. A capture removes a piece from play; there is no way to regain a piece once captured (although there is a way to transform a Pawn into another piece). We give an example of capturing in Figure \ref{capture}.
 
@@ -478,7 +478,7 @@ Disappointingly, there exists an implementation of Chesskell using Finger Trees 
 
 \subsection{Length-indexed Vectors}
 
-To implement the board, a desirable data structure would be one that had a fixed type, which could be guaranteed to remain at 8. As such, a variant of singly-linked lists, named length-indexed vectors. A length-indexed vector is a singly linked list which contains its' length in its' type. That is, a length-indexed vector of size 0 has a different type than a length-indexed vector of size 3. The GADT data type definition is below:
+To implement the board, a desirable data structure would be one that had a fixed type, which could be guaranteed to remain at 8. As such, a variant of singly-linked lists, named length-indexed vectors. A length-indexed vector is a singly linked list which contains its' length in its' type. That is, a length-indexed vector of size 0 has a different type than a length-indexed vector of size 3. We give an example GADT data type definition below:
 
 \begin{lstlisting}
 data Vec (n :: Nat) (a :: *) where
@@ -499,9 +499,40 @@ Almost all operations available on lists are available on length indexed vectors
 
 \section{Modelling Chess with Functions}
 
-% TODO: Talk about function that takes in chess board + the next move, and outputs a chess board
+Ideally, the Chess board alone would be sufficient to calculate whether a move was valid. A value-level function for determining the validity of moves could take in the current state of the board, and two positions (the position moving from and the position moving two), and either return the new board state or some king of error. Since Chess is conducted move by move, to simulate a game, this function could be chained repeatedly, with each new move and the previous generated board as input. Such an ideal function could have type \inline{ChessBoard -> Position -> Position -> Maybe ChessBoard}.
 
-% TODO: Talk about overall structure of Chesskell - type-level model accessible through Move function, which is interfaced with through the EDSL (or just by itself)
+In a game of Chess, the majority of moves are time-agnostic; that is, they are not tied to previous moves, only the current state of the board. There are, however, two exceptions; Castling and \emph{en passant} capture. Castling is a move by both a King and a Rook, and an \emph{en passant} capture is a special form of capture available only to Pawns. However, the only additional information required to calculate whether these moves are valid is the last piece that moved, and for each piece the number of times that piece has moved. As such, the board representation can be defined to include this information; ensuring that not only pieces and teams are recorded, but also the number of moves made and the last piece to make a move. Therefore, with a new type \inline{DecoratedChessBoard} containing the new information (as well as the board state), a function for calculating move validity could have type \inline{DecoratedChessBoard -> Position -> Position -> Maybe DecoratedChessBoard}.
+
+A pure function implementation is therefore possible, making use of a Chess board data structure which includes this information. Translating this approach to the type-level, a Type Family (or First Class Family) can be defined which performs similarly, with kind \inline{'DecoratedChessBoard -> 'Position -> 'Position -> 'DecoratedChessBoard}. This type-level model of Chess, implemented as a single movement Type Family, must be interacted with via the defined EDSL. The EDSL is responsible for gathering move-wise positional information, and chaining together calls of the movement Type Family, which will either return a valid Chess board or a type error depending on whether the described move is permissible or not.
+
+\section{Designing an EDSL for Chess}
+
+Since the EDSL is for describing games of Chess, it makes sense that it should draw inspiration from Chess game notation, such as Algebraic Notation (which we explain briefly above). In such notation, the board state is implicit and undescribed; that is, the state of the board must be inferred by the reader from the moves made thus far, assuming that the game started in standard configuration (Figure \ref{startboard}).
+
+One possible match in Haskell for this style is monadic computation. If the board information were stored in a custom monad, then the \emph{bind} operator (written as \inline{>>=)}) could be used to chain together these chess moves, in some way akin to below:
+
+\begin{lstlisting}
+game = chessStart
+    >>= move e2 e4
+    >>= move e7 e5
+    >>= -- ...
+\end{lstlisting}
+
+However, this approach introduces a few problems. Firstly, the EDSL is more difficult to read for those unfamiliar with Haskell. It immediately would be less an EDSL, and more a set of plain Haskell functions with nice names. Secondly, it is not immediately clear how a monad for the type-level chess board could be defined. It could piggyback off of another defined monad, such as the \inline{Maybe} monad, but this is introducing further complexity for no good reason.
+
+Luckily, there exists an alternative; Continuation Passing Style (CPS). The core idea is value transformation through a series of continuation function applications, until the final continuation function returns a value. Due to the left-to-right composition of functions, CPS results in very readable code, and could be utilised to avoid any Haskell-specific operators and appear as a clear stretch of Chess notation.
+
+Consider the following example of CPS code. We give the definition of two functions, \inline{add} and \inline{to}:
+
+\begin{lstlisting}
+add :: Int -> ((Int -> Int) -> m) -> m
+add x cont = cont (+ x)
+
+to :: (Int -> Int) -> Int -> Int
+to f x = f x
+\end{lstlisting}
+
+With the definition of these two functions, the line \inline{add 5 to 7} is well-typed, and evaluates to \inline{12}. This is because \inline{add} takes in a continuation of type \inline{(Int -> Int) -> m}, and returns a value of type \inline{m}. In other words, the continuation (in this case \inline{to} is responsible for the output. Using such a scheme enables Chesskell to be much closer to conventional chess notation than to Haskell code, and avoids unnecessary wrapping of the types within a monadic context.
 
 
 \chapter{Implementation}
