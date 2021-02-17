@@ -131,9 +131,9 @@ Game development, as a more general field in Computer Science, has many Chess-ba
 
 \subsection{Why Haskell?}
 
-Given the previous discussion on dependent type systems, and how Haskell is inching towards one, it begs the question; why not use a dependently typed language, like Idris, to write Chesskell in? The simple answer is because it would be trivial. Writing type-level code in Idris (or any other dependently typed language) would be near indistinguishable from writing a Chess validity checker, bundled within an EDSL, at the term-level. Such a feat is both simple and unoriginal.
+Given the previous discussion on dependent type systems, and how Haskell is inching towards one, it begs the question; why not use a dependently typed language, like Idris, to write Chesskell in? The simple answer is because it would be trivial. Writing type-level code in Idris (or any other dependently typed language) would be near indistinguishable from writing a Chess validity checker, bundled within an EDSL, at the value-level. Such a feat is both simple and unoriginal.
 
-However, choosing to write Chesskell in Haskell means figuring out how to perform typical term-level computation at the type-level. Indeed, the majority of the code for Chesskell is reusable, since much of it is not specifically about expressing the rules of Chess, but building components to enable complex computation with types. The project is both more difficult, and more interesting, for having been completed in a language without a full dependent type system.
+However, choosing to write Chesskell in Haskell means figuring out how to perform typical value-level computation at the type-level. Indeed, the majority of the code for Chesskell is reusable, since much of it is not specifically about expressing the rules of Chess, but building components to enable complex computation with types. The project is both more difficult, and more interesting, for having been completed in a language without a full dependent type system.
 
 \section{Objectives}
 
@@ -151,9 +151,7 @@ During the course of the project, a "valid Chess game" is any game that adheres 
 
 \chapter{Background}
 
-Haskell is a purely functional language, which is statically typed and lazily evaluated\footnote{\url{https://www.haskell.org/}}. The expressions accepted by the compiler are all well-typed; that is, they have some valid type. GHC will not, without the use of extensions, compile an expression that is not well-typed. The type of an expression can be inferred by the compiler in many cases, but can also be annotated manually by the programmer.
-
-As we explain above, languages with a dependent type system have no separation between types and values. In Haskell however, programs go through \emph{type erasure}---the executable output of the compiler has no notion of types. In other words, Haskell has a clear separation between dynamic values, and the static types those values have. Haskell cannot be used to write functions on types, in the same way that a dependently typed language like Idris can.
+Haskell is a purely functional language, which is statically typed and lazily evaluated\footnote{\url{https://www.haskell.org/}}. As we explain above, languages with a dependent type system have no separation between types and values. In Haskell however (among other languages), programs undergo \emph{type erasure}---the executable output of the compiler has no notion of types. In other words, Haskell has a clear separation between dynamic values, and the static types those values have. Haskell cannot be used to write functions on types, in the same way that a dependently typed language like Idris can.
 
 This is just one of the differences between Haskell's type system and a dependent type system, but it is an important one; type-level programming in Haskell is made more complex due to type erasure. This chapter summarises key aspects of Haskell's type system, including how programmers can use GHC extensions and advanced features to circumvent type erasure and perform computation at the type level in Haskell.
 
@@ -170,7 +168,7 @@ x = 3  -- error: Couldn't match expected type 'Bool' with actual type 'Int'
 
 However, Haskell has support for \emph{polymorphism}; firstly, parametric polymorphism, where a value's type is dependent on one or more \emph{type variables}. Consider the list type; it would be nonsensical to define an entire new list data type for each potential inhabitant. As such, the list type in Haskell is more general, in that it can hold any value of any type, provided that all elements of the list are of the same type. For instance, a list of booleans, such as \inline{[True, False]}, has type \inline{[Bool]}, which is notated as \inline{[True, False] :: [Bool]}.
 
-In Haskell, type variables are conventionally named as lowercase single letters in alphabetical order; so the first general type in an type annotation is typically \inline{a}, followed by \inline{b}, \inline{c}, and so on. In fact, all Haskell types start with a capital letter, so any lowercase string is a valid type variable name. As such, the polymorphic empty list \inline{[]} has type \inline{[a]}, where the type variable \inline{a} can be unified with other types, such as \inline{Bool} in the example above.
+In Haskell, type variables are conventionally named as lowercase single letters in alphabetical order; so the first general type in an type annotation is typically \inline{a}, followed by \inline{b}, \inline{c}, and so on. In fact, all Haskell types start with a capital letter, so any lowercase string is a valid type variable name (except for keywords). As such, the polymorphic empty list \inline{[]} has type \inline{[a]}, where the type variable \inline{a} can be unified with other types, such as \inline{Bool} in the example above.
 
 Secondly, Haskell supports ad-hoc polymorphism, whereby functions can be specialised to operate on specific types, with separate definitions for each type. Haskell achieves this through \emph{type classes}, a feature which is akin to interfaces in object oriented languages. We give an example below, involving the basic equality operator in Haskell (which is a member of the \inline{Eq} typeclass). Example definitions for both \inline{Bool} and \inline{Int} are given to demonstrate how different definitions can be used for the same function:
 
@@ -191,11 +189,11 @@ instance Eq Int where
     x == y = if x > 0 then (x - 1 == y - 1) else (x + 1 == y + 1)
 \end{lstlisting}
 
-Haskell functions are of the form \inline{a -> b}, for some type variables \inline{a} and \inline{b} which can unify with any other type, including function types. For instance, Boolean logical AND would have the type \inline{Bool -> Bool -> Bool}, while logical NOT would have the type \inline{Bool -> Bool}. All Haskell functions can be curried \cite{currying}.
+Haskell functions are of the form \inline{a -> b}, for some type variables \inline{a} and \inline{b} which can unify with any other type, including function types. For instance, Boolean logical AND would have the type \inline{Bool -> Bool -> Bool}, while logical NOT would have the type \inline{Bool -> Bool}.
 
-For example; assume the definition of a function \inline{and}, which performs logical AND on its two inputs. The type of \inline{and} would be \inline{Bool -> Bool -> Bool}, while the type of \inline{and True} would be \inline{Bool -> Bool}, and the type of \inline{and True False} would just be \inline{Bool}. The expression \inline{and True} is well-typed, and would compile; contrasting with other languages such as C or Java, in which functions cannot be partially applied and an analogous expression (e.g. \inline{and(True)}) would fail with a type error.
+All Haskell functions can be curried \cite{currying}; as an example, assume the definition of a function \inline{and}, which performs logical AND on its two inputs. The type of \inline{and} would be \inline{Bool -> Bool -> Bool}, while the type of \inline{and True} would be \inline{Bool -> Bool}, and the type of \inline{and True False} would just be \inline{Bool}. The expression \inline{and True} is well-typed, and would compile; contrasting with other languages such as C or Java, in which functions cannot be partially applied and an analogous expression (e.g. \inline{and(True)}) would fail with a type error.
 
-Haskell allows the programmer to define their own data type with the keyword \inline{data}. These data types are \emph{algebraic}, meaning that it is a type comprised of other types. For instance, to define a "Hand" type, where someone can hold something on each finger, the definition would be something like as follows:
+Haskell allows the programmer to define their own data type with the keyword \inline{data}. These data types are \emph{algebraic}, meaning that they are types comprised of other types. For instance, to define a "Hand" type, where someone can hold something on each finger, the definition would be something like as follows:
 
 \begin{lstlisting}
 data Hand a = One a
@@ -237,15 +235,15 @@ Consider the following example, where the \inline{(:)} operator adds an element 
 infiniteList = 1 : infiniteList
 \end{lstlisting}
 
-And the expression \inline{take 5 infiniteList} both terminates and is well-typed, returning the value \inline{[1,1,1,1,1]}.
+With such a definition, the expression \inline{take 5 infiniteList} both terminates and is well-typed, returning the value \inline{[1,1,1,1,1]}.
 
-Another example demonstrates lazy evaluation: in Haskell, the \inline{undefined} value simply throws an error whenever encountered. We use it to demonstrate Haskell lazy evaluation: consider an expression \inline{list} defined as \inline{list = [1,2,3,undefined]}. \inline{take 3 list} evaluates to \inline{[1,2,3]}, while \inline{take 4 list} generates an exception. For a non-list example, consider if expressions. \inline{if True then 3 else undefined} evaluates to \inline{3}, since the else branch is not evaluated.
+Another example demonstrates lazy evaluation: in Haskell, the \inline{undefined} value simply throws an exception whenever evaluated. We use it to demonstrate Haskell lazy evaluation: consider an expression \inline{list} defined as \inline{list = [1,2,3,undefined]} (which compiles successfully). \inline{take 3 list} evaluates to \inline{[1,2,3]}, while \inline{take 4 list} generates an exception. For a non-list example, consider if expressions. \inline{if True then 3 else undefined} evaluates to \inline{3}, since the else branch is not evaluated.
 
 All values in Haskell are lazily evaluated (unless explicitly set otherwise in code). The expression \inline{5 + 2 * 3} will only be evaluated to \inline{11} when that value is required somewhere in code, and if it is never required, it is never evaluated.
 
 \section{Type-level Programming}
 
-While the above is certainly useful in day-to-day programming, it is not enough to achieve dependent types. Luckily, there are many more GHC extensions, a large number of which bring the language closer to dependent types.
+While GADTs and lazy evaluation are certainly useful in day-to-day programming, they are not enough to achieve complex type-level computation. Luckily, there are many more GHC extensions, a large number of which bring the language closer to dependent types.
 
 \subsection{Kind Promotion}
 
@@ -263,11 +261,11 @@ data Book where
 
 With the \inline{-XDataKinds} extension enabled, the above code not only produces the two values \inline{Fiction} and \inline{NonFiction} with type \inline{Book}, but also the \emph{types} \inline{'Fiction} and \inline{'NonFiction}, of kind \inline{Book}. The key point of understanding is that there are no values of type \inline{'Fiction} or \inline{'NonFiction}---they exist solely at the type level.
 
-The syntax for "has type" and "has kind" is in both cases \inline{::}, which is unfortunate; however, in the rest of the document, where the distinction is unclear, it shall be made so. Additionally, the prefix \inline{'} for promoted types is optional, and is left out where the compiler can unambiguously state whether an expression should be a type or a value.
+The syntax for "has type" and "has kind" is in both cases \inline{::}, which is unfortunate; however, in the rest of the document, where the distinction is unclear, it shall be made so. Additionally, the prefix \inline{'} for promoted types is optional, and can be left out where the compiler can unambiguously state whether an expression should be a type or a value.
 
 \subsection{Type Families}
 
-Another key extension introduces \emph{type families} \cite{opentfs} \cite{closedtfs}. Type families allow the programmer to compute over types just as functions compute over values; they are the type-level analogue to functions, and come with their own syntax. Following on from the \inline{Book} example above, consider a type family \inline{IsFiction}, which states whether a given \inline{Book} is fiction or not. A term-level definition could be as follows:
+Another key extension introduces \emph{type families} \cite{opentfs} \cite{closedtfs}. Type families allow the programmer to compute over types just as functions compute over values; they are the type-level analogue to functions, and come with their own syntax. Following on from the \inline{Book} example above, consider a type family \inline{IsFiction}, which states whether a given \inline{Book} is fiction or not. A value-level definition could be as follows:
 
 \begin{lstlisting}
 isFiction :: Book -> Bool
@@ -301,7 +299,7 @@ type family IsEitherFiction (x :: Book) (y :: Book) :: Bool where
 
 While the function \inline{isEitherFiction} can be partially applied, the type family \inline{IsEitherFiction} cannot. One could feasibly map \inline{isEitherFiction} over a list of books, but mapping with the type family \inline{IsEitherFiction} is impossible. Imagine a type family \inline{Map}, of kind \inline{(a -> b) -> [a] -> [b]}, analogous to the value-level function \inline{map}. While the value-level expression \inline{map (isEitherFiction NonFiction) [NonFiction, Fiction]} evaluates to \inline{[False, True]}, the type-level equivalent (\inline{Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ]}) causes a type error.
 
-Sadly, lots of functional programming relies on partial application, and these facilities simply aren't available when using Haskell's Type Families. Additionally, Type Families are not lazily evaluated, but are eagerly evaluated; we demonstrate with the definition of a custom \inline{If} type family, combined with a type error:
+Sadly, much of functional programming relies on partial application, and these facilities simply aren't available when using Haskell's Type Families. Additionally, Type Families are not lazily evaluated, but are eagerly evaluated; we demonstrate with the definition of a custom \inline{If} type family, combined with a type error:
 
 \begin{lstlisting}
 type family If (x :: Bool) (t :: k) (e :: k) :: k where
@@ -309,7 +307,7 @@ type family If (x :: Bool) (t :: k) (e :: k) :: k where
     If False _ y = y
 \end{lstlisting}
 
-The type-level expression \inline{If True 3 4} has kind \inline{Nat}, and evaluates to \inline{3}. However, the type-level expression \inline{If True 3 (TypeError (Text "Not lazily evaluating!"))} results in a type error; demonstrating that Type Family arguments are evaluated before application. Compared with the behaviour of Haskell's term-level \inline{if}, it is clear that type families are eagerly evaluated rather than lazily evaluated.
+The type-level expression \inline{If True 3 4} has kind \inline{Nat}, and evaluates to \inline{3}. However, the type-level expression \inline{If True 3 (TypeError (Text "Not lazily evaluating!"))} results in a type error; demonstrating that Type Family arguments are evaluated before application. Compared with the behaviour of Haskell's value-level \inline{if}, it is clear that type families are eagerly evaluated rather than lazily evaluated.
 
 \subsection{First-Class Families}
 
@@ -332,7 +330,7 @@ type instance Eval (IsEitherFiction NonFiction Fiction) = True
 type instance Eval (IsEitherFiction NonFiction NonFiction) = False
 \end{lstlisting}
 
-When combined with a definition of \inline{Map}, mapping (and general Functor behaviour) at the type level becomes possible by calling \inline{Eval}: \inline{Eval (Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ])} evaluates to \inline{'[ 'False, 'True ]}.
+When combined with a definition of \inline{Map}, mapping (and general Functor behaviour) at the type level becomes possible by calling \inline{Eval}: the expression \inline{Eval (Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ])} evaluates to \inline{'[ 'False, 'True ]}.
 
 However, since an open type family is used to define First Class Families, they cannot have overlapping definitions. For instance, the below will not compile:
 
@@ -343,7 +341,7 @@ type instance Eval (IsEitherFiction x Fiction) = True
 type instance Eval (IsEitherFiction x NonFiction) = False
 \end{lstlisting}
 
-When using a closed type family, or a term-level function, the definitions written are implicitly ordered, so if instances overlap, the behaviour is to default to the first definition written. Luckily, this can be leveraged; by using a combination of First Class Families and closed type families, both partial application and ordered definitions can be used:
+When using a closed type family, or a value-level function, the definitions written are implicitly ordered, so if instances overlap, the behaviour is to default to the first definition written. Luckily, this can be leveraged; by using a combination of First Class Families and closed type families, both partial application and ordered definitions can be used:
 
 \begin{lstlisting}
 data IsEitherFiction :: Book -> Book -> Exp Bool
@@ -364,7 +362,7 @@ data TE :: ErrorMessage -> Exp a
 type instance Eval (TE msg) = TypeError msg
 \end{lstlisting}
 
-When combined with \inline{Eval}, \inline{TE} can be used to return a type error: \inline{Eval (TE (Text "Custom error!"))} generates the type error \inline{error: Custom error!}.
+When combined with \inline{Eval}, \inline{TE} can be used to return a type error: \inline{Eval (TE (Text "Custom error!"))} generates \inline{error: Custom error!}.
 
 By guarding the actual type error behind \inline{Eval} calls, type errors can be lazily evaluated, as can other type level constructs. Consider another First Class Family for if statements:
 
@@ -389,25 +387,23 @@ The behaviour of the First Class Family definition is different from that of the
 
 The \inline{-XTypeApplications} Haskell syntax provides a way for the programmer to directly specify type variables \cite{typeapplication}. Consider an empty list, with type \inline{[a]}. Using type application syntax, where we prefix a type name with \inline{@}, one can specify the type of an empty list by stating what type should inhabit type variable \inline{a}.
 
-For example: the empty list \inline{[] @Int} has type \inline{[Int]}, and the empty list \inline{[] @Bool} has type \inline{[Bool]}. Note that the polymorphic empty list type has been used in all cases; the thing that has changed is the type of the list itself.
+For example: the empty list \inline{[] @Int} has type \inline{[Int]}, and the empty list \inline{[] @Bool} has type \inline{[Bool]}. Note that the empty list value has been used in all cases; the thing that has changed is the type of that empty list.
 
 \subsection{Proxies and Singletons}
 
-While promotion and type families allow the programmer to compute at the type level, there must be some way to pass information between the value level and the type level for this to be useful. For Chesskell, this communication only needs to be one-way; the term-level EDSL passes information up to the type system, which either compiles successfully or throws a type error. There are two widely used methods of passing information from values to types; \emph{proxies} and \emph{singletons}.
+While promotion and type families allow the programmer to compute at the type level, there must be some way to pass information between the value level and the type level for this to be useful. For Chesskell, this communication only needs to be one-way; the value-level EDSL passes information up to the type system, which either compiles successfully or throws a type error. Promoted types (such as \inline{'Fiction}) have no runtime values, and so cannot be used as value-level function argument types. There are two widely used methods of circumventing this limitation in Haskell to mimic values with these promoted types; \emph{proxies} and \emph{singletons}.
 
 \subsubsection{Proxy Types}
 
-Proxy types provide a wrapper to allow arbitrary types to have kind \inline{*}. As we explain above, all term-level functions take in values, and all values have types with kind \inline{*}. Term-level functions cannot operate on types of another kind, since they have no runtime values.
+Proxy types provide a wrapper to allow arbitrary types to have kind \inline{*}. As we explain above, all value-level functions take in values, and all values have types with kind \inline{*}. The \inline{Proxy} type constructor takes in a single type variable, and exposes a polymorphic value \inline{Proxy}. The \inline{Proxy} type constructor, when applied to some type, has kind \inline{*}. To follow on from the previous \inline{Book} example, while \inline{'NonFiction} has kind \inline{Book}, \inline{Proxy 'NonFiction} has kind \inline{*}, and so values of type \inline{Proxy 'NonFiction} can be passed around at the type level.
 
-The \inline{Proxy} type constructor takes in a single type variable, and exposes a polymorphic value \inline{Proxy}. The \inline{Proxy} type constructor, when applied to some type, has kind \inline{*}. To follow on from the previous \inline{Book} example, while \inline{'NonFiction} has kind \inline{Book}, \inline{Proxy 'NonFiction} has kind \inline{*}, and so values of type \inline{Proxy 'NonFiction} can be passed around at the type level.
-
-By making use of the type application syntax we explain above, we can demonstrate how term-level \inline{Proxy} values can be used to pass around type variables with arbitrary kinds. While \inline{'NonFiction} has kind \inline{Book}, \inline{Proxy 'NonFiction} has kind \inline{*}. Additionally, since it has kind \inline{*}, it has a runtime value; \inline{Proxy @NonFiction} is the value of type \inline{Proxy 'NonFiction}.
+By making use of the type application syntax we explain above, we can demonstrate how \inline{Proxy} values can be used to pass around type variables with arbitrary kinds. While \inline{'NonFiction} has kind \inline{Book}, \inline{Proxy 'NonFiction} has kind \inline{*}. Additionally, since it has kind \inline{*}, it has a runtime value; \inline{Proxy @NonFiction} is the value of type \inline{Proxy 'NonFiction}.
 
 \subsubsection{Singletons}
 
-As helpful as proxy types can be, their data flow is one-way; there is no way, at the term-level, to ascertain the type of a \inline{Proxy} value. However, singletons \cite{singletons} provide a two-way flow. Each singleton type has a single inhabitant, and each individual value has a single unambiguous type. In other words, it's a large step towards dependently typed programming.
+As helpful as proxy types can be, they have one limitation; since all the value-level code sees are \inline{Proxy} values, all of the relevant information is only available at the type-level. However, singleton types \cite{singletons} provide an alternative approach. Each singleton type has a single inhabitant value, and each individual value has a single unambiguous type. In other words, it's a large step towards dependently typed programming.
 
-This is achieved through, for each defined type, running it through the Richard Eisenberg's singletons library's Template Haskell definitions\footnote{\url{https://hackage.haskell.org/package/singletons}}. Template Haskell is a compile-time meta-programming system, similar to macros in that it allows programmers to define programs to modify and generate Haskell source code \cite{templatehaskell}. The singletons library uses Template Haskell to define new data types, given data type definitions. Should singletons be given the definition of the \inline{Book} datatype which we detail above, it will generate a new \inline{SBook} datatype, defined as below:
+This is achieved through, for each defined type, running it through Richard Eisenberg's singletons library's Template Haskell definitions\footnote{\url{https://hackage.haskell.org/package/singletons}}. Template Haskell is a compile-time meta-programming system, similar to macros in that it allows programmers to define programs to modify and generate Haskell source code \cite{templatehaskell}. The singletons library uses Template Haskell to define new data types, given data type definitions. Should singletons be given the definition of the \inline{Book} datatype which we detail above, it will generate a new \inline{SBook} datatype, defined as below:
 
 \begin{lstlisting}
 data SBook :: Book -> * where
@@ -415,9 +411,9 @@ data SBook :: Book -> * where
     SNonFiction :: SBook 'NonFiction
 \end{lstlisting}
 
-Due to datatype promotion, this introduces new values, types, and kinds. The runtime value \inline{SFiction} has the type \inline{SBook 'Fiction}, and the type \inline{'SFiction} has kind \inline{SBook Fiction}. These definitions are designed to enable the programmer to perform term-level computation which takes types into account, as well as pass type variables around much as with proxy types.
+Due to datatype promotion, this introduces new values, types, and kinds. The runtime value \inline{SFiction} has the type \inline{SBook 'Fiction}, and the type \inline{'SFiction} has kind \inline{SBook Fiction}. These definitions are designed to enable the programmer to access type information through values, and vice versa.
 
-The type of \inline{SNonFiction} can only be \inline{SBook 'NonFiction}, and so term-level code now has some intuition of types; and conversely, when given a type \inline{SBook a}, type families can use the type variable \inline{a} which will be either \inline{'Fiction} or \inline{'NonFiction}.
+The type of \inline{SNonFiction} can only be \inline{SBook 'NonFiction}, and so value-level code now has some intuition of types; and conversely, when given a type \inline{SBook a}, type families can use the type variable \inline{a} which will be either \inline{'Fiction} or \inline{'NonFiction}.
 
 
 \chapter{Design}
@@ -462,7 +458,7 @@ As helpful as type families and First Class Families are in enabling computation
 
 \subsection{Chess Data Structures}
 
-An important part of any good Chess program is its board representation, since all other parts of the program come from this; move generation, move evaluation, and the entire search space are all defined or influenced by the board representation. A great deal of work has gone into defining memory- or time-efficient Chess boards \cite{bitboard} \cite{searchtables}, including combinations of multiple representations to yield greater speed \cite{bitandccr}. While there is value to be gleaned from examining these representations, Chesskell serves a different purpose; it does not need to search through the valid set of moves to determine which are the best, and speed is not its focus. Chesskell's board representation must be relatively efficient, but it would be naive to expect similar levels of performance from type-level constraint solving computation as from optimised term-level code.
+An important part of any good Chess program is its board representation, since all other parts of the program come from this; move generation, move evaluation, and the entire search space are all defined or influenced by the board representation. A great deal of work has gone into defining memory- or time-efficient Chess boards \cite{bitboard} \cite{searchtables}, including combinations of multiple representations to yield greater speed \cite{bitandccr}. While there is value to be gleaned from examining these representations, Chesskell serves a different purpose; it does not need to search through the valid set of moves to determine which are the best, and speed is not its focus. Chesskell's board representation must be relatively efficient, but it would be naive to expect similar levels of performance from type-level constraint solving computation as from optimised value-level code.
 
 \subsection{Singly-linked Lists}
 
@@ -532,7 +528,7 @@ to :: (Int -> Int) -> Int -> Int
 to f x = f x
 \end{lstlisting}
 
-With the definition of these two functions, the line \inline{add 5 to 7} is well-typed, and evaluates to \inline{12}. This is because \inline{add} takes in a continuation of type \inline{(Int -> Int) -> m}, and returns a value of type \inline{m}. In other words, the continuation (in this case \inline{to} is responsible for the output. Using such a scheme enables Chesskell to be much closer to conventional chess notation than to Haskell code, and avoids unnecessary wrapping of the types within a monadic context.
+With the definition of these two functions, the line \inline{add 5 to 7} is well-typed, and evaluates to \inline{12}. This is because \inline{add} takes in a continuation of type \inline{(Int -> Int) -> m}, and returns a value of type \inline{m}. In other words, the continuation (in this case \inline{to} is responsible for the output. Using such a scheme enables Chesskell to be much closer to conventional chess notation than to Haskell code, and avoids wrapping the types in an unrelated monadic context.
 
 
 \chapter{Implementation}
