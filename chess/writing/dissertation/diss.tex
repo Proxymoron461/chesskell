@@ -422,9 +422,9 @@ The type of \inline{SNonFiction} can only be \inline{SBook 'NonFiction}, and so 
 
 \chapter{Design}
 
-This section of the dissertation details the general design of Chesskell. Broadly, Chesskell is split into two main sections; the type-level chess model and ruleset, and the value-level EDSL which acts as an interface for the type-level chess model.
+This chapter of the dissertation details the general design of Chesskell. Broadly, Chesskell is split into two main sections; the type-level chess model and ruleset, and the value-level EDSL which acts as an interface for the type-level chess model.
 
-Additionally, we explain some basic Chess knowledge in this chapter, to aid in understanding. However, we tackle the more complex rules when they become relevant; this section is not a formal introduction to Chess, but a simple summary to make the design of Chesskell clear.
+Additionally, we explain some basic Chess knowledge in this chapter, to aid in understanding. However, we tackle the more complex rules when they become relevant; this chapter does not constitute a formal introduction to Chess, but a simple summary to make the design of Chesskell clear.
 
 \section{The Basics of Chess}
 
@@ -448,9 +448,13 @@ There are additional ways in which a Chess game may end, such as when two oppone
 
 \subsection{Chess Notation}
 
-There are two main categories of chess notation; those concerning the state of the game, and those concerning the state of the board.
+There are two main categories of chess notation; those concerning the state of the game, and those concerning the state of the board. Further relevant details on specific Chess notation will be tackled as and when relevant; this section is only aimed as a minor note of their existence.
 
-Chess notation concerning the state of the game tends to be an account of the whole set of moves, starting from the standard start position... % TODO
+Chess notation concerning the state of the game tends to be an account of the whole set of moves, starting from the standard start positions. Algebraic notation is the most common chess notation, and is used by FIDE to record matches between professional chess players. Each piece type other than Pawn is denoted with a capital letter: K for King, Q for Queen, B for Bishop, R for Rook, and N for Knight. As such, the move \texttt{Na4} means that a Knight has moved to the position "a4" on the board. Algebraic notation typically does not include the square the piece moved from; only its destination square. Figure \ref{algebraicexample} shows the initial state of the board, followed by a set of moves in algebraic notation, and the resulting state of the board.
+
+There are stylised variants of Algebraic Notation, such as Figurine Algebraic Notation, in which symbols for the pieces replace the capital letter. For example, \texttt{Na4} is written as \wmove{Na4}, whereby the N is replaced with the symbol for a Knight. This is the variant used in the dissertation; future examples use Figurine Algebraic Notation, where chess symbols replace capital letters.
+
+The other class of chess notation is that for board creation or description. Forsyth-Edwards Notation (FEN), a popular example, simply states which pieces are where on a board, line-by-line. White pieces are denoted with uppercase letters, and Black pieces are denoted with lowercase letters. The letters used match those for Algebraic Notation, save for the introduction of P for White Pawns (and p for Black Pawns). Lines are described as series of pieces and empty spaces, such that a row with a White Pawn on every other position would be described as \texttt{P1P1P1P1}. Another row with two spaces between Black Pawns would be described as \texttt{p2p2p1}, since the total number of row positions must equal eight. See Figure \ref{fenexample} for an example of a board created with FEN notation.
 
 \section{Type-Level Data Structures}
 
@@ -470,7 +474,7 @@ An alternative to type-level lists would be to use 2-3 Finger Trees \cite{finger
 
 Finger Trees are so named because while the main portion of the data is in recursive tree form, each tree maintains two "hands" full of data. Essentially, each of these appendages is a small overflow buffer for the tree itself, since inserting into the tree is more costly ($O(log n))$) than inserting into the buffer ($O(1)$). A pleasant side effect of this approach is that not only can you access data at the beginning of the sequence in $O(1)$ time, you can also access data at the end of the sequence in $O(1)$ time; something impossible with Haskell's built in singly linked lists.
 
-Disappointingly, there exists an implementation of Chesskell using Finger Trees as opposed to lists for variable length data, but as we discuss in the Evaluation section, there was no significant increase in compile time relative to the effort spent implementing Finger Trees at the type level.
+Disappointingly, there exists an implementation of Chesskell using Finger Trees as opposed to lists for variable length data, but as we discuss in the Evaluation chapter, there was no significant increase in compile time relative to the effort spent implementing Finger Trees at the type level.
 
 \subsection{Length-indexed Vectors}
 
@@ -607,6 +611,21 @@ Chesskell is a successful project. ...
     \showboard
     \caption{The White Queen and White Rook place the Black King into checkmate.}
     \label{checkmate}
+\end{figure}
+
+\begin{figure}
+    \newgame
+    \hidemoves{1.e4 e5 2. Nf3 Nc6 3.Bb5 a6}
+    \showboard
+    \caption{The position of the board after: 1.e4 e5 2. Nf3 Nc6 3.Bb5 a6}
+    \label{algebraicexample}
+\end{figure}
+
+\begin{figure}
+    \fenboard{rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b - - 0 1}
+    \showboard
+    \caption{The board created with: (rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1)}
+    \label{fenexample}
 \end{figure}
 
 \end{document}
