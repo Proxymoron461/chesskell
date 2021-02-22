@@ -225,21 +225,21 @@ data Hand a where
     Five  :: Int  -> Bool -> Int  -> Bool -> Int  -> Hand Int
 \end{lstlisting}
 
-\section{Lazy Evaluation}
+% \section{Lazy Evaluation}
 
-Haskell is a \emph{lazily evaluated} language, which means that values are computed on-demand. This contrasts with \emph{eagerly evaluated languages} like C or Java, which evaluate their arguments before applying functions. A good example of this behaviour is with infinite list types. Trivially, if a program tries to fully evaluate an infinite list, then it will never terminate. However, in a lazily evaluated environment, an infinite list can be used for computation.
+% Haskell is a \emph{lazily evaluated} language, which means that values are computed on-demand. This contrasts with \emph{eagerly evaluated languages} like C or Java, which evaluate their arguments before applying functions. A good example of this behaviour is with infinite list types. Trivially, if a program tries to fully evaluate an infinite list, then it will never terminate. However, in a lazily evaluated environment, an infinite list can be used for computation.
 
-Consider the following example, where the \inline{(:)} operator adds an element to the beginning of a list, and \inline{take n list} takes \inline{n} elements from the start of \inline{list}. One could define an infinite list as such:
+% Consider the following example, where the \inline{(:)} operator adds an element to the beginning of a list, and \inline{take n list} takes \inline{n} elements from the start of \inline{list}. One could define an infinite list as such:
 
-\begin{lstlisting}
-infiniteList = 1 : infiniteList
-\end{lstlisting}
+% \begin{lstlisting}
+% infiniteList = 1 : infiniteList
+% \end{lstlisting}
 
-With such a definition, the expression \inline{take 5 infiniteList} both terminates and is well-typed, returning the value \inline{[1,1,1,1,1]}.
+% With such a definition, the expression \inline{take 5 infiniteList} both terminates and is well-typed, returning the value \inline{[1,1,1,1,1]}.
 
-Another example demonstrates lazy evaluation: in Haskell, the \inline{undefined} value simply throws an exception whenever evaluated. We use it to demonstrate Haskell lazy evaluation: consider an expression \inline{list} defined as \inline{list = [1,2,3,undefined]} (which compiles successfully). \inline{take 3 list} evaluates to \inline{[1,2,3]}, while \inline{take 4 list} generates an exception. For a non-list example, consider if expressions. \inline{if True then 3 else undefined} evaluates to \inline{3}, since the else branch is not evaluated.
+% Another example demonstrates lazy evaluation: in Haskell, the \inline{undefined} value simply throws an exception whenever evaluated. We use it to demonstrate Haskell lazy evaluation: consider an expression \inline{list} defined as \inline{list = [1,2,3,undefined]} (which compiles successfully). \inline{take 3 list} evaluates to \inline{[1,2,3]}, while \inline{take 4 list} generates an exception. For a non-list example, consider if expressions. \inline{if True then 3 else undefined} evaluates to \inline{3}, since the else branch is not evaluated.
 
-All values in Haskell are lazily evaluated (unless explicitly set otherwise in code). The expression \inline{5 + 2 * 3} will only be evaluated to \inline{11} when that value is required somewhere in code, and if it is never required, it is never evaluated.
+% All values in Haskell are lazily evaluated (unless explicitly set otherwise in code). The expression \inline{5 + 2 * 3} will only be evaluated to \inline{11} when that value is required somewhere in code, and if it is never required, it is never evaluated.
 
 \section{Type-level Programming}
 
@@ -299,15 +299,17 @@ type family IsEitherFiction (x :: Book) (y :: Book) :: Bool where
 
 While the function \inline{isEitherFiction} can be partially applied, the type family \inline{IsEitherFiction} cannot. One could feasibly map \inline{isEitherFiction} over a list of books, but mapping with the type family \inline{IsEitherFiction} is impossible. Imagine a type family \inline{Map}, of kind \inline{(a -> b) -> [a] -> [b]}, analogous to the value-level function \inline{map}. While the value-level expression \inline{map (isEitherFiction NonFiction) [NonFiction, Fiction]} evaluates to \inline{[False, True]}, the type-level equivalent (\inline{Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ]}) causes a type error.
 
-Sadly, much of functional programming relies on partial application, and these facilities simply aren't available when using Haskell's Type Families. Additionally, Type Families are not lazily evaluated, but are eagerly evaluated; we demonstrate with the definition of a custom \inline{If} type family, combined with a type error:
+Sadly, much of functional programming relies on partial application, and these facilities simply aren't available when using Haskell's Type Families.
 
-\begin{lstlisting}
-type family If (x :: Bool) (t :: k) (e :: k) :: k where
-    If True  x _ = x
-    If False _ y = y
-\end{lstlisting}
+% Additionally, Type Families are not lazily evaluated, but are eagerly evaluated; we demonstrate with the definition of a custom \inline{If} type family, combined with a type error:
 
-The type-level expression \inline{If True 3 4} has kind \inline{Nat}, and evaluates to \inline{3}. However, the type-level expression \inline{If True 3 (TypeError (Text "Not lazily evaluating!"))} results in a type error; demonstrating that Type Family arguments are evaluated before application. Compared with the behaviour of Haskell's value-level \inline{if}, it is clear that type families are eagerly evaluated rather than lazily evaluated.
+% \begin{lstlisting}
+% type family If (x :: Bool) (t :: k) (e :: k) :: k where
+%     If True  x _ = x
+%     If False _ y = y
+% \end{lstlisting}
+
+% The type-level expression \inline{If True 3 4} has kind \inline{Nat}, and evaluates to \inline{3}. However, the type-level expression \inline{If True 3 (TypeError (Text "Not lazily evaluating!"))} results in a type error; demonstrating that Type Family arguments are evaluated before application. Compared with the behaviour of Haskell's value-level \inline{if}, it is clear that type families are eagerly evaluated rather than lazily evaluated.
 
 \subsection{First-Class Families}
 
@@ -353,35 +355,35 @@ type family IsEitherFiction' (x :: Book) (y :: Book) :: Bool where
     IsEitherFiction' x 'NonFiction = False
 \end{lstlisting}
 
-\subsubsection{Type-level Lazy Evaluation}
+% \subsubsection{Type-level Lazy Evaluation}
 
-First Class Families introduce more than just partial application; they can be used to perform type-level lazy evaluation. Consider a First Class Family, \inline{TE}, which takes in an \inline{ErrorMessage} and returns a \inline{TypeError}:
+% First Class Families introduce more than just partial application; they can be used to perform type-level lazy evaluation. Consider a First Class Family, \inline{TE}, which takes in an \inline{ErrorMessage} and returns a \inline{TypeError}:
 
-\begin{lstlisting}
-data TE :: ErrorMessage -> Exp a
-type instance Eval (TE msg) = TypeError msg
-\end{lstlisting}
+% \begin{lstlisting}
+% data TE :: ErrorMessage -> Exp a
+% type instance Eval (TE msg) = TypeError msg
+% \end{lstlisting}
 
-When combined with \inline{Eval}, \inline{TE} can be used to return a type error: \inline{Eval (TE (Text "Custom error!"))} generates \inline{error: Custom error!}.
+% When combined with \inline{Eval}, \inline{TE} can be used to return a type error: \inline{Eval (TE (Text "Custom error!"))} generates \inline{error: Custom error!}.
 
-By guarding the actual type error behind \inline{Eval} calls, type errors can be lazily evaluated, as can other type level constructs. Consider another First Class Family for if statements:
+% By guarding the actual type error behind \inline{Eval} calls, type errors can be lazily evaluated, as can other type level constructs. Consider another First Class Family for if statements:
 
-\begin{lstlisting}
-data If :: Bool -> Exp a -> Exp a -> Exp a
-type instance Eval (If True  x y) = Eval x
-type instance Eval (If False x y) = Eval y
-\end{lstlisting}
+% \begin{lstlisting}
+% data If :: Bool -> Exp a -> Exp a -> Exp a
+% type instance Eval (If True  x y) = Eval x
+% type instance Eval (If False x y) = Eval y
+% \end{lstlisting}
 
-Alongside a First Class Family version of the identity function:
+% Alongside a First Class Family version of the identity function:
 
-\begin{lstlisting}
-data ID :: a -> Exp a
-type instance Eval (ID x) = x
-\end{lstlisting}
+% \begin{lstlisting}
+% data ID :: a -> Exp a
+% type instance Eval (ID x) = x
+% \end{lstlisting}
 
-The First Class Family version of \inline{If} supports lazy evaluation; as can be demonstrated by placing an unevaluated type error in the else branch. The type-level expression \inline{Eval (If True (ID 3) (TE (Text "Not lazily evaluated!")))} evaluates to \inline{3}, rather than generating a type error.
+% The First Class Family version of \inline{If} supports lazy evaluation; as can be demonstrated by placing an unevaluated type error in the else branch. The type-level expression \inline{Eval (If True (ID 3) (TE (Text "Not lazily evaluated!")))} evaluates to \inline{3}, rather than generating a type error.
 
-The behaviour of the First Class Family definition is different from that of the Closed Type Family definition we give above; the type error is never evaluated, as the \inline{Eval} call on the else branch is never made. As such, First Class Families can be used to perform lazy evaluation at the type level.
+% The behaviour of the First Class Family definition is different from that of the Closed Type Family definition we give above; the type error is never evaluated, as the \inline{Eval} call on the else branch is never made. As such, First Class Families can be used to perform lazy evaluation at the type level.
 
 \subsection{Type Applications}
 
@@ -492,6 +494,14 @@ someFunc vec = -- ...
 This makes it a perfect candidate to act as the central chess board type, containing all pieces. To guarantee that a board is an 8x8 grid, it simply needs to contain 8 length-indexed vectors of length 8. Due to the use of the \inline{-XDataKinds} extension to enable promotion, this length-indexed vector definition immediately also defines a type-level length-indexed vector.
 
 Almost all operations available on lists are available on length indexed vectors. However, since length-indexed vectors have an additional type variable (their length), they are difficult to dynamically create without some length type variable. That is, a function \inline{f :: a -> Vec n b} cannot exist, since the type variable \inline{n} will have nothing to unify with when \inline{f} is called.
+
+\subsection{Type-Level Bitboards}
+
+One popular Chess board representation is the Bitboard \cite{bitboard}; using a set of 64-bit binary strings to represent the positions of pieces. Since a chess board is always 8x8, a 64-bit string (when seen as a string of 8 bytes) can hold some binary state of a particular Chess board position. Each piece type and colour needs its own bitboard, since a 1 or a 0 is not enough to differentiate between piece types. For instance, a bitboard describing White Pawns will have a 1 at every index in the 64-bit string that has a Pawn present, and will have 0s in all other positions, where the bottom left of the board is the least significant bit, and the top right of the board is the most significant bit.
+
+The main draw of bitboards is the speed at which potential moves can be generated and the board can be modified. For instance, to move all pieces left by one square, all that is required is a left shift by 1 of the bitboard representation.
+
+Although type-level Haskell has no bitwise operators, they could potentially be emulated through the use of pattern matching. Consider "bitwise" logical AND; each possible pair of inputs could be pattern-matched against, and the outputs enumerated. However, this code would be both laborious to write and harder to read; and a bitboard representation's main benefit is speed. Type-level operations like this would definitely not map directly to hardware bitwise operations, and so the main benefit of Bitboards would be lost. A Bitboard representation of Chesskell may indeed be faster than the vector board representation we explain above; however, it would incur a considerable complexity cost that is unlikely to be worth it, especially since type-level computation will be slow anyway. While it would make an interesting extension to Chesskell someday in the future, it is not part of the final feature set described in this dissertation.
 
 \section{Modelling Chess with Functions}
 
