@@ -34,7 +34,7 @@
     framesep=4pt,  % Margin size
     framerule=0pt,
     morekeywords={Eval, Exp, family, instance},
-    deletekeywords={map, and, error}
+    deletekeywords={map, and, error, take}
 }
 
 \setkomafont{sectioning}{\firamedium}
@@ -510,6 +510,16 @@ Ideally, the Chess board alone would be sufficient to calculate whether a move w
 In a game of Chess, the majority of moves are time-agnostic; that is, they are not tied to previous moves, only the current state of the board. There are, however, two exceptions; Castling and \emph{en passant} capture. Castling is a move by both a King and a Rook, and an \emph{en passant} capture is a special form of capture available only to Pawns. However, the only additional information required to calculate whether these moves are valid is the last piece that moved, and for each piece the number of times that piece has moved. As such, the board representation can be defined to include this information; ensuring that not only pieces and teams are recorded, but also the number of moves made and the last piece to make a move. Therefore, with a new type \inline{DecoratedChessBoard} containing the new information (as well as the board state), a function for calculating move validity could have type \inline{DecoratedChessBoard -> Position -> Position -> Maybe DecoratedChessBoard}.
 
 A pure function implementation is therefore possible, making use of a Chess board data structure which includes this information. Translating this approach to the type-level, a Type Family (or First Class Family) can be defined which performs similarly, with kind \inline{'DecoratedChessBoard -> 'Position -> 'Position -> 'DecoratedChessBoard}. This type-level model of Chess, implemented as a single movement Type Family, must be interacted with via the defined EDSL. The EDSL is responsible for gathering move-wise positional information, and chaining together calls of the movement Type Family, which will either return a valid Chess board or a type error depending on whether the described move is permissible or not.
+
+\subsection{Checking Chess Rules}
+
+When determining if a given move of Chess is valid or not, the destination squares for all pieces is not sufficient. In other words, a function to generate the valid positions a piece can move to is not enough to enforce all rules of Chess.
+
+Part of the relevant global state for a Chess game is the team that is currently moving; remember, White and Black teams move in an alternating fashion. It breaks the rules of Chess for a White piece to move after a White piece has just moved. There are also a few implicit Chess rules that would be helpful to have more personalised error messages for; such as the fact that no piece can actually take the opposite King. While this information will be encoded in the fact that the opposite King's position will not be in the valid move list for that piece (even though the piece can indeed attack that position), it would be helpful to have a more specific error message for this case. Instead of \inline{error: The Piece cannot move to that position}, it should say something like \inline{error: Pieces cannot take their King}.
+
+In Chesskell, an early idea was to simply check for these invariants with either type-level if statements or pattern matching. However, as the number of invariants with specific error messages grows, so too would the number of nested if statements. While such an approach would work, it is harder to follow and rather ugly.
+
+Being in a functional environment, it is natural to express these rule checks as functions that either successfully compute something, or return a type error. Each function could essentially act as an assertion; either the input fulfils some query, or there is an error. For instance, a function \inline{CannotTakeKing :: DecoratedChessBoard -> Position -> DecoratedChessBoard} that takes in the board state and the position to move to, and generates a type error if the position to move to is the position of either of the Kings. The reason it returns a \inline{DecoratedChessBoard} in the successful case is so that it can be naturally composed together with the core movement function, using a First Class Family version of the Haskell function composition operator, \inline{(.)}. Instead of code of the form \inline{(if firstCondition then (if secondCondition then Move a1 a2 else throw "Second error") else throw "First error")}, with more and more nested if conditions, the rule-checking code has the form \inline{(SecondCheck . FirstCheck . Move a1 a2)}, which is much easier to modify and understand.
 
 \section{Designing an EDSL for Chess}
 
