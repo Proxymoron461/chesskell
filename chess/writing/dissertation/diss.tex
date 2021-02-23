@@ -476,7 +476,9 @@ Disappointingly, there exists an implementation of Chesskell using Finger Trees 
 
 \subsection{Length-indexed Vectors}
 
-To implement the board, a desirable data structure would be one that had a fixed type, which could be guaranteed to remain at 8. As such, a variant of singly-linked lists, named length-indexed vectors. A length-indexed vector is a singly linked list which contains its' length in its' type. That is, a length-indexed vector of size 0 has a different type than a length-indexed vector of size 3. We give an example GADT data type definition below:
+If the intention is to use it for representing a Chess board (or any other structure with a definite length), singly-linked lists have issues; how can we ensure that the chess board is the appropriate size (an 8x8 grid) without a length check each move? This would take at least 56 additions, since list length is computed recursively; as well as 7 more addition operations to put together the list lengths.
+
+A more desirable data structure would be one that had a fixed type, which could be guaranteed to remain at length 8. As such, Chesskell makes use of a variant of singly-linked lists, named length-indexed vectors. A length-indexed vector is a singly linked list which contains its' length in its' type. That is, a length-indexed vector of size 0 has a different type than a length-indexed vector of size 3. As with most things in Haskell, we use recursive definitions; an empty vector has length 0, and you express a vector of length (n + 1) by pushing an element to the front of a vector of length n. We give an example GADT data type definition below:
 
 \begin{lstlisting}
 data Vec (n :: Nat) (a :: *) where
@@ -639,6 +641,30 @@ data Piece where
 \end{lstlisting}
 
 \subsubsection{The Board}
+
+We explain above that length-indexed vectors are an ideal choice for representing the Chess board. The board can be expressed using these vectors---a vector of 8 vectors of 8 \inline{Maybe Piece}-s. We use \inline{Maybe Piece} instead of just \inline{Piece} because a board square does not necessarily contain a piece (in fact, the majority of board squares are empty):
+
+\begin{lstlisting}
+type Eight = (S (S (S (S (S (S (S (S Z))))))))
+type Row   = Vec Eight (Maybe Piece)
+type Board = Vec Eight Row
+\end{lstlisting}
+
+Although this is the main board type, it is augmented with a \inline{BoardDecorator}, so named because the intention is similar to the decorator design pattern \cite{decorator}, with the exception that subclassing and superclassing are not features of Haskell. \inline{BoardDecorator} should be used instead of \inline{Board}, since it provides additional information:
+
+\begin{itemize}
+    \item The last team to move;
+    \item The last position moved to;
+    \item The White and Black King positions, stored as a tuple;
+    \item The number of moves in the game thus far.
+\end{itemize}
+
+Previous versions of the program, to find the King positions, would pass repeatedly over the \inline{Board}. Having their positions available in the decorator saves Chesskell from making these passes. While there is the overhead that the \inline{BoardDecorator} must be updated at each move, the code is much conceptually clearer with the use of the decorator.
+
+\begin{lstlisting}
+data BoardDecorator where
+    Dec :: Board -> Team -> Position -> (Position, Position) -> Nat -> BoardDecorator
+\end{lstlisting}
 
 \subsubsection{Miscellaneous Types}
 
