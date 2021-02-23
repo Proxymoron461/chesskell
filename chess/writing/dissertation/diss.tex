@@ -11,6 +11,7 @@
 \usepackage{parskip}
 \usepackage[multiple]{footmisc}
 \usepackage{skak}
+\usepackage[noabbrev]{cleveref}
 
 \definecolor{background}{rgb}{0.97, 0.97, 0.97}
 \definecolor{comments}{rgb}{0.0, 0.64, 0.0}
@@ -36,6 +37,10 @@
     morekeywords={Eval, Exp, family, instance},
     deletekeywords={map, and, error, take}
 }
+
+\RedeclareSectionCommands[
+  afterskip=1sp
+]{paragraph,subparagraph}
 
 \setkomafont{sectioning}{\firamedium}
 
@@ -430,17 +435,17 @@ Chess is a two-player game, played in alternating moves by players typically nam
 
 \subsection{The Board}
 
-The board is an 8x8 grid of 64 square tiles, each of which is coloured Black or White such that each square is next to tiles of the opposite colour (see Figure \ref{chessboard}). The pieces move within this board, and cannot take moves that would wrap around it or take them off of the board.
+The board is an 8x8 grid of 64 square tiles, each of which is coloured Black or White such that each square is next to tiles of the opposite colour (see \cref{chessboard}). The pieces move within this board, and cannot take moves that would wrap around it or take them off of the board.
 
-At the beginning of the game, all Chess pieces lie in a specific arrangement (see Figure \ref{startboard}). All Black and all White pieces are opposite one another, such that their positions are mirrored.
+At the beginning of the game, all Chess pieces lie in a specific arrangement (see \cref{startboard}). All Black and all White pieces are opposite one another, such that their positions are mirrored.
 
 \subsection{The Pieces}
 
-While each team has 16 pieces total, there are only 6 types of pieces; Pawns, Rooks, Knights, Bishops, Queens, and Kings (in rough order of value during play). Each have their own strict movement rules, and in all but a single case, pieces of the opposite team can be \emph{captured} by moving to their square. A capture removes a piece from play; there is no way to regain a piece once captured (although there is a way to transform a Pawn into another piece). We give an example of capturing in Figure \ref{capture}.
+While each team has 16 pieces total, there are only 6 types of pieces; Pawns, Rooks, Knights, Bishops, Queens, and Kings (in rough order of value during play). Each have their own strict movement rules, and in all but a single case, pieces of the opposite team can be \emph{captured} by moving to their square. A capture removes a piece from play; there is no way to regain a piece once captured (although there is a way to transform a Pawn into another piece). We give an example of capturing in \cref{capture}.
 
 \subsection{The Game}
 
-A King is in \emph{check} when they are in the attack path of another piece. The objective of the game is to place the opponent's King into \emph{checkmate}, whereby every move the King could make is to a position where they would be in check (see Figure \ref{checkmate} for an example). Additionally, a move by a team that would place that team's King into check is an invalid move, and cannot be made.
+A King is in \emph{check} when they are in the attack path of another piece. The objective of the game is to place the opponent's King into \emph{checkmate}, whereby every move the King could make is to a position where they would be in check (see \cref{checkmate} for an example). Additionally, a move by a team that would place that team's King into check is an invalid move, and cannot be made.
 
 There are additional ways in which a Chess game may end, such as when two opponents agree to a draw; however, these additional rules concern the players of Chess rather than the game itself, and so are not a part of the implementation of Chesskell.
 
@@ -448,11 +453,11 @@ There are additional ways in which a Chess game may end, such as when two oppone
 
 There are two main categories of chess notation; those concerning the state of the game, and those concerning the state of the board. Further relevant details on specific Chess notation will be tackled as and when relevant; this section is only aimed as a minor note of their existence.
 
-Chess notation concerning the state of the game tends to be an account of the whole set of moves, starting from the standard start positions. Algebraic notation is the most common chess notation, and is used by FIDE to record matches between professional chess players. Each piece type other than Pawn is denoted with a capital letter: K for King, Q for Queen, B for Bishop, R for Rook, and N for Knight. As such, the move \texttt{Na4} means that a Knight has moved to the position "a4" on the board. Algebraic notation typically does not include the square the piece moved from; only its destination square. Figure \ref{algebraicexample} shows the initial state of the board, followed by a set of moves in algebraic notation, and the resulting state of the board.
+Chess notation concerning the state of the game tends to be an account of the whole set of moves, starting from the standard start positions. Algebraic notation is the most common chess notation, and is used by FIDE to record matches between professional chess players. Each piece type other than Pawn is denoted with a capital letter: K for King, Q for Queen, B for Bishop, R for Rook, and N for Knight. As such, the move \texttt{Na4} means that a Knight has moved to the position "a4" on the board. Algebraic notation typically does not include the square the piece moved from; only its destination square. \cref{algebraicexample} shows the initial state of the board, followed by a set of moves in algebraic notation, and the resulting state of the board.
 
 There are stylised variants of Algebraic Notation, such as Figurine Algebraic Notation, in which symbols for the pieces replace the capital letter. For example, \texttt{Na4} is written as \wmove{Na4}, whereby the N is replaced with the symbol for a Knight. This is the variant used in the dissertation; future examples use Figurine Algebraic Notation, where chess symbols replace capital letters.
 
-The other class of chess notation is that for board creation or description. Forsyth-Edwards Notation (FEN), a popular example, simply states which pieces are where on a board, line-by-line. White pieces are denoted with uppercase letters, and Black pieces are denoted with lowercase letters. The letters used match those for Algebraic Notation, save for the introduction of P for White Pawns (and p for Black Pawns). Lines are described as series of pieces and empty spaces, such that a row with a White Pawn on every other position would be described as \texttt{P1P1P1P1}. Another row with two spaces between Black Pawns would be described as \texttt{p2p2p1}, since the total number of row positions must equal eight. See Figure \ref{fenexample} for an example of a board created with FEN notation.
+The other class of chess notation is that for board creation or description. Forsyth-Edwards Notation (FEN), a popular example, simply states which pieces are where on a board, line-by-line. White pieces are denoted with uppercase letters, and Black pieces are denoted with lowercase letters. The letters used match those for Algebraic Notation, save for the introduction of P for White Pawns (and p for Black Pawns). Lines are described as series of pieces and empty spaces, such that a row with a White Pawn on every other position would be described as \texttt{P1P1P1P1}. Another row with two spaces between Black Pawns would be described as \texttt{p2p2p1}, since the total number of row positions must equal eight. See \cref{fenexample} for an example of a board created with FEN notation.
 
 \section{Type-Level Data Structures}
 
@@ -513,7 +518,7 @@ In a game of Chess, the majority of moves are time-agnostic; that is, they are n
 
 A pure function implementation is therefore possible, making use of a Chess board data structure which includes this information. Translating this approach to the type-level, a Type Family (or First Class Family) can be defined which performs similarly, with kind \inline{'DecoratedChessBoard -> 'Position -> 'Position -> 'DecoratedChessBoard}. This type-level model of Chess, implemented as a single movement Type Family, must be interacted with via the defined EDSL. The EDSL is responsible for gathering move-wise positional information, and chaining together calls of the movement Type Family, which will either return a valid Chess board or a type error depending on whether the described move is permissible or not.
 
-\subsection{Checking Chess Rules}
+\subsection{Checking Chess Rules} \label{chessrules}
 
 When determining if a given move of Chess is valid or not, the destination squares for all pieces is not sufficient. In other words, a function to generate the valid positions a piece can move to is not enough to enforce all rules of Chess.
 
@@ -525,7 +530,7 @@ Being in a functional environment, it is natural to express these rule checks as
 
 \section{Designing an EDSL for Chess}
 
-Since the EDSL is for describing games of Chess, it makes sense that it should draw inspiration from Chess game notation, such as Algebraic Notation (which we explain briefly above). In such notation, the board state is implicit and undescribed; that is, the state of the board must be inferred by the reader from the moves made thus far, assuming that the game started in standard configuration (Figure \ref{startboard}).
+Since the EDSL is for describing games of Chess, it makes sense that it should draw inspiration from Chess game notation, such as Algebraic Notation (which we explain briefly above). In such notation, the board state is implicit and undescribed; that is, the state of the board must be inferred by the reader from the moves made thus far, assuming that the game started in standard configuration (\cref{startboard}).
 
 One possible match in Haskell for this style is monadic computation. If the board information were stored in a custom monad, then the \emph{bind} operator (written as \inline{>>=)}) could be used to chain together these chess moves, in some way akin to below:
 
@@ -640,6 +645,8 @@ data Piece where
     MkPiece :: Team -> PieceName -> PieceInfo -> Piece
 \end{lstlisting}
 
+There are several utility Type Families defined for the \inline{PieceInfo} type to simplify code; such as \inline{GetPosition}, a First Class Family which gets the position information from a given \inline{PieceInfo} type.
+
 \subsubsection{The Board}
 
 We explain above that length-indexed vectors are an ideal choice for representing the Chess board. The board can be expressed using these vectors---a vector of 8 vectors of 8 \inline{Maybe Piece}-s. We use \inline{Maybe Piece} instead of just \inline{Piece} because a board square does not necessarily contain a piece (in fact, the majority of board squares are empty):
@@ -670,17 +677,79 @@ data BoardDecorator where
 
 \subsection{Chess Rules}
 
+In Chesskell, the rules of Chess are expressed as type families that either return a \inline{BoardDecorator} or a type error (as we explain in \cref{chessrules}). Each such check type family has the suffix \inline{-Check}, such as \inline{NotTakingKingCheck} and \inline{NotTakingOwnTeamCheck}. These checks are broadly split into pre-move checks, and post-move checks---and each check has a custom error message to make clear to the user where exactly the EDSL mistake is.
+
+Below, as an example, is the definition of \inline{NotSamePosCheck}, which checks that the move is between two distinct positions, and generates a type error otherwise:
+
+\begin{lstlisting}
+data NotSamePosCheck :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (NotSamePosCheck fromPos toPos boardDec)
+    = If' (Eval (fromPos :==: toPos))
+        (TE' (TL.Text ("Moves from a position to that same position are not allowed.")))
+        (ID boardDec)
+\end{lstlisting}
+
 \subsubsection{Movement Rules}
+
+Each piece, depending on its team and name, can move a certain number of spaces. For instance, a King can move a single space in any direction. The \inline{PieceMoveList} type family formalises this, returning a list of spaces that a piece can move to, given that piece as a \inline{Piece} type, and a \inline{BoardDecorator} representing the current state of the board.
+
+\begin{lstlisting}
+data PieceMoveList :: Piece -> BoardDecorator -> Exp [Position]
+\end{lstlisting}
+
+Consider a \inline{PieceMoveList} instance for Bishops:
+
+\begin{lstlisting}
+type instance Eval (PieceMoveList (MkPiece team Bishop info) boardDec) = Eval (AllReachableDiag team boardDec (Eval (GetPosition info)))
+\end{lstlisting}
+
+Bishops can move diagonally in a straight line by any number of spaces. The type family \inline{AllReachableDiag} is used to get a list of all diagonally "reachable" positions. It takes in the \inline{Position} of the relevant piece, that piece's \inline{Team}, and the current state of the board as a \inline{BoardDecorator}. It outputs all diagonal positions that piece can move to.
+
+Reachability for a given direction is defined in Chesskell as all the empty spaces in that direction, stopping at either the first occupied space or the edge of the board. That space is included or excluded depending on whether that space is occupied by a piece of the opposite team, since an attacking piece could move to that space and take the piece there.
+
+When moving pieces, it is important to check that those pieces can indeed make that move. As such, there is a rule-check type family, named \inline{CanMoveCheck} of kind \inline{Position -> Position -> BoardDecorator -> Exp BoardDecorator}, which checks if there is a piece at the first position that can move to the second position. Additionally, for more specific error messages, there exist a few additional checks, such as \inline{TeamCheck}, which ensures that the same team does not move twice in a row.
 
 \subsubsection{Attack/Capture Rules}
 
-\subsubsection{Checking For Violations}
+Although they are similar, the list of spaces that a piece can attack and the list of spaces that a piece can move to are not the same. While it is true that every space a piece can attack is one that it can move to, the opposite does not hold; for example, pieces can attack the King of the opposite team, but cannot directly move to that King's position and capture it. There are other differences as well, most notably for Pawns and Kings; so \inline{PieceMoveList} cannot be used to determine which squares a piece can attack. Another type family, \inline{PieceAttackList}, exists which gives the list of all squares that a piece can attack.
+
+\paragraph{Checking for Check}
+
+One of the most important rules in Chess, that of placing the opposite King in check, cannot be expressed solely through move and attack lists. Any movement can place either King in check, and it is not always the case that a movement by a piece places the opposite King in check; a move may be ruled as invalid because it places that piece's King into check. For instance, if a Black Rook stands between a White Queen and a Black King, the Rook is not allowed to move out of the Queen's attack path, since such a move would put the King into check.
+
+However, the only time that check is relevant is after each move. A move by a piece is invalid when it places that piece's King in check, or if it leaves that piece's King in check. This means that it fits nicely as a post-move check, implemented as a type family \inline{CheckNoCheck}. Early versions of Chesskell naively computed and combined all attack lists for all pieces, and simply checked if the King's position is in that combined list.
+
+A more efficient approach, found in Chesskell today, is to emulate other pieces' movement code from the King's position. It is worth noting that for all pieces except Kings and Pawns, if they can move from a to b, then they can also move from b to a. As an illustration, if a Queen at the King's position (of the same team as the King) would be able to reach a Queen of the opposite team, then the King would be in check.
+
+As such, several "rays" are sent out from the King's position and check for Queens of the opposite team, as well as Bishops (for diagonal rays) and Rooks (for rank and file rays). Attacking Pawns are also checked here, for the immediate diagonal positions either above the King (if the King is White) or below the King.
+
+Additionally, Knight movement rules are applied to check if there are any Knights reachable from the King's position; and if so, then the King is in check.
+
+There is one last piece type not handled by the above method---Kings. This is deliberate; it would be illegal for a King to move within attacking distance of the opposite King, since then the moving King would be in check.
+
+A code snippet for determining if the King is in check, which checks if any of the above conditions are true, is below for understanding. The first class family \inline{Any} returns true if any elements of a list of Booleans are true, and false otherwise. Each of the -\inline{Ray} functions returns true if a piece could place a King in check from that direction, and the \inline{IsKnightAttacking} function returns true if any Knights of the opposite team are reachable from the given position:
+
+\begin{lstlisting}
+data IsKingInCheck :: Position -> Team -> BoardDecorator -> Exp Bool
+type instance Eval (IsKingInCheck kingPos team boardDec) = Eval (Any '[
+    SendLeftRay kingPos team boardDec,
+    SendRightRay kingPos team boardDec,
+    SendAboveRay kingPos team boardDec,
+    SendBelowRay kingPos team boardDec, 
+    SendNWRay kingPos team boardDec,
+    SendNERay kingPos team boardDec,
+    SendSWRay kingPos team boardDec,
+    SendSERay kingPos team boardDec,
+    IsKnightAttacking kingPos team boardDec ])
+\end{lstlisting}
 
 \subsubsection{Exceptions}
 
 \paragraph{Castling}
 
 \paragraph{Pawn Capture and En Passant}
+
+\paragraph{Pawn Promotion}
 
 \section{The EDSL}
 
@@ -718,6 +787,10 @@ data BoardDecorator where
 \subsection{Chesskell Shorthand}
 
 \section{Chesskell EDSL vs Other Chess Notations}
+
+\subsection{Captures}
+
+\subsection{Castling}
 
 
 \chapter{Conclusions}
