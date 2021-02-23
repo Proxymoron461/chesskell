@@ -340,7 +340,7 @@ type instance Eval (PieceAttackList (MkPiece team Bishop info) boardDec) = Eval 
 type instance Eval (PieceAttackList (MkPiece team Knight info) boardDec) = Eval (AllReachableGivenList team boardDec (Eval (GetAllKnightPositions (GetPosition' info))))
 type instance Eval (PieceAttackList (MkPiece team Rook info) boardDec)   = Eval (AllReachableStraightLine team boardDec (GetPosition' info))
 type instance Eval (PieceAttackList (MkPiece team Queen info) boardDec)  = Eval (AllReachableLineAndDiag team boardDec (GetPosition' info))
-type instance Eval (PieceAttackList (MkPiece team King info) boardDec)   = Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (GetPosition' info))))
+type instance Eval (PieceAttackList (MkPiece team King info) boardDec)   = Eval (AllReachableGivenList team boardDec (Eval (GetAdjacent (GetPosition' info))))  -- King cannot castle to capture an enemy
 
 -- Adds the castling positions to the King move list if applicable
 type family KingMoveList (p :: Piece) (b :: BoardDecorator) :: [Position] where
@@ -684,7 +684,7 @@ type instance Eval (CheckNoCheck boardDec) =
         (ID boardDec)
 -- type instance Eval (CheckNoCheck boardDec) = boardDec
 
--- TODO: Check from King's position which pieces are reachable!
+-- Check from King's position which pieces are reachable!
 
 data SendLeftRay :: Position -> Team -> BoardDecorator -> Exp Bool
 type instance Eval (SendLeftRay kingPos team boardDec) = SendLeftRay' kingPos team boardDec
