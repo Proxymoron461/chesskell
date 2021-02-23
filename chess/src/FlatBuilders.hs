@@ -147,35 +147,35 @@ data Fen (n :: Nat) where
     Bb  :: Fen n -> Fen (S n)
     Rb  :: Fen n -> Fen (S n)
 
-f0 :: Term (Proxy (b :: Fen n)) (Proxy (b :: Fen n))
-f0 = id
+fn0 :: Term (Proxy (b :: Fen n)) (Proxy (b :: Fen n))
+fn0 = id
 
-f1 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F1 b))
-f1 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F1 b))
+fn1 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F1 b))
+fn1 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F1 b))
 
-f2 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F2 b))
-f2 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F2 b))
+fn2 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F2 b))
+fn2 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F2 b))
 
-f3 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F3 b))
-f3 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F3 b))
+fn3 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F3 b))
+fn3 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F3 b))
 
-f4 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F4 b))
-f4 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F4 b))
+fn4 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F4 b))
+fn4 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F4 b))
 
-f5 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F5 b))
-f5 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F5 b))
+fn5 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F5 b))
+fn5 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F5 b))
 
-f6 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F6 b))
-f6 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F6 b))
+fn6 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F6 b))
+fn6 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F6 b))
 
-f7 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F7 b))
-f7 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F7 b))
+fn7 :: (Proxy (b :: Fen n)) -> Spec (Proxy (F7 b))
+fn7 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F7 b))
 
 ff :: Spec (Proxy FF)
 ff cont = cont (Proxy @FF)
 
-f8 :: Term (Proxy (b :: Fen Nat8)) (Proxy (b :: Fen Nat8))
-f8 = id
+fn8 :: Term (Proxy (b :: Fen Nat8)) (Proxy (b :: Fen Nat8))
+fn8 = id
 
 wP :: (Proxy (b :: Fen n)) -> Spec (Proxy (Pw b))
 wP (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Pw b))
