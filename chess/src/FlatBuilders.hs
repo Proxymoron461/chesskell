@@ -174,8 +174,8 @@ fn7 (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(F7 b))
 ff :: Spec (Proxy FF)
 ff cont = cont (Proxy @FF)
 
-fn8 :: Term (Proxy (b :: Fen Nat8)) (Proxy (b :: Fen Nat8))
-fn8 = id
+fn8 :: Proxy F8
+fn8 = Proxy @(F8)
 
 wP :: (Proxy (b :: Fen n)) -> Spec (Proxy (Pw b))
 wP (Proxy :: Proxy (b :: Fen n)) cont = cont (Proxy @(Pw b))
