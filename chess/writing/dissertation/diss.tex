@@ -589,6 +589,111 @@ edslMove :: SPosition from -> SPosition to -> Proxy (b :: Board) -> Proxy (Eval 
 edslMove (x :: SPosition from) (y :: SPosition to) (z :: Proxy (b :: Board)) = Proxy @(Eval (Move from to b))
 \end{lstlisting}
 
+\section{First Class Family Prelude}
+
+Before diving into the implementation details of Chesskell's type-level model and EDSL, it is worth taking some time to explain the extensive use of First Class Families in the codebase.
+
+As we demonstrate below, much of Chesskell makes use of value-level constructs like partial function application, mapping, and even behaviour akin to Monads and Applicative Functors \cite{applicatives}. There are certain rules in Chess that would require excessive amounts of pattern-matching to express with closed type families. Therefore, effort was taken to research and develop a suitable way to model helpful value-level behaviour at the type level. The solution arrived at was through First Class Families; and so Chesskell comes with a lot of First Class Family definitions of functions found in Haskell's standard library.
+
+The most notable of these definitions are type-level versions of Map \inline{(<\$>)}, Apply \inline{<*>}, and Bind \inline{(>>=)}, to enable Functor, Applicative Functor, and Monad-like behaviour at the type level:
+
+\begin{lstlisting}
+data Map :: (a -> Exp b) -> f a -> Exp (f b)
+type instance Eval (Map f Nothing)  = Nothing
+type instance Eval (Map f (Just x)) = Just (Eval (f x))
+type instance Eval (Map f '[])       = '[]
+type instance Eval (Map f (x ': xs)) = Eval (f x) ': Eval (Map f xs)
+
+data (<$>) :: (a -> Exp b) -> f a -> Exp (f b)
+type instance Eval (f <$> x) = Eval (Map f x)
+
+data Apply :: f (a -> Exp b) -> f a -> Exp (f b)
+type instance Eval (Apply _ Nothing)         = Nothing
+type instance Eval (Apply (Just f) (Just x)) = Just (Eval (f x))
+type instance Eval (Apply '[] _) = '[]
+type instance Eval (Apply (f ': fs) xs) = Eval (f <$> xs) ++ Eval (Apply fs xs)
+
+data (<*>) :: f (a -> Exp b) -> f a -> Exp (f b)
+type instance Eval (f <*> x) = Eval (Apply f x)
+
+data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
+type instance Eval (Bind f Nothing)  = Nothing
+type instance Eval (Bind f (Just x)) = Eval (f x)
+
+data (>>=) :: m a -> (a -> Exp (m b)) -> Exp (m b)
+type instance Eval (x >>= f) = Eval (Bind f x)
+\end{lstlisting}
+
+There are other commonly-used Haskell functions defined as First Class Families, such as \inline{Foldr}, \inline{Append}, \inline{Concat}, and \inline{Zip}:
+
+\begin{lstlisting}
+data Foldr :: (a -> b -> Exp b) -> b -> f a -> Exp b
+type instance Eval (Foldr f z '[])       = z
+type instance Eval (Foldr f z (x ': xs)) = Eval (f x (Eval (Foldr f z xs)))
+
+data Append :: a -> a -> Exp a
+type instance Eval (Append x y) = x ++ y
+
+data Concat :: [[a]] -> Exp [a]
+type instance Eval (Concat xs) = Eval (Foldr Append '[] xs)
+
+data Zip :: [a] -> [b] -> Exp [(a, b)]
+type instance Eval (Zip xs ys) = Eval (ZipWith xs ys (CW2 '(,)))
+
+data ZipWith :: [a] -> [b] -> (a -> b -> Exp c) -> Exp [c]
+type instance Eval (ZipWith '[] _ _) = '[]
+type instance Eval (ZipWith _ '[] _) = '[]
+type instance Eval (ZipWith (x ': xs) (y ': ys) f) = Eval (f x y) ': Eval (ZipWith xs ys f)
+\end{lstlisting}
+
+To allow the composition and use of functions as first class entities, there are type-level versions of constructs like function composition, uncurrying, and flipping the arguments of functions:
+
+\begin{lstlisting}
+data (.) :: (b -> Exp c) -> (a -> Exp b) -> a -> Exp c
+type instance Eval ((.) g f x) = Eval (g (Eval (f x)))
+
+data Flip :: (a -> b -> Exp c) -> b -> a -> Exp c
+type instance Eval (Flip f b a) = Eval (f a b)
+
+data Uncurry :: (a -> b -> Exp c) -> (a, b) -> Exp c
+type instance Eval (Uncurry f '(a, b)) = Eval (f a b)
+\end{lstlisting}
+
+In fact, the curry function (named \inline{CurryWrap} here, with the alias \inline{CW}) can be used to use type constructors in place of First Class Families. Code such as \inline{Map (CW (At B)) '[Z, S Z, S (S Z)]} evaluates to a list of \inline{Column} types, thanks to the below definitions:
+
+\begin{lstlisting}
+data CurryWrap :: (a -> b) -> a -> Exp b
+type instance Eval (CurryWrap f a) = f a
+data CW :: (a -> b) -> a -> Exp b
+type instance Eval (CW f a) = Eval (CurryWrap f a)
+\end{lstlisting}
+
+A First Class Family version of \inline{If} is used extensively in Chesskell, as well as a Closed Type Family version \inline{If'}:
+
+\begin{lstlisting}
+data If :: Bool -> Exp b -> Exp b -> Exp b
+type instance Eval (If cond thenDo elseDo) = If' cond thenDo elseDo
+
+type family If' (b :: Bool) (t :: Exp a) (e :: Exp a) :: a where
+    If' 'True  x _ = Eval x
+    If' 'False _ y = Eval y
+\end{lstlisting}
+
+It should be made clear that these First Class Family definitions were created to make the type-level Chess code as clean, and as close to idiomatic Haskell code, as possible. Many of Chesskell's most important functions are implemented as First Class Families, to ensure that they can be composed and mapped over structures. For instance, to get a piece from a board position, set a piece at a position, or apply a function to a piece if it is present at a board position, simply use the below three First Class Families:
+
+\begin{lstlisting}
+data GetPieceAt :: Board -> Position -> Exp (Maybe Piece)
+type instance Eval (GetPieceAt board (At col row)) = Eval (Join (Eval (Join (Eval ((Eval ((CW (!!)) <$> (Eval (GetRow board row)))) <*> (Just ((ColToIndex col))))))))
+
+data SetPieceAt :: Piece -> Board -> Position -> Exp Board
+type instance Eval (SetPieceAt piece board (At col row)) = Eval (SetRow board row (Eval (PutAt (Just (Eval (SetPiecePosition piece (At col row)))) (ColToIndex col) (Eval (FromJust (Eval (GetRow board row)))))))
+
+data ApplyFuncAt :: (Piece -> Exp Piece) -> Board -> Position -> Exp Board
+type instance Eval (ApplyFuncAt f board pos) = Eval (FromMaybe board ((FlipToLast SetPieceAt) board pos . f) (Eval (GetPieceAt board pos)))
+\end{lstlisting}
+
+While not every First Class Family used below is listed here (simply because there are too many to list), each one has a clear name and the ones listed so far should give a reasonable intuition as to what a First Class Family can do. It should be stressed that the creation of reusable First Class Families was a priority during development, and so while individual Chesskell functions are shortened through their use, this is due to the numerous First Class Family definitions not directly seen.
+
 \section{Type-Level Chess}
 
 The software has a full representation of a game of chess at the type-level, as we explain below. The model is checked move-by-move, with the current board state, as well as some further information, carried between moves via a \inline{BoardDecorator}. This \inline{BoardDecorator} contains all information necessary to encapsulate the current state of a game of chess; in other words, Chesskell does not rely on any global state, and the state of the game is modifiable easily.
