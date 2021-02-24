@@ -553,7 +553,8 @@ type family GetMoveable (n :: PieceName) (p :: Position) (b :: BoardDecorator) :
         = IsListSingleton (Eval (
             Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPiece piece .&. HasTeam (GetMovingTeam boardDec)))
             (Eval (PieceMoveList (MkPiece (GetMovingTeam boardDec) piece (Info Z toPos False)) EmptyDec))))
-          (TL.Text ("There is not exactly one " ++ TypeShow piece ++ " which can move to: " ++ TypeShow toPos ++ "."))
+          ((TL.Text ("There is not exactly one " ++ TypeShow piece ++ " which can move to: " ++ TypeShow toPos ++ "."))
+            TL.:$$: (TL.Text ("Consider using the long-form Chesskell syntax instead.")))
 
 -- FIXME: Currently it's getting their positions - instead, should check that toPos is in their movelist
 type family MoveablePawn (p :: Position) (t :: Team) (b :: BoardDecorator) :: Position where
