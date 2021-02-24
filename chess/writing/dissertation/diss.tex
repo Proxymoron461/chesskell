@@ -673,8 +673,6 @@ data BoardDecorator where
     Dec :: Board -> Team -> Position -> (Position, Position) -> Nat -> BoardDecorator
 \end{lstlisting}
 
-\subsubsection{Miscellaneous Types}
-
 \subsection{Chess Rules}
 
 In Chesskell, the rules of Chess are expressed as type families that either return a \inline{BoardDecorator} or a type error (as we explain in \cref{chessrules}). Each such check type family has the suffix \inline{-Check}, such as \inline{NotTakingKingCheck} and \inline{NotTakingOwnTeamCheck}. These checks are broadly split into pre-move checks, and post-move checks---and each check has a custom error message to make clear to the user where exactly the EDSL mistake is.
@@ -875,15 +873,24 @@ failedToPromote = create
 
 \section{The EDSL}
 
-% TODO: Introduce the section somehow??
+The EDSL has gone through multiple changes during development, not only in syntax but also in feature set. This section of the dissertation details the changes the Chesskell EDSL has undergone, explaining the design decisions along the way.
 
 \subsection{Minimum Viable Product}
 
-% TODO: Talk about the non-CPS early version
+Before the final format and syntax of the EDSL was decided upon, it was important to determine whether the creation of a value-level interface for the type level model was possible at all. The earliest version of the EDSL was essentially just a set of named Haskell functions, to test if the type-level model was usable.
+
+This Minimum Viable Product version does not include many of the Chesskell EDSL's more advanced features, such as board creation, but allows the user to describe a Chess game move by move. A single core function, named \inline{move}, made use of singletons and a first class family version of bind to move a piece on a board from one position to another:
+
+\begin{lstlisting}
+move :: SPosition from -> SPosition to -> Proxy (b :: Maybe Board) -> Proxy (Eval (b >>= Move from to))
+move (sFrom :: SPosition from) (sTo :: SPosition to) (pBoard :: Proxy (b :: Maybe Board)) = Proxy @(Eval (b >>= Move from to))
+\end{lstlisting}
+
+Despite its simple nature, \inline{move} provides enough for a user to interact with the type-level model of Chess and describe a game. It is a sufficiently viable and minimal version of Chesskell---but of course, it's not much of an EDSL.
 
 \subsection{Flat Builders}
 
-A Continuation Passing Style \cite{cps} scheme forms the foundation for the EDSL, with inspiration taken from Dmitrij Szamozvancev's Flat Builders pattern \cite{mezzo}. The core idea is value transformation through a series of continuation function applications, until the final continuation function returns a value.
+Once the possibility of a Chesskell EDSL was proven, the actual format and logic of the EDSL was to be decided upon. A Continuation Passing Style \cite{cps} scheme forms the foundation for the EDSL, with inspiration taken from Dmitrij Szamozvancev's Flat Builders pattern \cite{mezzo}. The core idea is value transformation through a series of continuation function applications, until the final continuation function returns a value.
 
 The type \inline{Spec t} is the type of functions which take in a continuation to operate on a value of type \inline{t}. For instance, a function with type \inline{Int -> Spec Int} would take in an integer, and then a continuation to operate on that integer.
 
