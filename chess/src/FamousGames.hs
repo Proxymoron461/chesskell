@@ -35,6 +35,6 @@ import Lib
 --     n f3 n f6
 --     n c3 p d6
 --     p d4 p d4
---     n d4 p a6
+--     n d4 p a6 -- end
 --     b g5 p e6 end  -- Successfully compiles in 1m44 - WHAT
     -- p f4 b e7 end -- FIXME: Also crashes
