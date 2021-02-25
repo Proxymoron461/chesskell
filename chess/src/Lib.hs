@@ -525,11 +525,11 @@ type instance Eval (GetEnPassantPosition pos boardDec) =
         (ID '[])  --else
 
 data EnPassantPosition :: Team -> Position -> Exp [Position]
-type instance Eval (EnPassantPosition team pos) = EnPassantPositionNonFCF team pos
+type instance Eval (EnPassantPosition team pos) = EnPassantPosition' team pos
 
-type family EnPassantPositionNonFCF (t :: Team) (p :: Position) :: [Position] where
-    EnPassantPositionNonFCF White (At col row)     = '[ At col (S row) ]
-    EnPassantPositionNonFCF Black (At col (S row)) = '[ At col row ]
+type family EnPassantPosition' (t :: Team) (p :: Position) :: [Position] where
+    EnPassantPosition' White (At col row)     = '[ At col (S row) ]
+    EnPassantPosition' Black (At col (S row)) = '[ At col row ]
 
 -- TODO: Non-FCF type family version??
 data GetLeftRightPositions :: Position -> Exp [Position]
