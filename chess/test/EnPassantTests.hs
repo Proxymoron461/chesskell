@@ -1,4 +1,4 @@
-module SideCases where
+module EnPassantTests where
 
 import Data.Type.Equality ((:~:)(..))
 import qualified GHC.TypeLits as TL (Nat)

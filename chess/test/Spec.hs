@@ -16,11 +16,11 @@ import ChessTypes
 import Movement
 import TestTypes
 import KingTests
-import SideCases
 import MiscTests
 import CastleTests
-import PromotionTests
 import PawnTakeTests
+import PromotionTests
+import EnPassantTests
 import KnightMoveTests
 import NoUnderAttackCastleTests
 import CannotMoveThroughTests
@@ -35,7 +35,7 @@ import CannotCauseCheckTests
 -- TODO: Multiple test suites over multiple files??
 main :: IO ()
 main = hspec $ do
-  -- enPassantTestSuite -- Defined in SideCases.hs
+  enPassantTestSuite -- Defined in SideCases.hs
   miscTestSuite -- Defined in MiscTests.hs
   kingTestSuite  -- Defined in KingTests.hs
   -- movementTestSuite -- Defined in Movement.hs
