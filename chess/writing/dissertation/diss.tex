@@ -71,7 +71,7 @@
 \begin{abstract}
     Type-level programming, a relatively recent phenomenon, allows programmers to express computation during the compilation of their programs. Through the use of type-level constructs, rules can be imposed on code to ensure that if it compiles, then it behaves in a certain way. However, there is still plenty of room to push the boundaries of what can be achieved with type-level programming.
 
-    Chess has a well-defined ruleset, and has not been expressed at the type level before. This dissertation describes the development of Chesskell, a full type-level model of, and rule-checker for, Chess---along with a Haskell-Embedded Domain-Specific Language for notating Chess games. If the Chesskell code compiles, then the match described obeys the full International Chess Federation ruleset for Chess. Despite difficulties during development, including memory issues, the final version of Chesskell is feature-complete and supports Chess games of up to 10 moves.
+    Chess has a well-defined ruleset, and has not been expressed at the type level before. This dissertation describes the development of Chesskell, a full type-level model of, and rule-checker for, Chess---along with a Haskell-Embedded Domain-Specific Language for notating Chess games. If the Chesskell code compiles, then the match described obeys the full International Chess Federation ruleset for Chess. Despite difficulties during development, including memory issues, the final version of Chesskell is feature-complete and supports Chess games of up to 12 moves.
 
     \textbf{\textit{Keywords:}} Type-level Programming, Haskell, Chess, EDSL.
 \end{abstract}
@@ -1132,11 +1132,11 @@ FIGURE HERE PLEASE % TODO: Make a figure
 
 Then, this list of squares is filtered based on whether there is a valid piece in the original \inline{BoardDecorator} of the correct team in any of those squares. If the resulting filtered list has length 1 (i.e. it contains a single piece), then the position of that single piece extracted; otherwise, there are either no valid origin squares, or multiple valid origin squares, in which case the longer Chesskell syntax should be used.
 
-As an example of the above case, consider the board state in \cref{twobishops}. There are two bishops who could potentially move to square c5, and as such Chesskell will not be able to tell which bishop should move to that location, and will fail to compile with a type error:
+As an example of the latter case, consider the board state in \cref{twobishops}. There are two bishops who could potentially move to square c5, and as such Chesskell will not be able to tell which bishop should move to that location, and will fail to compile with a type error:
 
 \begin{lstlisting}
 -- Below results in the following type error:
-    -- * There is not exactly one Bishop which can move to: C5.
+    -- * There is more than one White Bishop which can move to: C5.
     -- Consider using the long-form Chesskell syntax instead.
     -- * When checking the inferred type
     -- twoBishops :: Data.Proxy.Proxy (...)
