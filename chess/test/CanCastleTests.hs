@@ -153,7 +153,7 @@ type BlackLeftCastleWhiteRightCastleDec = 'Dec
                  'White
                  'Rook
                  ('Info
-                    Z ('At 'A Nat1) ))) :-> ((Just (MkPiece White Pawn (Info Z (At A Nat2) False))) :-> ('Nothing :-> ('Nothing :-> ('Just
+                    Z ('At 'A Nat1) ))) :-> ((Just (MkPiece White Pawn (Info Z (At A Nat2)))) :-> ('Nothing :-> ('Nothing :-> ('Just
                                       ('MkPiece
                                          'White
                                          'King
