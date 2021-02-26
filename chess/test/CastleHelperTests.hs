@@ -215,7 +215,7 @@ type OnlyRooksAndKings = 'Dec
                  'White
                  'Rook
                  ('Info
-                    Z ('At 'A (Nat1)) 'False))
+                    Z ('At 'A (Nat1))))
             ':-> ('Nothing
                   ':-> ('Nothing
                         ':-> ('Nothing
@@ -223,7 +223,7 @@ type OnlyRooksAndKings = 'Dec
                                       ('MkPiece
                                          'White
                                          'King
-                                         ('Info Z ('At 'E Nat1) 'False))
+                                         ('Info Z ('At 'E Nat1)))
                                     ':-> ('Nothing
                                           ':-> ('Nothing
                                                 ':-> ('Just
@@ -235,7 +235,7 @@ type OnlyRooksAndKings = 'Dec
                                                               ('At
                                                                  'H
                                                                  (Nat1))
-                                                              'False))
+                                                            ))
                                                       ':-> 'VEnd))))))))
            ':-> EmptyRow
                  ':-> EmptyRow
@@ -252,7 +252,7 @@ type OnlyRooksAndKings = 'Dec
                                                               ('At
                                                                  'A
                                                                  (Nat8))
-                                                              'False))
+                                                            ))
                                                       ':-> ('Nothing
                                                             ':-> ('Nothing
                                                                   ':-> ('Nothing
@@ -265,7 +265,7 @@ type OnlyRooksAndKings = 'Dec
                                                                                       ('At
                                                                                          'E
                                                                                          Nat8)
-                                                                                      'False))
+                                                                                    ))
                                                                               ':-> ('Nothing
                                                                                     ':-> ('Nothing
                                                                                           ':-> ('Just
@@ -277,7 +277,7 @@ type OnlyRooksAndKings = 'Dec
                                                                                                         ('At
                                                                                                            'H
                                                                                                            (Nat8))
-                                                                                                        'False))
+                                                                                                      ))
                                                                                                 ':-> 'VEnd))))))))
                                                      ':-> 'VEnd))
           'Black
@@ -311,7 +311,7 @@ type MoveKingsDec = 'Dec
                                                ('Info
                                                   (S Z)
                                                   ('At 'E (S Nat1))
-                                                  'False))
+                                                ))
                                           ':-> ('Nothing
                                                 ':-> ('Nothing ':-> ('Nothing ':-> 'VEnd))))))))
                  ':-> (('Nothing
@@ -363,7 +363,7 @@ type MoveKingsDec = 'Dec
                                                                                    'E
                                                                                    (S
                                                                                       Nat6))
-                                                                                'False))
+                                                                              ))
                                                                         ':-> ('Nothing
                                                                               ':-> ('Nothing
                                                                                     ':-> ('Nothing
@@ -403,7 +403,7 @@ type LeftWRookRightBRookDec = 'Dec
                                       ('MkPiece
                                          'White
                                          'King
-                                         ('Info Z ('At 'E Nat1) 'False))
+                                         ('Info Z ('At 'E Nat1)))
                                     ':-> ('Nothing
                                           ':-> ('Nothing
                                                 ':-> ('Just
@@ -415,7 +415,7 @@ type LeftWRookRightBRookDec = 'Dec
                                                               ('At
                                                                  'H
                                                                  (S Nat0))
-                                                              'False))
+                                                            ))
                                                       ':-> 'VEnd))))))))
            ':-> (('Just
                     ('MkPiece
@@ -424,7 +424,7 @@ type LeftWRookRightBRookDec = 'Dec
                        ('Info
                           (S Z)
                           ('At 'A (S Nat1))
-                          'False))
+                        ))
                   ':-> ('Nothing
                         ':-> ('Nothing
                               ':-> ('Nothing
@@ -483,7 +483,7 @@ type LeftWRookRightBRookDec = 'Dec
                                                                                                      'H
                                                                                                      (S
                                                                                                         Nat6))
-                                                                                                  'False))
+                                                                                                ))
                                                                                           ':-> 'VEnd))))))))
                                                ':-> (('Just
                                                         ('MkPiece
@@ -494,7 +494,7 @@ type LeftWRookRightBRookDec = 'Dec
                                                               ('At
                                                                  'A
                                                                  (S Nat7))
-                                                              'False))
+                                                            ))
                                                       ':-> ('Nothing
                                                             ':-> ('Nothing
                                                                   ':-> ('Nothing
@@ -507,7 +507,7 @@ type LeftWRookRightBRookDec = 'Dec
                                                                                       ('At
                                                                                          'E
                                                                                          Nat8)
-                                                                                      'False))
+                                                                                    ))
                                                                               ':-> ('Nothing
                                                                                     ':-> ('Nothing
                                                                                           ':-> ('Nothing

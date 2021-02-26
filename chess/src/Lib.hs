@@ -552,7 +552,7 @@ type family GetMoveable (n :: PieceName) (p :: Position) (b :: BoardDecorator) :
     GetMoveable piece toPos boardDec -- Uses EmptyDec to ensure no weird piece collisions 
         = IsListSingleton (Eval (
             Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPiece piece .&. HasTeam (GetMovingTeam boardDec)))
-            (Eval (PieceMoveList (MkPiece (GetMovingTeam boardDec) piece (Info Z toPos False)) EmptyDec))))
+            (Eval (PieceMoveList (MkPiece (GetMovingTeam boardDec) piece (Info Z toPos)) EmptyDec))))
           (GetMovingTeam boardDec) piece toPos
 
 -- FIXME: Currently it's getting their positions - instead, should check that toPos is in their movelist

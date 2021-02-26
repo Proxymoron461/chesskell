@@ -13,19 +13,19 @@ import Vec
 import FirstClassFunctions
 import ChessTypes
 
-type WhitePromPawn  = MkPiece White Pawn (Info Z (At A Nat2) False)
-type WhitePromPawn2 = MkPiece White Pawn (Info Z (At A Nat7) False)
-type WhitePromPawn3 = MkPiece White Pawn (Info (S Z) (At B Nat3) False)
-type BlackPromPawn  = MkPiece Black Pawn (Info Z (At B Nat8) False)
-type BlackPromPawn2 = MkPiece Black Pawn (Info (S Z) (At C Nat2) False)
+type WhitePromPawn  = MkPiece White Pawn (Info Z (At A Nat2))
+type WhitePromPawn2 = MkPiece White Pawn (Info Z (At A Nat7))
+type WhitePromPawn3 = MkPiece White Pawn (Info (S Z) (At B Nat3))
+type BlackPromPawn  = MkPiece Black Pawn (Info Z (At B Nat8))
+type BlackPromPawn2 = MkPiece Black Pawn (Info (S Z) (At C Nat2))
 type PromotionBoard = EmptyRow
                     :-> (Just WhitePromPawn :-> Nothing :-> Just BlackPromPawn2 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :-> (Nothing :-> Just WhitePromPawn3 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :-> EmptyRow
                     :-> EmptyRow
                     :-> EmptyRow
-                    :-> (Just WhitePromPawn2 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Just (MkPiece White King (Info Z (At F Nat7) False)) :-> Nothing :<> Nothing)
-                    :<> (Nothing :-> Just BlackPromPawn :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Just (MkPiece Black King (Info Z (At H Nat8) False)))
+                    :-> (Just WhitePromPawn2 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Just (MkPiece White King (Info Z (At F Nat7))) :-> Nothing :<> Nothing)
+                    :<> (Nothing :-> Just BlackPromPawn :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Just (MkPiece Black King (Info Z (At H Nat8))))
 
 type BlackLastPromDec = Dec PromotionBoard Black (At C Nat2) '(At F Nat7, At H Nat8) Nat2
 type WhiteLastPromDec = Dec PromotionBoard White (At B Nat3) '(At F Nat7, At H Nat8) Nat2

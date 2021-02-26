@@ -15,14 +15,14 @@ import ChessTypes
 
 import TestTypes
 
-type WhiteTakePawn  = MkPiece White Pawn (Info Z (At A Nat2) False)
-type WhiteTakePawn2 = MkPiece White Pawn (Info Z (At A Nat7) False)
-type WhiteTakePawn3 = MkPiece White Pawn (Info (S Z) (At B Nat3) False)
-type WhiteTakePawn4 = MkPiece White Pawn (Info Z (At B Nat6) False)
-type BlackTakePawn  = MkPiece Black Pawn (Info Z (At A Nat8) False)
-type BlackTakePawn2 = MkPiece Black Pawn (Info (S Z) (At C Nat2) False)
-type BlackTakePawn3 = MkPiece Black Pawn (Info (S Z) (At A Nat3) False)
-type BlackTakePawn4  = MkPiece Black Pawn (Info Z (At B Nat8) False)
+type WhiteTakePawn  = MkPiece White Pawn (Info Z (At A Nat2))
+type WhiteTakePawn2 = MkPiece White Pawn (Info Z (At A Nat7))
+type WhiteTakePawn3 = MkPiece White Pawn (Info (S Z) (At B Nat3))
+type WhiteTakePawn4 = MkPiece White Pawn (Info Z (At B Nat6))
+type BlackTakePawn  = MkPiece Black Pawn (Info Z (At A Nat8))
+type BlackTakePawn2 = MkPiece Black Pawn (Info (S Z) (At C Nat2))
+type BlackTakePawn3 = MkPiece Black Pawn (Info (S Z) (At A Nat3))
+type BlackTakePawn4  = MkPiece Black Pawn (Info Z (At B Nat8))
 
 type PawnTakeBoard = EmptyRow
                     :-> (Just WhiteTakePawn :-> Nothing :-> Just BlackTakePawn2 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
@@ -30,8 +30,8 @@ type PawnTakeBoard = EmptyRow
                     :-> EmptyRow
                     :-> EmptyRow
                     :-> (Nothing :-> Just WhiteTakePawn4 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
-                    :-> (Just WhiteTakePawn2 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Just (MkPiece White King (Info Z (At F Nat7) False)) :-> Nothing :<> Nothing)
-                    :<> (Just BlackTakePawn :-> Just BlackTakePawn4 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Just (MkPiece Black King (Info Z (At H Nat8) False)))
+                    :-> (Just WhiteTakePawn2 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Just (MkPiece White King (Info Z (At F Nat7))) :-> Nothing :<> Nothing)
+                    :<> (Just BlackTakePawn :-> Just BlackTakePawn4 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Just (MkPiece Black King (Info Z (At H Nat8))))
 
 type BlackLastPromDec = Dec PawnTakeBoard Black (At C Nat2) '(At F Nat7, At H Nat8) Nat2
 type WhiteLastPromDec = Dec PawnTakeBoard White (At B Nat3) '(At F Nat7, At H Nat8) Nat2

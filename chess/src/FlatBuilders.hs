@@ -96,9 +96,9 @@ put :: Proxy (b :: BoardDecorator) -> STeam team -> SPieceName name -> Spec (Pro
 put (dec :: Proxy b) (t :: STeam team) (p :: SPieceName name) cont = cont (Proxy @(CA b team name))
 
 at :: Proxy (CA (b :: BoardDecorator) (team :: Team) (name :: PieceName)) -> SPosition toPos
-      -> Spec (Proxy (Eval (SetPieceAtDec (MkPiece team name (Info Z toPos False)) b toPos)))
+      -> Spec (Proxy (Eval (SetPieceAtDec (MkPiece team name (Info Z toPos)) b toPos)))
 at (dec :: Proxy (CA b team name)) (p :: SPosition toPos) cont
-    = cont (Proxy @(Eval (SetPieceAtDec (MkPiece team name (Info Z toPos False)) b toPos)))
+    = cont (Proxy @(Eval (SetPieceAtDec (MkPiece team name (Info Z toPos)) b toPos)))
 
 lastTeam :: Proxy (b :: BoardDecorator) -> STeam team -> Spec (Proxy (SetLastTeam b team))
 lastTeam (dec :: Proxy b) (t :: STeam team) cont
@@ -250,18 +250,18 @@ type family FenHelper (f :: Fen n) (r :: Nat) (c :: Column) :: Vec n (Maybe Piec
     FenHelper (F5 fen) row col = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R (R (R col)))))
     FenHelper (F6 fen) row col = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R (R (R (R col))))))
     FenHelper (F7 fen) row col = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R (R (R (R (R col)))))))
-    FenHelper (Pw fen) row col = Just (MkPiece White Pawn (Info Z (At col row) False)) :-> FenHelper fen row (R col)
-    FenHelper (Nw fen) row col = Just (MkPiece White Knight (Info Z (At col row) False)) :-> FenHelper fen row (R col)
-    FenHelper (Qw fen) row col = Just (MkPiece White Queen (Info Z (At col row) False)) :-> FenHelper fen row (R col)
-    FenHelper (Kw fen) row col = Just (MkPiece White King (Info Z (At col row) False)) :-> FenHelper fen row (R col)
-    FenHelper (Bw fen) row col = Just (MkPiece White Bishop (Info Z (At col row) False)) :-> FenHelper fen row (R col)
-    FenHelper (Rw fen) row col = Just (MkPiece White Rook (Info Z (At col row) False)) :-> FenHelper fen row (R col)
-    FenHelper (Pb fen) row col = Just (MkPiece Black Pawn (Info Z (At col row) False)) :-> FenHelper fen row (R col)
-    FenHelper (Nb fen) row col = Just (MkPiece Black Knight (Info Z (At col row) False)) :-> FenHelper fen row (R col)
-    FenHelper (Qb fen) row col = Just (MkPiece Black Queen (Info Z (At col row) False)) :-> FenHelper fen row (R col)
-    FenHelper (Kb fen) row col = Just (MkPiece Black King (Info Z (At col row) False)) :-> FenHelper fen row (R col)
-    FenHelper (Bb fen) row col = Just (MkPiece Black Bishop (Info Z (At col row) False)) :-> FenHelper fen row (R col)
-    FenHelper (Rb fen) row col = Just (MkPiece Black Rook (Info Z (At col row) False)) :-> FenHelper fen row (R col)
+    FenHelper (Pw fen) row col = Just (MkPiece White Pawn (Info Z (At col row))) :-> FenHelper fen row (R col)
+    FenHelper (Nw fen) row col = Just (MkPiece White Knight (Info Z (At col row))) :-> FenHelper fen row (R col)
+    FenHelper (Qw fen) row col = Just (MkPiece White Queen (Info Z (At col row))) :-> FenHelper fen row (R col)
+    FenHelper (Kw fen) row col = Just (MkPiece White King (Info Z (At col row))) :-> FenHelper fen row (R col)
+    FenHelper (Bw fen) row col = Just (MkPiece White Bishop (Info Z (At col row))) :-> FenHelper fen row (R col)
+    FenHelper (Rw fen) row col = Just (MkPiece White Rook (Info Z (At col row))) :-> FenHelper fen row (R col)
+    FenHelper (Pb fen) row col = Just (MkPiece Black Pawn (Info Z (At col row))) :-> FenHelper fen row (R col)
+    FenHelper (Nb fen) row col = Just (MkPiece Black Knight (Info Z (At col row))) :-> FenHelper fen row (R col)
+    FenHelper (Qb fen) row col = Just (MkPiece Black Queen (Info Z (At col row))) :-> FenHelper fen row (R col)
+    FenHelper (Kb fen) row col = Just (MkPiece Black King (Info Z (At col row))) :-> FenHelper fen row (R col)
+    FenHelper (Bb fen) row col = Just (MkPiece Black Bishop (Info Z (At col row))) :-> FenHelper fen row (R col)
+    FenHelper (Rb fen) row col = Just (MkPiece Black Rook (Info Z (At col row))) :-> FenHelper fen row (R col)
 
 type family FenReverse' (f :: Fen n) :: Fen n where
     FenReverse' FF = FF

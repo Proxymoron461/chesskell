@@ -70,19 +70,19 @@ type instance TypeShow King   = "King"
 -- helpful!
 -- TODO: Remove Bool entry!!
 data PieceInfo where
-    Info :: Nat -> Position -> Bool -> PieceInfo
+    Info :: Nat -> Position -> PieceInfo
 
 data GetMoveCount :: PieceInfo -> Exp Nat
-type instance Eval (GetMoveCount (Info x _ _)) = x
+type instance Eval (GetMoveCount (Info x _)) = x
 
 data HasMoveCount :: Nat -> PieceInfo -> Exp Bool
-type instance Eval (HasMoveCount n (Info x _ _)) = Eval (n :==: x)
+type instance Eval (HasMoveCount n (Info x _)) = Eval (n :==: x)
 
 data GetPosition :: PieceInfo -> Exp Position
 type instance Eval (GetPosition info) = GetPosition' info
 
 type family GetPosition' (p :: PieceInfo) :: Position where
-   GetPosition' (Info _ x _) = x
+   GetPosition' (Info _ x) = x
 
 -- New datatype to hold the board, as well as some intermediate state, including:
 
@@ -131,10 +131,10 @@ type family GetNoOfMoves (x :: BoardDecorator) :: Nat where
 
 -- TODO: Validity check??
 data SetPosition :: PieceInfo -> Position -> Exp PieceInfo
-type instance Eval (SetPosition (Info n _ x) pos) = Info n pos x
+type instance Eval (SetPosition (Info n _) pos) = Info n pos
 
 data InfoIncrementMoves :: PieceInfo -> Exp PieceInfo
-type instance Eval (InfoIncrementMoves (Info n pos x)) = Info (S n) pos x
+type instance Eval (InfoIncrementMoves (Info n pos)) = Info (S n) pos
 
 data IncrementMoves :: Piece -> Exp Piece
 type instance Eval (IncrementMoves (MkPiece team name info)) = MkPiece team name (Eval (InfoIncrementMoves info))
@@ -150,12 +150,6 @@ type instance Eval (PiecePosition (MkPiece _ _ info)) = Eval (GetPosition info)
 
 data LastPieceToMove :: BoardDecorator -> Piece -> Exp Bool
 type instance Eval (LastPieceToMove boardDec piece) = Eval ((Eval (PiecePosition piece)) :==: (GetLastPosition boardDec))
-
-data ResetLastMoved :: Piece -> Exp Piece
-type instance Eval (ResetLastMoved (MkPiece team name (Info x y _))) = (MkPiece team name (Info x y False))
-
-data ResetLastPieceMoved :: Board -> Exp Board
-type instance Eval (ResetLastPieceMoved board) = Eval ((Map (Map ResetLastMoved)) <$> board)
 
 data IsLastPieceMovedAt :: Position -> BoardDecorator -> Exp Bool
 type instance Eval (IsLastPieceMovedAt pos boardDec) = Eval (pos :==: GetLastPosition boardDec)
@@ -390,7 +384,7 @@ type family OneUp (p :: Position) :: Position where
 
 type LastMoveInfo = (Maybe Board, Team)
 
-type StartInfo = 'Info Z (At A Z) False
+type StartInfo = 'Info Z (At A Z)
 
 type EmptyRow   = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing
 type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :<> EmptyRow
@@ -398,14 +392,14 @@ type EmptyBoard = EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :-> EmptyRow :
 type EmptyDec = Dec EmptyBoard Black (At A Nat1) '(At E Nat1, At E Nat8) Nat1
 
 type JustKingsDec = Dec JustKings Black (At A Nat1) '(At E Nat1, At E Nat8) Nat1
-type JustKings = (Nothing :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1) False))) :-> Nothing :-> Nothing :<> Nothing)
+type JustKings = (Nothing :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1)))) :-> Nothing :-> Nothing :<> Nothing)
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
-                 :<> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece Black King (Info Z (At E Nat8) False))) :-> Nothing :-> Nothing :<> Nothing)
+                 :<> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece Black King (Info Z (At E Nat8)))) :-> Nothing :-> Nothing :<> Nothing)
 
 type StartDec = Dec StartBoard Black (At A Nat1) '(At E Nat1, At E Nat8) Nat1
 
@@ -413,48 +407,46 @@ type StartBoard = ('Just
      ('MkPiece
         'White
         'Rook
-        ('Info Z ('At 'A (S Z)) 'False))
+        ('Info Z ('At 'A (S Z))))
    ':-> ('Just
            ('MkPiece
               'White
               'Knight
-              ('Info Z ('At 'B (S Z)) 'False))
+              ('Info Z ('At 'B (S Z))))
          ':-> ('Just
                  ('MkPiece
                     'White
                     'Bishop
-                    ('Info Z ('At 'C (S Z)) 'False))
+                    ('Info Z ('At 'C (S Z))))
                ':-> ('Just
                        ('MkPiece
                           'White
                           'Queen
-                          ('Info Z ('At 'D (S Z)) 'False))
+                          ('Info Z ('At 'D (S Z))))
                      ':-> ('Just
                              ('MkPiece
                                 'White
                                 'King
-                                ('Info Z ('At 'E (S Z)) 'False))
+                                ('Info Z ('At 'E (S Z))))
                            ':-> ('Just
                                    ('MkPiece
                                       'White
                                       'Bishop
-                                      ('Info Z ('At 'F (S Z)) 'False))
+                                      ('Info Z ('At 'F (S Z))))
                                  ':-> ('Just
                                          ('MkPiece
                                             'White
                                             'Knight
                                             ('Info
                                                Z
-                                               ('At 'G (S Z))
-                                               'False))
+                                               ('At 'G (S Z))))
                                        ':-> ('Just
                                                ('MkPiece
                                                   'White
                                                   'Rook
                                                   ('Info
                                                      Z
-                                                     ('At 'H (S Z))
-                                                     'False))
+                                                     ('At 'H (S Z))))
                                              ':-> 'VEnd))))))))
   ':-> (('Just
            ('MkPiece
@@ -462,48 +454,42 @@ type StartBoard = ('Just
               'Pawn
               ('Info
                  Z
-                 ('At 'A (S (S Z)))
-                 'False))
+                 ('At 'A (S (S Z)))))
          ':-> ('Just
                  ('MkPiece
                     'White
                     'Pawn
                     ('Info
                        Z
-                       ('At 'B (S (S Z)))
-                       'False))
+                       ('At 'B (S (S Z)))))
                ':-> ('Just
                        ('MkPiece
                           'White
                           'Pawn
                           ('Info
                              Z
-                             ('At 'C (S (S Z)))
-                             'False))
+                             ('At 'C (S (S Z)))))
                      ':-> ('Just
                              ('MkPiece
                                 'White
                                 'Pawn
                                 ('Info
                                    Z
-                                   ('At 'D (S (S Z)))
-                                   'False))
+                                   ('At 'D (S (S Z)))))
                            ':-> ('Just
                                    ('MkPiece
                                       'White
                                       'Pawn
                                       ('Info
                                          Z
-                                         ('At 'E (S (S Z)))
-                                         'False))
+                                         ('At 'E (S (S Z)))))
                                  ':-> ('Just
                                          ('MkPiece
                                             'White
                                             'Pawn
                                             ('Info
                                                Z
-                                               ('At 'F (S (S Z)))
-                                               'False))
+                                               ('At 'F (S (S Z)))))
                                        ':-> ('Just
                                                ('MkPiece
                                                   'White
@@ -511,8 +497,7 @@ type StartBoard = ('Just
                                                   ('Info
                                                      Z
                                                      ('At
-                                                        'G (S (S Z)))
-                                                     'False))
+                                                        'G (S (S Z)))))
                                              ':-> ('Just
                                                      ('MkPiece
                                                         'White
@@ -522,8 +507,7 @@ type StartBoard = ('Just
                                                            ('At
                                                               'H
                                                               (S
-                                                                 (S Z)))
-                                                           'False))
+                                                                 (S Z)))))
                                                    ':-> 'VEnd))))))))
         ':-> (('Nothing
                ':-> ('Nothing
@@ -570,8 +554,7 @@ type StartBoard = ('Just
                                                            (S
                                                               (S
                                                                  (S
-                                                                    (S Z))))))))
-                                               'False))
+                                                                    (S Z))))))))))
                                        ':-> ('Just
                                                ('MkPiece
                                                   'Black
@@ -587,8 +570,7 @@ type StartBoard = ('Just
                                                                     (S
                                                                        (S
                                                                           (S
-                                                                             Z))))))))
-                                                     'False))
+                                                                             Z))))))))))
                                              ':-> ('Just
                                                      ('MkPiece
                                                         'Black
@@ -604,8 +586,7 @@ type StartBoard = ('Just
                                                                           (S
                                                                              (S
                                                                                 (S
-                                                                                   Z))))))))
-                                                           'False))
+                                                                                   Z))))))))))
                                                    ':-> ('Just
                                                            ('MkPiece
                                                               'Black
@@ -621,8 +602,7 @@ type StartBoard = ('Just
                                                                                 (S
                                                                                    (S
                                                                                       (S
-                                                                                         Z))))))))
-                                                                 'False))
+                                                                                         Z))))))))))
                                                          ':-> ('Just
                                                                  ('MkPiece
                                                                     'Black
@@ -638,8 +618,7 @@ type StartBoard = ('Just
                                                                                       (S
                                                                                          (S
                                                                                             (S
-                                                                                               Z))))))))
-                                                                       'False))
+                                                                                               Z))))))))))
                                                                ':-> ('Just
                                                                        ('MkPiece
                                                                           'Black
@@ -655,8 +634,7 @@ type StartBoard = ('Just
                                                                                             (S
                                                                                                (S
                                                                                                   (S
-                                                                                                     Z))))))))
-                                                                             'False))
+                                                                                                     Z))))))))))
                                                                      ':-> ('Just
                                                                              ('MkPiece
                                                                                 'Black
@@ -672,8 +650,7 @@ type StartBoard = ('Just
                                                                                                   (S
                                                                                                      (S
                                                                                                         (S
-                                                                                                           Z))))))))
-                                                                                   'False))
+                                                                                                           Z))))))))))
                                                                            ':-> ('Just
                                                                                    ('MkPiece
                                                                                       'Black
@@ -689,8 +666,7 @@ type StartBoard = ('Just
                                                                                                         (S
                                                                                                            (S
                                                                                                               (S
-                                                                                                                 Z))))))))
-                                                                                         'False))
+                                                                                                                 Z))))))))))
                                                                                  ':-> 'VEnd))))))))
                                       ':-> (('Just
                                                ('MkPiece
@@ -708,8 +684,7 @@ type StartBoard = ('Just
                                                                        (S
                                                                           (S
                                                                              (S
-                                                                                Z)))))))))
-                                                     'False))
+                                                                                Z)))))))))))
                                              ':-> ('Just
                                                      ('MkPiece
                                                         'Black
@@ -726,8 +701,7 @@ type StartBoard = ('Just
                                                                              (S
                                                                                 (S
                                                                                    (S
-                                                                                      Z)))))))))
-                                                           'False))
+                                                                                      Z)))))))))))
                                                    ':-> ('Just
                                                            ('MkPiece
                                                               'Black
@@ -744,8 +718,7 @@ type StartBoard = ('Just
                                                                                    (S
                                                                                       (S
                                                                                          (S
-                                                                                            Z)))))))))
-                                                                 'False))
+                                                                                            Z)))))))))))
                                                          ':-> ('Just
                                                                  ('MkPiece
                                                                     'Black
@@ -762,8 +735,7 @@ type StartBoard = ('Just
                                                                                          (S
                                                                                             (S
                                                                                                (S
-                                                                                                  Z)))))))))
-                                                                       'False))
+                                                                                                  Z)))))))))))
                                                                ':-> ('Just
                                                                        ('MkPiece
                                                                           'Black
@@ -780,8 +752,7 @@ type StartBoard = ('Just
                                                                                                (S
                                                                                                   (S
                                                                                                      (S
-                                                                                                        Z)))))))))
-                                                                             'False))
+                                                                                                        Z)))))))))))
                                                                      ':-> ('Just
                                                                              ('MkPiece
                                                                                 'Black
@@ -798,8 +769,7 @@ type StartBoard = ('Just
                                                                                                      (S
                                                                                                         (S
                                                                                                            (S
-                                                                                                              Z)))))))))
-                                                                                   'False))
+                                                                                                              Z)))))))))))
                                                                            ':-> ('Just
                                                                                    ('MkPiece
                                                                                       'Black
@@ -816,8 +786,7 @@ type StartBoard = ('Just
                                                                                                            (S
                                                                                                               (S
                                                                                                                  (S
-                                                                                                                    Z)))))))))
-                                                                                         'False))
+                                                                                                                    Z)))))))))))
                                                                                  ':-> ('Just
                                                                                          ('MkPiece
                                                                                             'Black
@@ -834,7 +803,6 @@ type StartBoard = ('Just
                                                                                                                  (S
                                                                                                                     (S
                                                                                                                        (S
-                                                                                                                          Z)))))))))
-                                                                                               'False))
+                                                                                                                          Z)))))))))))
                                                                                        ':-> 'VEnd))))))))
                                             ':-> 'VEnd)))))))
