@@ -652,7 +652,11 @@ type instance Eval (CanMoveCheck fromPos toPos boardDec)
     = If' (Eval (CanMoveTo fromPos toPos boardDec))
         (ID boardDec)
         (TE' ((TL.Text ("There is no valid move from " ++ TypeShow fromPos ++ " to " ++ TypeShow toPos ++ ".")
-              TL.:$$: TL.Text ("The " ++ TypeShow (Eval ((PieceType . FromJust . GetPieceAtDec boardDec) fromPos)) ++ " at " ++ TypeShow fromPos ++ " can move to: " ++ TypeShow (Eval (PieceMoveList (FromJust' (Eval (GetPieceAtDec boardDec fromPos))) boardDec))))))
+              TL.:$$: (MoveListError (Eval ((PieceType . FromJust . GetPieceAtDec boardDec) fromPos)) fromPos (Eval (PieceMoveList (FromJust' (Eval (GetPieceAtDec boardDec fromPos))) boardDec))))))
+
+type family MoveListError (x :: PieceName) (y :: Position) (z :: [Position]) :: TL.ErrorMessage where
+    MoveListError piece fromPos '[] = TL.Text ("The " ++ TypeShow piece ++ " at " ++ TypeShow fromPos ++ " has no valid moves to any position.")
+    MoveListError piece fromPos xs  = TL.Text ("The " ++ TypeShow piece ++ " at " ++ TypeShow fromPos ++ " can move to: " ++ TypeShow xs)
 
 data NotSamePosCheck :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (NotSamePosCheck fromPos toPos boardDec)
