@@ -553,43 +553,50 @@ type family GetMoveable (n :: PieceName) (p :: Position) (b :: BoardDecorator) :
         = IsListSingleton (Eval (
             Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPiece piece .&. HasTeam (GetMovingTeam boardDec)))
             (Eval (PieceMoveList (MkPiece (GetMovingTeam boardDec) piece (Info Z toPos False)) EmptyDec))))
-          ((TL.Text ("There is not exactly one " ++ TypeShow piece ++ " which can move to: " ++ TypeShow toPos ++ "."))
-            TL.:$$: (TL.Text ("Consider using the long-form Chesskell syntax instead.")))
+          (GetMovingTeam boardDec) piece toPos
 
 -- FIXME: Currently it's getting their positions - instead, should check that toPos is in their movelist
 type family MoveablePawn (p :: Position) (t :: Team) (b :: BoardDecorator) :: Position where
     MoveablePawn (At A (S (S row))) White boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At A (S (S row))) boardDec))))
             '[ At A (S row), At A row, At B (S row) ])
-        ))) (TL.Text ("There is not exactly one White Pawn which can move to: " ++ TypeShow (At A (S (S row))) ++ "."))
+        ))) White Pawn (At A (S (S row)))
     MoveablePawn (At H (S (S row))) White boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At H (S (S row))) boardDec))))
             '[ At H (S row), At H row, At G (S row) ])
-        ))) (TL.Text ("There is not exactly one White Pawn which can move to: " ++ TypeShow (At H (S (S row))) ++ "."))
+        ))) White Pawn (At H (S (S row)))
     MoveablePawn (At col (S (S row))) White boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At col (S (S row))) boardDec))))
             '[ At col (S row), At col row, At (L col) (S row), At (R col) (S row) ])
-        ))) (TL.Text ("There is not exactly one White Pawn which can move to: " ++ TypeShow (At col (S (S row))) ++ "."))
-    MoveablePawn (At col Nat1) White boardDec = TL.TypeError (TL.Text "A White Pawn can never reach the first row.")
+        ))) White Pawn (At col (S (S row)))
+    MoveablePawn (At col Nat1) White boardDec = IsListSingleton '[] White Pawn (At col Nat1)
     MoveablePawn (At A row) Black boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At A row) boardDec))))
             '[ At A (S row), At A (S (S row)), At B (S row) ])
-        ))) (TL.Text ("There is not exactly one Black Pawn which can move to: " ++ TypeShow (At A row) ++ "."))
+        ))) Black Pawn (At A row)
     MoveablePawn (At H row) Black boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At H row) boardDec))))
             '[ At H (S row), At H (S (S row)), At G (S row) ])
-        ))) (TL.Text ("There is not exactly one Black Pawn which can move to: " ++ TypeShow (At H row) ++ "."))
+        ))) Black Pawn (At H row)
     MoveablePawn (At col row) Black boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At col row) boardDec))))
             '[ At col (S row), At col (S (S row)), At (L col) (S row), At (R col) (S row) ])
-        ))) (TL.Text ("There is not exactly one Black Pawn which can move to: " ++ TypeShow (At col row) ++ "."))
+        ))) Black Pawn (At col row)
 
 data PosInMoveList :: Position -> BoardDecorator -> Piece -> Exp Bool
 type instance Eval (PosInMoveList toPos boardDec piece) = Eval (toPos `In` Eval (PieceMoveList piece boardDec))
 
-type family IsListSingleton (x :: [a]) (t :: TL.ErrorMessage) :: a where
-    IsListSingleton '[ x ] _ = x
-    IsListSingleton _ err = TL.TypeError err
+type family IsListSingleton (x :: [a]) (t :: Team) (y :: PieceName) (z :: Position) :: a where
+    IsListSingleton '[ x ] _ _ _ = x
+    IsListSingleton _ White Pawn (At col Nat1)
+        = TL.TypeError (TL.Text ("A White Pawn can never reach the first row."))
+    IsListSingleton '[] team piece toPos
+        = TL.TypeError ((TL.Text ("There is no " ++ TypeShow team ++ " " ++ TypeShow piece ++ " which can move to: " ++ TypeShow toPos ++ "."))
+            TL.:$$: (TL.Text ("Consider using the long-form Chesskell syntax instead.")))
+    IsListSingleton _ team piece toPos
+        = TL.TypeError ((TL.Text ("There is more than one " ++ TypeShow team ++ " " ++ TypeShow piece ++ " which can move to: " ++ TypeShow toPos ++ "."))
+            TL.:$$: (TL.Text ("Consider using the long-form Chesskell syntax instead.")))
+    
 
 -- Only moves a piece if it is of the correct type
 -- Checks if the piece should have undergone a promotion
