@@ -7,6 +7,9 @@
 *.out
 *.bbl
 *.blg
+*.nav
+*.snm
+*.vrb
 stack.yaml
 stack.yaml.lock
 .stack-work/*
