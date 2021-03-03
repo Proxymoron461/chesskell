@@ -350,7 +350,7 @@ type family KingMoveList (p :: Piece) (b :: BoardDecorator) :: [Position] where
 
 -- data PieceHasMoveCount :: Nat -> Piece -> Exp Bool
 type family CanCastle (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
-    CanCastle team boardDec = If' (Not' (HasKingMoved team boardDec))
+    CanCastle team boardDec = If' (Not' (Eval (HasKingMoved team boardDec :&&: IsKingInCheck team boardDec)))
         (ID (CanCastleToEitherRook team boardDec))
         (ID '(False, False))
 
@@ -360,7 +360,7 @@ type family CanCastle (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
 type family CanCastleToEitherRook (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
     CanCastleToEitherRook team boardDec = (Eval (PairAnd (HaveRooksNotMoved team boardDec)
         (Eval (PairAnd
-            (Eval (PairPredicate (Eval (CastleSpacesToTest team boardDec)) (Not . AnySpaceInCheck team boardDec)))
+            (Eval (PairPredicate (Eval (CastleSpacesToTest team boardDec)) (Not . IsSpaceInCheck team boardDec)))
             (Eval (PairPredicate (BetweenKingAndRook team) (AllSpacesFree boardDec)))))))
 
 -- TODO: Replace with RangeBetweenExclusive or something like that??
@@ -407,8 +407,8 @@ type family HaveRooksMovedHelper (r :: (Position, Position)) (b :: BoardDecorato
 -- data GetUnderAttackPositions :: Team -> BoardDecorator -> Exp [Position]
 -- Checks if any of a particular list of spaces is under attack
 -- data IsKingInCheckHelper :: Position -> Team -> BoardDecorator -> Exp Bool
-data AnySpaceInCheck :: Team -> BoardDecorator -> [Position] -> Exp Bool
-type instance Eval (AnySpaceInCheck team boardDec xs) = Eval (Any (((FlipToLast IsKingInCheckHelper) team boardDec)) xs)
+data IsSpaceInCheck :: Team -> BoardDecorator -> Position -> Exp Bool
+type instance Eval (IsSpaceInCheck team boardDec pos) = Eval (IsKingInCheckHelper pos team boardDec)
 
 -- TODO: Pattern match over Rook + King positions??
 data AllSpacesFree :: BoardDecorator -> [Position] -> Exp Bool
@@ -427,13 +427,13 @@ type family GetCastlePositionsHelper (x :: (Bool, Bool)) (p :: Position) :: [Pos
     GetCastlePositionsHelper '(False, True)  kingPos = '[ TwoRight kingPos ]
     GetCastlePositionsHelper '(True,  True)  kingPos = '[ TwoLeft kingPos, TwoRight kingPos ]
 
-data CastleSpacesToTest :: Team -> BoardDecorator -> Exp ([Position], [Position])
+data CastleSpacesToTest :: Team -> BoardDecorator -> Exp (Position, Position)
 type instance Eval (CastleSpacesToTest team boardDec)
     = Eval (CastleSpacesToTestHelper (GetKingPosition team boardDec))
 
-data CastleSpacesToTestHelper :: Position -> Exp ([Position], [Position])
+data CastleSpacesToTestHelper :: Position -> Exp (Position, Position)
 type instance Eval (CastleSpacesToTestHelper (At col row))
-    = '( '[At col row, At (L col) row ], '[ At col row, At (R col) row ] )
+    = '( At (L col) row, At (R col) row )
 
 -- :kind! Eval (((Flip (CW2 At)) Z) A) = At A Z
 type family SpacesBetween (x :: Position) (y :: Position) :: [Position] where
