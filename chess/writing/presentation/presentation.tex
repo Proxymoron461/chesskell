@@ -5,6 +5,14 @@
 \usepackage{listings}
 \usepackage{xcolor}
 
+\usepackage[
+backend=biber,
+style=alphabetic,
+citestyle=authortitle-icomp
+]{biblatex}
+
+\addbibresource{presentation.bib}
+
 \usetheme{metropolis}
 
 \title{Chesskell: Modelling a Two-Player Game at the Type-Level}
@@ -45,7 +53,7 @@
 \frame{\titlepage}
 
 \begin{frame}{Why do type systems exist?}
-Type systems exist because: \pause we want to avoid errors \cite{cardellitypes}.
+Type systems exist because: \pause we want to avoid errors (\cite{cardellitypes}).
 
 \pause But not domain-specific logical errors?
 
@@ -56,7 +64,7 @@ Type systems exist because: \pause we want to avoid errors \cite{cardellitypes}.
 
 \begin{itemize}
     \item<1-3> It's popular and internationally known;
-    \item<2-3> It's been widely studied in the field of Computer Science \cite{chesseducation} \cite{chessml};
+    \item<2-3> It's been widely studied in the field of Computer Science (\cite{chesseducation}, \cite{chessml});
     \item<3-4> It has a \emph{well-defined ruleset}.
 \end{itemize}
     
@@ -147,7 +155,7 @@ In Haskell, values have \emph{types}, and types have \emph{kinds}.
 
 \pause
 
-Luckily, we can \emph{promote} types to kinds with the \inline{-XDataKinds} extension \cite{givingpromotion}.
+Luckily, we can \emph{promote} types to kinds with the \inline{-XDataKinds} extension (\cite{givingpromotion}).
 
 \pause
 
@@ -171,7 +179,7 @@ factorial x = x * factorial (x - 1)
 
 \pause
 
-You can't compute on types with functions; instead, you have to use \emph{type families} \cite{opentfs} \cite{closedtfs}.
+But you have to use \emph{type families} to compute on types (\cite{opentfs}, \cite{closedtfs}).
 
 \begin{lstlisting}
 type family Factorial (x :: Nat) :: Nat where
@@ -246,7 +254,7 @@ type instance Eval (And False False) = False
 
 \begin{frame}[fragile]{Creating the Types for Chess}
 
-Using promotion (as we explain earlier), we define appropriate types for use with type families in Chess. We give some examples below, in both regular and GADT \cite{gadts} syntax:
+Using promotion (as we explain earlier), we define appropriate types for use with type families in Chess. We give some examples below, in both regular and GADT (\cite{gadts}) syntax:
 
 \begin{lstlisting}
 data Team = Black | White
@@ -349,7 +357,7 @@ Ideally, the EDSL should look like existing chess notation:
 
 \pause
 
-Can achieve using Continuation Passing Style, inspired by Dima Szamozvancev's Flat Builders work \cite{mezzo}.
+Can achieve using Continuation Passing Style, inspired by Dima Szamozvancev's Flat Builders work (\cite{mezzo}).
 
 \end{frame}
 
@@ -566,7 +574,8 @@ Through testing, it seems the upper limit is \textbf{12 moves maximum}; some 12-
 \begin{itemize}
     \item<2-> More domains could be modelled at the type level, not just Chess;
     \item<3-> A session-typed version of Chesskell;
-    \item<4-> Further optimisations to try and increase the move limit.
+    \item<4-> Further optimisations to try and increase the move limit;
+    \item<5-> An automated tool to transform from Algebraic Notation into Chesskell notation.
 \end{itemize}
     
 \end{frame}
@@ -592,9 +601,7 @@ We have created:
 
 \begin{frame}[allowframebreaks]{References}
 
-\bibliographystyle{ieeetr}
-
-\bibliography{presentation}
+\printbibliography
     
 \end{frame}
 
