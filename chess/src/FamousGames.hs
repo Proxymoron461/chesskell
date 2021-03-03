@@ -38,3 +38,34 @@ import Lib
 --     n d4 p a6 -- end
 --     b g5 p e6 end  -- Successfully compiles in 1m44 - WHAT
     -- p f4 b e7 end -- FIXME: Also crashes
+
+ 
+-- zunigaVsMarch = chess
+--     p e4 p c5 
+--     n f3 p d6 
+--     p d4 p d4
+--     n d4 n f6
+--     n c3 n c6 end  -- Compiles successfully
+    -- b c4 q b6 end  -- FIXME: Crashes
+
+-- rubinsteinVsVidmar = chess
+--     p d4 n f6
+--     p c4 p e5
+--     p e5 n g4
+--     b f4 n c6 end
+    -- n f3 b b4 end -- FIXME: Crashes
+--     n c3 q e7 end
+
+-- nadtocheevVsKrodgius = chess
+--     p e4 p c5
+--     n f3 p d6
+--     p d4 p d4
+--     n d4 n f6 end
+--     n c3 p a6
+--     p f4 q b6 end
+
+-- xiangVsZhou = chess
+--     p d4 n f6
+--     p c4 p e6
+--     n f3 p b6
+--     p g3 b b7 end
