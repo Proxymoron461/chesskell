@@ -354,6 +354,9 @@ type family CanCastle (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
         (ID (CanCastleToEitherRook team boardDec))
         (ID '(False, False))
 
+
+-- TODO: Optimise - use new Check check + only check the space the King moves through
+-- TODO: Check that King is not in Check before movement
 type family CanCastleToEitherRook (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
     CanCastleToEitherRook team boardDec = (Eval (PairAnd (HaveRooksNotMoved team boardDec)
         (Eval (PairAnd
@@ -362,8 +365,8 @@ type family CanCastleToEitherRook (t :: Team) (b :: BoardDecorator) :: (Bool, Bo
 
 -- TODO: Replace with RangeBetweenExclusive or something like that??
 type family BetweenKingAndRook (t :: Team) :: ([Position], [Position]) where
-    BetweenKingAndRook White = '( SpacesBetweenInc (At D Nat1) (At B Nat1), '[ (At F Nat1), (At G Nat1) ])
-    BetweenKingAndRook Black = '( SpacesBetweenInc (At D Nat8) (At B Nat8), '[ (At F Nat8), (At G Nat8) ])
+    BetweenKingAndRook White = '( '[ (At D Nat1), (At C Nat1), (At B Nat1) ], '[ (At F Nat1), (At G Nat1) ])
+    BetweenKingAndRook Black = '( '[ (At D Nat8), (At C Nat8), (At B Nat8) ], '[ (At F Nat8), (At G Nat8) ])
 
 type family HasKingMoved (t :: Team) (b :: BoardDecorator) :: Bool where
     HasKingMoved team boardDec = Eval (IsPieceAtWhichDec boardDec (GetKingPosition team boardDec) (Not . PieceHasMoveCount Z))
@@ -403,9 +406,11 @@ type family HaveRooksMovedHelper (r :: (Position, Position)) (b :: BoardDecorato
 
 -- data GetUnderAttackPositions :: Team -> BoardDecorator -> Exp [Position]
 -- Checks if any of a particular list of spaces is under attack
+-- data IsKingInCheckHelper :: Position -> Team -> BoardDecorator -> Exp Bool
 data AnySpaceInCheck :: Team -> BoardDecorator -> [Position] -> Exp Bool
-type instance Eval (AnySpaceInCheck team boardDec xs) = Eval (Any ((Flip In) (Eval (GetUnderAttackPositions (OppositeTeam' team) boardDec))) xs)
+type instance Eval (AnySpaceInCheck team boardDec xs) = Eval (Any (((FlipToLast IsKingInCheckHelper) team boardDec)) xs)
 
+-- TODO: Pattern match over Rook + King positions??
 data AllSpacesFree :: BoardDecorator -> [Position] -> Exp Bool
 type instance Eval (AllSpacesFree boardDec xs) = Eval (All (Not . IsPieceAt boardDec) xs)
 
@@ -427,8 +432,8 @@ type instance Eval (CastleSpacesToTest team boardDec)
     = Eval (CastleSpacesToTestHelper (GetKingPosition team boardDec))
 
 data CastleSpacesToTestHelper :: Position -> Exp ([Position], [Position])
-type instance Eval (CastleSpacesToTestHelper pos)
-    = '(SpacesBetweenInc pos (TwoLeft pos), SpacesBetweenInc pos (TwoRight pos))
+type instance Eval (CastleSpacesToTestHelper (At col row))
+    = '( '[At col row, At (L col) row ], '[ At col row, At (R col) row ] )
 
 -- :kind! Eval (((Flip (CW2 At)) Z) A) = At A Z
 type family SpacesBetween (x :: Position) (y :: Position) :: [Position] where
