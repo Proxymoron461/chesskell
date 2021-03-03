@@ -238,8 +238,6 @@ type family And (x :: Bool) (y :: Bool) :: Bool where
     And False False = False
 \end{lstlisting}
 
-\pause
-
 becomes:
 
 \begin{lstlisting}
@@ -277,8 +275,6 @@ data Vec (n :: Nat) (a :: Type) where
     VEnd   :: Vec Z a
     (:->)  :: a -> Vec n a -> Vec (S n) a
 \end{lstlisting}
-
-\pause
 
 Since a Chess board is always an 8x8 grid, we use vectors of vectors:
 
@@ -341,8 +337,6 @@ edslMove (x :: SPosition from) (y :: SPosition to) (z :: Proxy (b :: BoardDecora
     = Proxy @(Eval (Move from to b))
 \end{lstlisting}
 
-\pause
-
 But this would still look similar to Haskell syntax; we need a new approach.
 
 \end{frame}
@@ -355,8 +349,8 @@ Ideally, the EDSL should look like existing chess notation:
 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6
 \end{verbatim}
 
-\pause
 
+% Inspired by the Flat Builders pattern laid out in Mezzo.
 Can achieve using Continuation Passing Style, inspired by Dima Szamozvancev's Flat Builders work (\cite{mezzo}).
 
 \end{frame}
@@ -516,8 +510,6 @@ end
 
 We also developed a shorthand syntax! 
 
-\pause
-
 The below game:
 
 \begin{lstlisting}
@@ -529,8 +521,6 @@ game = chess
     queen f3 to h5
 end
 \end{lstlisting}
-
-\pause
 
 becomes:
 
@@ -563,11 +553,13 @@ Compile-time and memory issues came up time and again throughout development; pu
 
 With some games, GHC will run out of memory (\textgreater 25GB) and crash.
 
-Through testing, it seems the upper limit is \textbf{12 moves maximum}; some 12-move games tested compile, most 10-move games compile, and all 8-move games compile.
+Through testing, it seems the upper limit is \textbf{12 moves maximum}; while all 6-move games tested have compiled, most 8- and 10-move games do as well.
     
 \end{frame}
 
 \begin{frame}{Further Work}
+
+There is room to expand on not just the implementation, but the \emph{intention} of the project:
 
 \pause
 
