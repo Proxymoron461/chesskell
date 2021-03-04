@@ -42,7 +42,8 @@ citestyle=authortitle-icomp
     framesep=4pt,  % Margin size
     framerule=0pt,
     morekeywords={Eval, Exp, family, instance},
-    deletekeywords={map, and, error, take}
+    deletekeywords={map, and, error, take},
+    showstringspaces=false
 }
 
 % Custom command for all inline code styling
@@ -380,6 +381,7 @@ Lots of idiomatic Haskell code relies on functions being \emph{first-class}; par
 
 \begin{lstlisting}
 x = map (+ 2) [1,2,3]
+-- = [3,4,5]
 \end{lstlisting}
 
 \pause
@@ -430,18 +432,49 @@ type instance Eval (And False False) = False
 
 \end{frame}
 
-\begin{frame}[fragile]{Creating the Types for Chess}
+\begin{frame}[fragile]{Type-Level Mapping}
 
-Using promotion (as we explain earlier), we define appropriate types for use with type families in Chess. We give some examples below, in both regular and GADT (\cite{gadts}) syntax:
+With the below definition of \inline{Map}:
 
 \begin{lstlisting}
-data Team = Black | White
+data Map :: (a -> Exp b) -> f a -> Exp (f b)
+type instance Eval (Map f '[])       = '[]
+type instance Eval (Map f (x ': xs)) = Eval (f x) ': Eval (Map f xs)
+\end{lstlisting}
 
-data PieceInfo where
-    Info :: Nat -> Position -> PieceInfo
+And a definition of a type-level \inline{(+)}:
 
-data Piece where
-    MkPiece :: Team -> PieceName -> PieceInfo -> Piece
+\begin{lstlisting}
+data (:+) :: Nat -> Nat -> Exp Nat
+type instance Eval (Z     :+ y) = y
+type instance Eval ((S x) :+ y) = S (x :+ y)
+\end{lstlisting}
+
+We can now map over a type-level list:
+
+\begin{lstlisting}
+Eval (Map (:+ 2) '[1,2,3])
+-- = '[3,4,5]
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]{Representing Movement}
+
+% In Chesskell, we represent movement with a single First Class Family that performs the given movement on a \inline{BoardDecorator}:
+
+Each turn of movement is expressed as a single First Class Family:
+
+\begin{lstlisting}
+data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
+\end{lstlisting}
+
+\pause
+
+Thanks to First Class Families, we can extend this with rule-checking naturally; using a type-level version of the function composition operator, \inline{(.)}:
+
+\begin{lstlisting}
+PostMoveCheck2 . PostMoveCheck1 . Move fromPos toPos . PreMoveCheck2 . PreMoveCheck1
 \end{lstlisting}
 
 \end{frame}
@@ -464,41 +497,46 @@ type Row   = Vec Eight (Maybe Piece)
 type Board = Vec Eight Row
 \end{lstlisting}
 
-\end{frame}
-
-\begin{frame}[fragile]{The BoardDecorator type}
-
-In the codebase, we use a wrapper data structure to hold helpful information along with the \inline{Board} for rule checking:
-
-\begin{lstlisting}
-data BoardDecorator where
-    Dec :: Board
-        -> Team
-        -> Position
-        -> (Position, Position)
-        -> Nat
-        -> BoardDecorator
-\end{lstlisting}
+In the codebase, we use a wrapper data structure (named \inline{BoardDecorator}) to hold additional useful information.
 
 \end{frame}
 
-\begin{frame}[fragile]{Representing Movement}
+\begin{frame}[fragile]{Using the Type-Level Model}
 
-% In Chesskell, we represent movement with a single First Class Family that performs the given movement on a \inline{BoardDecorator}:
-
-Movement is expressed as a single First Class Family:
+To interact with this type level model, the output of each \inline{Move} call is piped to the next one:
 
 \begin{lstlisting}
-data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
+x = Move a1 a2 StartBoard
+y = Move e3 e4 x
+z = -- ...
 \end{lstlisting}
 
-\pause
+\end{frame}
 
-Thanks to First Class Families, we can extend this with rule-checking naturally; using a type-level version of the function composition operator, \inline{(.)}:
+\begin{frame}[fragile]{Using the Type-Level Model cont.}
 
-\begin{lstlisting}
-PostMoveCheck2 . PostMoveCheck1 . Move fromPos toPos . PreMoveCheck2 . PreMoveCheck1
+Below is a simplified representation of what happens for the game: \inline{chess pawn a1 to a2 king e2 to e1 end}
+
+\begin{overprint}
+
+\onslide<1>\begin{lstlisting}
+(MoveWithCheck King e2 e1 . MoveWithCheck Pawn a1 a2) StartBoard
 \end{lstlisting}
+
+\onslide<2>\begin{lstlisting}
+(MoveWithCheck King e2 e1 . MoveWithCheck Pawn a1 a2) StartBoard
+
+data MoveWithCheck :: PieceName -> Position -> Position -> Exp Board
+type instance Eval (MoveWithCheck name fromPos toPos board)
+    -- If there is a piece of that type at fromPos
+    = If (IsPieceAt name fromPos board)
+        -- then
+        (Move fromPos toPos board)
+        -- else
+        (TypeError -- ...)
+\end{lstlisting}
+
+\end{overprint}
 
 \end{frame}
 
@@ -535,54 +573,14 @@ Can achieve using Continuation Passing Style, inspired by Dima Szamozvancev's Fl
 
 \end{frame}
 
-\begin{frame}[fragile]{Making continuations for Chess}
+\begin{frame}[fragile]{Chess Continuations}
 
-The core continuations are \inline{chess}, the piece continuations, and \inline{to}:
+We define a continuation for beginning the stream (named \inline{chess}), another for ending it (\inline{end}), and a series of piece continuations that move a piece of that type; \inline{king}, \inline{queen}, etc.
 
-\pause
-
-\begin{overprint}
-
-\onslide<2>\begin{lstlisting}
-type Spec t = forall m. (t -> m) -> m
-
-chess :: Spec (Proxy StartDec)
-chess cont = cont (Proxy @StartDec)
-\end{lstlisting}
-
-\onslide<3>\begin{lstlisting}
-data MoveArgs where
-    MA :: BoardDecorator
-       -> Position
-       -> PieceName
-       -> Position
-       -> MoveArgs
-
-pawn :: Proxy (b :: BoardDecorator)
-     -> SPosition fromPos
-     -> Spec (Proxy (MA b fromPos 'Pawn))
-pawn (dec :: Proxy b) (from :: SPosition fromPos) cont
-    = cont (Proxy @(MA b fromPos Pawn))
-\end{lstlisting}
-
-\onslide<4>\begin{lstlisting}
-to :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))
-   -> SPosition toPos
-   -> Spec (Proxy (Eval (MoveWithStateCheck n fromPos toPos b)))
-to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: SPosition toPos) cont
-    = cont (Proxy @(Eval (MoveWithStateCheck n fromPos toPos b)))
-\end{lstlisting}
-
-\end{overprint}
-    
-\end{frame}
-
-\begin{frame}[fragile]{Using the Chess continuations}
-
-All of the above continuations can be chained together (along with \inline{end} which ends the continuation stream) like so:
+All of the above continuations can be chained together like so:
 
 \begin{lstlisting}
-game = chess pawn a1 to a2 end
+game = chess pawn a1 to a2 bishop e4 to d5 end
 \end{lstlisting}
 
 \end{frame}
@@ -714,7 +712,13 @@ end
 
 \end{frame}
 
-\begin{frame}{Testing}
+\begin{frame}[standout]
+
+Demo
+    
+\end{frame}
+
+\begin{frame}{Testing Overview}
 
 Combination of:
 
@@ -722,9 +726,131 @@ Combination of:
 
 \begin{itemize}
     \item<2-> Unit testing with assertions, based on whether a code snippet compiles or fails to compile;
-    \item<3-> EDSL testing with famous Chess games, written out in Chesskell notation.
+    \item<3-> Unit tests of custom-made board scenarios, to test out specific behaviour;
+    \item<4-> EDSL tests of custom board scenarios, for the same purpose;  
+    \item<5-> EDSL testing with famous Chess games, written out in Chesskell notation.
 \end{itemize}
     
+\end{frame}
+
+\begin{frame}[fragile]{Unit Testing}
+
+Unit tests rely on two main assertions; \inline{shouldTypecheck}, and \inline{shouldNotTypecheck}, which succeed or fail based on whether a specific code snippet fails with a type error or not.
+
+We created unit tests for individual type families, to determine if they have the behaviour they should:
+
+\begin{lstlisting}
+oppositeTeamTest1 :: White :~: Eval (OppositeTeam Black)
+oppositeTeamTest1 = Refl
+
+-- ...
+
+it "1: OppositeTeam Black = White" $
+    shouldTypecheck oppositeTeamTest1
+\end{lstlisting}
+
+(Note that a value with type \inline{x :~: y} will only compile if \inline{x} and \inline{y} can be unified.)
+    
+\end{frame}
+
+\begin{frame}[fragile]{Unit Testing cont.}
+
+We also created unit tests for every FIDE Law of Chess that could be tested in this manner:
+
+\begin{lstlisting}
+whiteBishopCannotTakeOwnTeam :: Proxy (a :: BoardDecorator)
+whiteBishopCannotTakeOwnTeam = Proxy @(Eval (Move (At C Nat1) (At D Nat2) WhiteStartDec))
+
+-- ...
+
+it "1: A White Bishop cannot take a piece on the same team" $
+    shouldNotTypecheck whiteBishopCannotTakeOwnTeam
+\end{lstlisting}
+    
+\end{frame}
+
+\begin{frame}[fragile]{Scenario Testing}
+    
+We created custom Chess test boards, to model specific behaviour. For example, we created the following board and test, whereby the Black King can castle left, but not right:
+
+\begin{figure}[h]
+    \centering
+    \fenboard{8/5Q2/8/8/8/8/8/r3k2r b - - 0 1}
+    \scalebox{0.55}{\showboard}
+    \label{blackcastleleft}
+\end{figure}
+
+\begin{lstlisting}
+blackCanCastleLeft :: '(True, False) :~: CanCastle Black BlackCastleLeftDec
+blackCanCastleLeft = Refl
+-- ...
+shouldTypecheck blackCanCastleLeft
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]{EDSL Scenario}
+
+The EDSL was similarly tested with scenarios, to ensure that rule-breaking moves did not compile:
+
+\begin{overprint}
+    
+\onslide<1>\begin{lstlisting}
+didntPromoteBlack = create
+        put _Wh _P at h7
+        put _Bl _P at a2
+    startMoves
+        pawn h7 promoteTo _B h8
+        pawn a2 to a1
+    end
+\end{lstlisting}
+
+\onslide<2>\begin{lstlisting}
+-- Below fails with the following type error:
+    -- * Promotion should have occurred at: a1. Pawns must be promoted when they reach the opposite end of the board.
+    -- * When checking the inferred type:
+    --     didntPromoteBlack :: Data.Proxy.Proxy (TypeError ...)
+didntPromoteBlack = create
+        put _Wh _P at h7
+        put _Bl _P at a2
+    startMoves
+        pawn h7 promoteTo _B h8
+        pawn a2 to a1
+    end
+\end{lstlisting}
+
+\end{overprint}
+    
+\end{frame}
+
+\begin{frame}[fragile]{EDSL Game Testing}
+    
+Testing for EDSL correctness primarily consisted of writing out the first few moves of some famous game, and then making variations with some errors inserted:
+
+\begin{overprint}
+
+\onslide<1>\begin{lstlisting}
+loopVsGandalf = chess
+        p e4 p c5
+        n f3 p d6
+        p d4 p d4
+        n d4 n f6
+        n c3 p a6
+    end
+\end{lstlisting}
+
+\onslide<2>\begin{lstlisting}
+loopVsGandalfError = chess
+        p e4 p c5
+        n f3 p d6
+        p d4 p d4
+        n d4 n f6
+        n c3 p a7  -- Error here: pawn moves to same place
+    end
+\end{lstlisting}
+
+\end{overprint}
+
 \end{frame}
 
 \begin{frame}{Compile-time and memory issues}
@@ -739,15 +865,14 @@ Through testing, it seems the upper limit is \textbf{12 moves maximum}; while al
 
 \begin{frame}{Further Work}
 
-There is room to expand on not just the implementation, but the \emph{intention} of the project:
+There is room to expand Chesskell:
 
 \pause
 
 \begin{itemize}
-    \item<2-> More domains could be modelled at the type level, not just Chess;
-    \item<3-> A session-typed version of Chesskell;
-    \item<4-> Further optimisations to try and increase the move limit;
-    \item<5-> An automated tool to transform from Algebraic Notation into Chesskell notation.
+    \item<2-> A session-typed version of Chesskell;
+    \item<3-> Further optimisations to try and increase the move limit;
+    \item<4-> An automated tool to transform from Algebraic Notation into Chesskell notation.
 \end{itemize}
     
 \end{frame}
@@ -771,21 +896,15 @@ We have created:
     
 \end{frame}
 
-\begin{frame}[allowframebreaks]{References}
-
-\printbibliography
-    
-\end{frame}
-
-\begin{frame}[standout]
-
-Demo
-    
-\end{frame}
-
 \begin{frame}[standout]
 
 Q\&A
+    
+\end{frame}
+
+\begin{frame}[allowframebreaks]{References}
+
+\printbibliography
     
 \end{frame}
 
