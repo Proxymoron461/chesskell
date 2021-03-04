@@ -4,6 +4,7 @@
 \usepackage{skak}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{graphicx}
 
 \usepackage[
 backend=biber,
@@ -93,7 +94,7 @@ This is obviously an error. But it compiles!
 
 \begin{frame}[fragile]{Type-Level Programming}
 
-Recent developments to Haskell have focused on performing computation at the type level (\cite{opentfs}, \cite{closedtfs}).
+Recent developments to Haskell have focused on performing computation at the type level with \emph{type families} (\cite{opentfs}, \cite{closedtfs}).
 
 Haskell is NOT a dependently typed language; types and values are separated.
     
@@ -134,7 +135,8 @@ What issues do we run into when implementing a complex rule set at the type leve
 
 \pause
 
-Is Haskell's type system mature enough for Chess?
+\textbf{Is Haskell's type system mature enough for Chess?}
+
 \end{frame}
 
 \begin{frame}{Why Chess?}
@@ -360,7 +362,7 @@ factorial x = x * factorial (x - 1)
 
 \pause
 
-But you have to use \emph{type families} to compute on types (\cite{opentfs}, \cite{closedtfs}).
+But you have to use type families to compute on types:
 
 \begin{lstlisting}
 type family Factorial (x :: Nat) :: Nat where
@@ -771,7 +773,7 @@ it "1: A White Bishop cannot take a piece on the same team" $
 
 \begin{frame}[fragile]{Scenario Testing}
     
-We created custom Chess test boards, to model specific behaviour. For example, we created the following board and test, whereby the Black King can castle left, but not right:
+We created custom Chess test boards, paired with unit tests, to model specific behaviour: % For example, we created the following board and test, whereby the Black King can castle left, but not right:
 
 \begin{figure}[h]
     \centering
@@ -825,7 +827,7 @@ didntPromoteBlack = create
 
 \begin{frame}[fragile]{EDSL Game Testing}
     
-Testing for EDSL correctness primarily consisted of writing out the first few moves of some famous game, and then making variations with some errors inserted:
+Testing for EDSL correctness primarily consisted of writing out the first few moves of some famous game, and then making variations with errors:
 
 \begin{overprint}
 
@@ -845,7 +847,17 @@ loopVsGandalfError = chess
         n f3 p d6
         p d4 p d4
         n d4 n f6
-        n c3 p a7  -- Error here: pawn moves to same place
+        n c3 p a7
+    end
+\end{lstlisting}
+
+\onslide<3>\begin{lstlisting}
+loopVsGandalfError = chess
+        p e4 p c5
+        n f3 p d6
+        p d4 p d4
+        n d4 n f6
+        n c3 p a7  -- Pawn moves to same place!
     end
 \end{lstlisting}
 
@@ -861,6 +873,57 @@ With some games, GHC will run out of memory (\textgreater 25GB) and crash.
 
 Through testing, it seems the upper limit is \textbf{12 moves maximum}; while all 6-move games tested have compiled, most 8- and 10-move games do as well.
     
+\end{frame}
+
+\begin{frame}[fragile]{Compile-time and memory issues cont.}
+
+In fact, we discovered a difference in behaviour between type applications (\cite{typeapplication}) and type signatures:
+
+\begin{lstlisting}
+-- Compiles, but would hang
+chess :: Spec (Proxy StartDec)
+chess cont = cont (Proxy @StartDec)
+
+-- Would fail to compile
+chess :: Spec (Proxy StartDec)
+chess cont = cont (Proxy :: Proxy StartDec)
+\end{lstlisting}
+
+\pause
+
+So we filed a GHC bug report: \url{https://gitlab.haskell.org/ghc/ghc/-/issues/18902}
+    
+\end{frame}
+
+\begin{frame}{Project Management}
+
+The project was managed successfully, making use of;
+
+\begin{itemize}
+    \item<2-> Spiral methodology;
+    \item<3-> Git and GitHub for version control;
+    \item<4-> Weekly supervisor meetings;
+    \item<5-> A Trello board to track upcoming tasks and completed features (Figure \ref{trello}); 
+    \item<6-> Extensive unit and integration testing.
+\end{itemize}
+
+\begin{overprint}
+
+\onslide<7>The implementation of Chesskell was feature-complete by the 4th of December; since then, work has gone into optimisation, testing, and write-ups.
+    
+\end{overprint}
+
+
+% Ultimately, since there is no customer, an agile approach would have been a waste-so we used the \emph{spiral} methodology, moving from planning to implementation to internal testing, and repeating until done.
+
+\end{frame}
+
+\begin{frame}{Project Management cont.}
+\begin{figure}
+    \includegraphics[width=\linewidth]{trello.png}
+    \caption{The Trello board used to track development.}
+    \label{trello}
+\end{figure}
 \end{frame}
 
 \begin{frame}{Further Work}
@@ -886,7 +949,7 @@ We have created:
 \begin{itemize}
     \item<2-> A full type-level model of Chess, which enforces all rules in the FIDE 2018 Laws of Chess;
     \item<3-> An EDSL for describing Chess games and creating custom chess boards, which uses the type-level model for rule-checking;
-    \item<4-> Interesting findings on compile-time and memory usage issues.
+    \item<4-> A first draft of a Haskell Symposium paper about the development of Chesskell, including our findings on compile-time and memory usage issues.
 \end{itemize}
 
 \begin{overprint}
