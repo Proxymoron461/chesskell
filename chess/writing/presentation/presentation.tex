@@ -53,11 +53,87 @@ citestyle=authortitle-icomp
 \frame{\titlepage}
 
 \begin{frame}{Why do type systems exist?}
-Type systems exist because: \pause we want to avoid errors (\cite{cardellitypes}).
+Type systems exist because: \pause we want to avoid errors.
 
-\pause But not domain-specific logical errors?
+(\cite{cardellitypes})
 
-\pause Solution: model your domain in the types!
+% \pause But not domain-specific logical errors?
+
+% \pause Solution: model your domain in the types!
+\end{frame}
+
+\begin{frame}[fragile]{Type Errors}
+
+A type system can prevent certain errors from occurring at all:
+
+\begin{lstlisting}
+not 5
+\end{lstlisting}
+
+The above will not compile, preventing an error.
+    
+\end{frame}
+
+\begin{frame}[fragile]{Type Errors cont.}
+
+You have a website, where you sell books.
+
+\pause
+
+For some reason, you use Java to build the server:
+
+\begin{lstlisting}[language=Java]
+int noOfPages = -1;
+\end{lstlisting}
+
+This is obviously an error. But it compiles!
+    
+\end{frame}
+
+\begin{frame}[fragile]{Type-Level Programming}
+
+Recent developments to Haskell have focused on performing computation at the type level (\cite{opentfs}, \cite{closedtfs}).
+
+Haskell is NOT a dependently typed language; types and values are separated.
+    
+\end{frame}
+
+\begin{frame}[fragile]{Type Erasure}
+In fact, Haskell programs undergo \emph{type erasure}.
+
+\pause
+
+\begin{lstlisting}
+x :: Int
+x = 3
+\end{lstlisting}
+
+Haskell type-level programming involves circumventing type erasure.
+
+\end{frame}
+
+\begin{frame}{Complex Type-Level Computation}
+
+There are other attempts at rule enforcement, in Haskell, at the type level.
+
+\pause
+
+Mezzo is an EDSL for musical composition, which can enforce classical harmony rules at the type level (\cite{mezzohaskellsymposium}).
+
+\pause
+
+BioShake is an EDSL for Bioinformatics workflows, whereby only workflows that are configured correctly will compile (\cite{bioshake}).
+    
+\end{frame}
+
+\begin{frame}[fragile]{Why create Chesskell?}
+These capabilities are intended for use; and so must be tested through use.
+
+What issues do we run into when implementing a complex rule set at the type level?
+
+\pause
+
+Is Haskell's type system mature enough for Chess?
 \end{frame}
 
 \begin{frame}{Why Chess?}
@@ -72,19 +148,123 @@ Type systems exist because: \pause we want to avoid errors (\cite{cardellitypes}
 
 \begin{frame}{A note on Chess}
 
+A Chess game takes place on a board.
+
+\begin{figure}[h]
+    \centering
+    \fenboard{8/8/8/8/8/8/8/8 w - - 0 1}
+    \showboard
+    \label{emptyboard}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{A note on Chess cont.}
+
 There are two \emph{Teams}; Black and White.
 
-\pause
+\begin{figure}[h]
+    \centering
+    \newgame
+    \showboard
+    \label{startboard1}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{A note on Chess cont.}
 
 Each Team has 16 \emph{Pieces}; 8 Pawns, 2 Rooks, 2 Bishops, 2 Knights, a Queen, and a King.
+    
+\begin{overprint}
+    
+\onslide<1>\begin{figure}[h]
+    \centering
+    \fenboard{8/8/8/8/8/8/8/8 w - - 0 1}
+    \showboard
+    \label{showpiece0}
+\end{figure}
 
-\pause
+\onslide<2>\begin{figure}[h]
+    \centering
+    \newgame
+    \showonly{p,P}
+    \showboard
+    \label{showpiece1}
+\end{figure}
+
+\onslide<3>\begin{figure}[h]
+    \centering
+    \newgame
+    \showonly{p,P,r,R}
+    \showboard
+    \label{showpiece2}
+\end{figure}
+
+\onslide<4>\begin{figure}[h]
+    \centering
+    \newgame
+    \showonly{p,P,r,R,b,B}
+    \showboard
+    \label{showpiece3}
+\end{figure}
+
+\onslide<5>\begin{figure}[h]
+    \centering
+    \newgame
+    \showallbut{q,Q,k,K}
+    \showboard
+    \label{showpiece4}
+\end{figure}
+
+\onslide<6>\begin{figure}[h]
+    \centering
+    \newgame
+    \showallbut{k,K}
+    \showboard
+    \label{showpiece5}
+\end{figure}
+
+\onslide<7>\begin{figure}[h]
+    \centering
+    \newgame
+    \showboard
+    \label{showpiece6}
+\end{figure}
+
+\end{overprint}
+    
+\end{frame}
+
+\begin{frame}{A note on Chess cont.}
 
 Each piece has different movement rules, allowing them to move around the 8x8 board.
+    
+\begin{figure}[h]
+    \centering
+    \newgame
+    \scalebox{0.60}{\showboard}
+    \quad
+    \hidemoves{1. e4 Nc6}
+    \scalebox{0.60}{\showboard}
+    \label{demonstratemovement}
+\end{figure}
+    
+\end{frame}
 
-\pause
+\begin{frame}{A note on Chess cont.}
 
 Pieces can remove other pieces from the board via \emph{capture}; which almost always involves moving to the other piece's square.
+
+\begin{figure}[h]
+    \centering
+    \fenboard{8/8/8/4Q3/3p4/8/8/8 w - - 0 1}
+    \scalebox{0.60}{\showboard}
+    \quad
+    \hidemoves{1. Qd4}
+    \scalebox{0.60}{\showboard}
+    \label{demonstratecapture}
+\end{figure}
 
 \end{frame}
 
