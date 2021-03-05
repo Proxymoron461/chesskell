@@ -54,6 +54,12 @@ citestyle=authortitle-icomp
 
 \frame{\titlepage}
 
+\begin{frame}[standout]
+
+Why do type systems exist?
+    
+\end{frame}
+
 \begin{frame}{Why do type systems exist?}
 Type systems exist because: \pause we want to avoid errors.
 
@@ -338,7 +344,7 @@ In Haskell, values have \emph{types}, and types have \emph{kinds}.
 
 \pause
 
-Luckily, we can \emph{promote} types to kinds with the \inline{-XDataKinds} extension (\cite{givingpromotion}).
+Luckily, we can \emph{promote} types to kinds with the \inline{-XDataKinds} extension (\cite{givingpromotion}):
 
 \pause
 
@@ -346,7 +352,10 @@ Luckily, we can \emph{promote} types to kinds with the \inline{-XDataKinds} exte
 data Book = Fiction | NonFiction
 \end{lstlisting}
 
-With the extension, this creates the values \inline{Fiction} and \inline{NonFiction} of type \inline{Book}, and also the \emph{types} \inline{'Fiction} and \inline{'NonFiction} of kind \inline{Book}.
+\begin{figure}
+    \includegraphics[height=0.6\textheight,keepaspectratio]{Promotion.png}
+    \label{promotiondiagram}
+\end{figure}
 
 \end{frame}
 
