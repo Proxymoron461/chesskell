@@ -69,3 +69,16 @@ import Lib
 --     p c4 p e6
 --     n f3 p b6
 --     p g3 b b7 end
+
+-- loopVsGandalf = chess
+--     p e4 p c5
+--     n f3 p d6
+--     p d4 p d4
+--     n d4 n f6
+--     n c3 p a6 end  -- All good, compiles just fine!
+    -- b e3 p e5 end
+
+lauVsBastian = chess
+    p e4 p e5
+    n f3 n c6
+    b b5 b c5 end -- FIXME: Fails now, but compiles when removing the last bishop move. Why??
