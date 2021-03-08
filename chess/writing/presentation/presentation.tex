@@ -177,7 +177,7 @@ A Chess game takes place on a board.
 
 \begin{frame}{A note on Chess cont.}
 
-There are two \emph{Teams}; Black and White.
+There are two \emph{Teams}; Black and White. Each have many pieces.
 
 \begin{figure}[h]
     \centering
@@ -188,69 +188,69 @@ There are two \emph{Teams}; Black and White.
 
 \end{frame}
 
-\begin{frame}{A note on Chess cont.}
+% \begin{frame}{A note on Chess cont.}
 
-Each Team has 16 \emph{Pieces}; 8 Pawns, 2 Rooks, 2 Bishops, 2 Knights, a Queen, and a King.
+% Each Team has 16 \emph{Pieces}; 8 Pawns, 2 Rooks, 2 Bishops, 2 Knights, a Queen, and a King.
     
-\begin{overprint}
+% \begin{overprint}
     
-\onslide<1>\begin{figure}[h]
-    \centering
-    \fenboard{8/8/8/8/8/8/8/8 w - - 0 1}
-    \showboard
-    \label{showpiece0}
-\end{figure}
+% \onslide<1>\begin{figure}[h]
+%     \centering
+%     \fenboard{8/8/8/8/8/8/8/8 w - - 0 1}
+%     \showboard
+%     \label{showpiece0}
+% \end{figure}
 
-\onslide<2>\begin{figure}[h]
-    \centering
-    \newgame
-    \showonly{p,P}
-    \showboard
-    \label{showpiece1}
-\end{figure}
+% \onslide<2>\begin{figure}[h]
+%     \centering
+%     \newgame
+%     \showonly{p,P}
+%     \showboard
+%     \label{showpiece1}
+% \end{figure}
 
-\onslide<3>\begin{figure}[h]
-    \centering
-    \newgame
-    \showonly{p,P,r,R}
-    \showboard
-    \label{showpiece2}
-\end{figure}
+% \onslide<3>\begin{figure}[h]
+%     \centering
+%     \newgame
+%     \showonly{p,P,r,R}
+%     \showboard
+%     \label{showpiece2}
+% \end{figure}
 
-\onslide<4>\begin{figure}[h]
-    \centering
-    \newgame
-    \showonly{p,P,r,R,b,B}
-    \showboard
-    \label{showpiece3}
-\end{figure}
+% \onslide<4>\begin{figure}[h]
+%     \centering
+%     \newgame
+%     \showonly{p,P,r,R,b,B}
+%     \showboard
+%     \label{showpiece3}
+% \end{figure}
 
-\onslide<5>\begin{figure}[h]
-    \centering
-    \newgame
-    \showallbut{q,Q,k,K}
-    \showboard
-    \label{showpiece4}
-\end{figure}
+% \onslide<5>\begin{figure}[h]
+%     \centering
+%     \newgame
+%     \showallbut{q,Q,k,K}
+%     \showboard
+%     \label{showpiece4}
+% \end{figure}
 
-\onslide<6>\begin{figure}[h]
-    \centering
-    \newgame
-    \showallbut{k,K}
-    \showboard
-    \label{showpiece5}
-\end{figure}
+% \onslide<6>\begin{figure}[h]
+%     \centering
+%     \newgame
+%     \showallbut{k,K}
+%     \showboard
+%     \label{showpiece5}
+% \end{figure}
 
-\onslide<7>\begin{figure}[h]
-    \centering
-    \newgame
-    \showboard
-    \label{showpiece6}
-\end{figure}
+% \onslide<7>\begin{figure}[h]
+%     \centering
+%     \newgame
+%     \showboard
+%     \label{showpiece6}
+% \end{figure}
 
-\end{overprint}
+% \end{overprint}
     
-\end{frame}
+% \end{frame}
 
 \begin{frame}{A note on Chess cont.}
 
@@ -268,21 +268,21 @@ Each piece has different movement rules, allowing them to move around the 8x8 bo
     
 \end{frame}
 
-\begin{frame}{A note on Chess cont.}
+% \begin{frame}{A note on Chess cont.}
 
-Pieces can remove other pieces from the board via \emph{capture}; which almost always involves moving to the other piece's square.
+% Pieces can remove other pieces from the board via \emph{capture}; which almost always involves moving to the other piece's square.
 
-\begin{figure}[h]
-    \centering
-    \fenboard{8/8/8/4Q3/3p4/8/8/8 w - - 0 1}
-    \scalebox{0.60}{\showboard}
-    \quad
-    \hidemoves{1. Qd4}
-    \scalebox{0.60}{\showboard}
-    \label{demonstratecapture}
-\end{figure}
+% \begin{figure}[h]
+%     \centering
+%     \fenboard{8/8/8/4Q3/3p4/8/8/8 w - - 0 1}
+%     \scalebox{0.60}{\showboard}
+%     \quad
+%     \hidemoves{1. Qd4}
+%     \scalebox{0.60}{\showboard}
+%     \label{demonstratecapture}
+% \end{figure}
 
-\end{frame}
+% \end{frame}
 
 \begin{frame}[fragile]{A Short Example}
 
@@ -431,21 +431,17 @@ type family Eval (e :: Exp a) :: a
 \begin{frame}[fragile]{Making a First Class Family}
 
 \begin{lstlisting}
-type family And (x :: Bool) (y :: Bool) :: Bool where
-    And True  True  = True
-    And True  False = False
-    And False True  = False
-    And False False = False
+type family Not (x :: Bool) :: Bool where
+    Not False = True
+    Not True  = False
 \end{lstlisting}
 
 becomes:
 
 \begin{lstlisting}
-data And :: Bool -> Bool -> Exp Bool
-type instance Eval (And True  True)  = True
-type instance Eval (And True  False) = False
-type instance Eval (And False True)  = False
-type instance Eval (And False False) = False
+data Not :: Bool -> Exp Bool
+type instance Eval (And True)  = False
+type instance Eval (And False) = True
 \end{lstlisting}
 
 \end{frame}
@@ -535,47 +531,30 @@ z = -- ...
 
 Below is a simplified representation of what happens for the game: \inline{chess pawn a1 to a2 king e2 to e1 end}
 
-\begin{overprint}
-
-\onslide<1>\begin{lstlisting}
-(MoveWithCheck King e2 e1 . MoveWithCheck Pawn a1 a2) StartBoard
-\end{lstlisting}
-
-\onslide<2>\begin{lstlisting}
-(MoveWithCheck King e2 e1 . MoveWithCheck Pawn a1 a2) StartBoard
-
-data MoveWithCheck :: PieceName -> Position -> Position -> Exp Board
-type instance Eval (MoveWithCheck name fromPos toPos board)
-    -- If there is a piece of that type at fromPos
-    = If (IsPieceAt name fromPos board)
-        -- then
-        (Move fromPos toPos board)
-        -- else
-        (TypeError -- ...)
-\end{lstlisting}
-
-\end{overprint}
-
-\end{frame}
-
-\begin{frame}[fragile]{Interacting with Type-Level model at the value level}
-
-The core idea is wrapping the \inline{BoardDecorator} type in a \inline{Proxy}, so that it can be passed around within a value by functions:
-
 \begin{lstlisting}
-data Proxy a = Proxy
-
-edslMove :: SPosition from
-         -> SPosition to
-         -> Proxy (b :: BoardDecorator)
-         -> Proxy (Eval (Move from to b))
-edslMove (x :: SPosition from) (y :: SPosition to) (z :: Proxy (b :: BoardDecorator))
-    = Proxy @(Eval (Move from to b))
+(MoveWithCheck King e2 e1 . MoveWithCheck Pawn a1 a2) StartBoard
 \end{lstlisting}
 
-But this would still look similar to Haskell syntax; we need a new approach.
-
 \end{frame}
+
+% \begin{frame}[fragile]{Interacting with Type-Level model at the value level}
+
+% The core idea is wrapping the \inline{BoardDecorator} type in a \inline{Proxy}, so that it can be passed around within a value by functions:
+
+% \begin{lstlisting}
+% data Proxy a = Proxy
+
+% edslMove :: SPosition from
+%          -> SPosition to
+%          -> Proxy (b :: BoardDecorator)
+%          -> Proxy (Eval (Move from to b))
+% edslMove (x :: SPosition from) (y :: SPosition to) (z :: Proxy (b :: BoardDecorator))
+%     = Proxy @(Eval (Move from to b))
+% \end{lstlisting}
+
+% But this would still look similar to Haskell syntax; we need a new approach.
+
+% \end{frame}
 
 \begin{frame}[fragile]{Creating the EDSL}
 
@@ -964,7 +943,7 @@ We have created:
 \begin{itemize}
     \item<2-> A full type-level model of Chess, which enforces all rules in the FIDE 2018 Laws of Chess;
     \item<3-> An EDSL for describing Chess games and creating custom chess boards, which uses the type-level model for rule-checking;
-    \item<4-> A first draft of a Haskell Symposium paper about the development of Chesskell, including our findings on compile-time and memory usage issues.
+    \item<4-> At the end of next week, we will submit a Haskell Symposium paper about the development of Chesskell, including our findings on compile-time and memory usage issues.
 \end{itemize}
 
 \begin{overprint}
