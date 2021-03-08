@@ -122,20 +122,27 @@ Haskell type-level programming involves circumventing type erasure.
 
 \begin{frame}{Complex Type-Level Computation}
 
-There are other attempts at rule enforcement, in Haskell, at the type level.
+There are other attempts at rule enforcement, in Haskell, at the type level:
 
 \pause
 
-Mezzo is an EDSL for musical composition, which can enforce classical harmony rules at the type level (\cite{mezzohaskellsymposium}).
+Mezzo - musical composition (\cite{mezzohaskellsymposium})
 
 \pause
 
-BioShake is an EDSL for Bioinformatics workflows, whereby only workflows that are configured correctly will compile (\cite{bioshake}).
+BioShake - Bioinformatics workflows (\cite{bioshake})
+
+
+% Mezzo is an EDSL for musical composition, which can enforce classical harmony rules at the type level (\cite{mezzohaskellsymposium}).
+
+% \pause
+
+% BioShake is an EDSL for Bioinformatics workflows, whereby only workflows that are configured correctly will compile (\cite{bioshake}).
     
 \end{frame}
 
 \begin{frame}[fragile]{Why create Chesskell?}
-These capabilities are intended for use; and so must be tested through use.
+% These capabilities are intended for use; and so must be tested through use.
 
 What issues do we run into when implementing a complex rule set at the type level?
 
@@ -586,7 +593,11 @@ Can achieve using Continuation Passing Style, inspired by Dima Szamozvancev's Fl
 
 \begin{frame}[fragile]{Chess Continuations}
 
-We define a continuation for beginning the stream (named \inline{chess}), another for ending it (\inline{end}), and a series of piece continuations that move a piece of that type; \inline{king}, \inline{queen}, etc.
+We define some important continuations: \pause \inline{chess}, \pause \inline{end}, \pause and piece continuations.
+
+% We define a continuation for beginning the stream (named \inline{chess}), another for ending it (\inline{end}), and a series of piece continuations that move a piece of that type; \inline{king}, \inline{queen}, etc.
+
+\pause
 
 All of the above continuations can be chained together like so:
 
@@ -904,7 +915,7 @@ So we filed a GHC bug report: \url{https://gitlab.haskell.org/ghc/ghc/-/issues/1
 
 \begin{frame}{Project Management}
 
-The project was managed successfully, making use of;
+The project was managed successfully, making use of:
 
 \begin{itemize}
     \item Spiral methodology;
