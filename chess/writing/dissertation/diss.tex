@@ -827,11 +827,11 @@ Although they are similar, the list of spaces that a piece can attack and the li
 
 One of the most important rules in Chess, that of placing the opposite King in check, cannot be expressed solely through move and attack lists. Any movement can place either King in check, and it is not always the case that a movement by a piece places the opposite King in check; a move may be ruled as invalid because it places that piece's King into check. For instance, if a Black Rook stands between a White Queen and a Black King, the Rook is not allowed to move out of the Queen's attack path, since such a move would put the King into check.
 
-However, the only time that check is relevant is after each move. A move by a piece is invalid when it places that piece's King in check, or if it leaves that piece's King in check. This means that it fits nicely as a post-move check, implemented as a type family \inline{CheckNoCheck}. Early versions of Chesskell naively computed and combined all attack lists for all pieces, and simply checked if the King's position is in that combined list.
+However, the only time that check is relevant is after each move. A move by a piece is invalid when it places that piece's King in check, or if it leaves that piece's King in check. This means that it fits nicely as a post-move check, implemented as a type family \inline{CheckNoCheck}. Early versions of Chesskell naively computed and combined all attack lists for all pieces, and simply checked if the King's position was a member of that combined list.
 
 A more efficient approach, found in Chesskell today, is to emulate other pieces' movement code from the King's position. It is worth noting that for all pieces except Kings and Pawns, if they can move from a to b, then they can also move from b to a. As an illustration, if a Queen at the King's position (of the same team as the King) would be able to reach a Queen of the opposite team, then the King would be in check.
 
-As such, several "rays" are sent out from the King's position and check for Queens of the opposite team, as well as Bishops (for diagonal rays) and Rooks (for rank and file rays). Attacking Pawns are also checked here, for the immediate diagonal positions either above the King (if the King is White) or below the King.
+As such, several "rays" are sent out from the King's position and check for Queens of the opposite team, as well as Bishops (for diagonal rays) and Rooks (for rank and file rays). Attacking Pawns are also checked here, for the immediate diagonal positions either above the King (if the King is White) or below the King. The ray will immediately stop being cast, and report back with no check possible in that direction, if a piece of the same team is encountered (since they would block the attack path of a piece of the opposite team).
 
 Additionally, Knight movement rules are applied to check if there are any Knights reachable from the King's position; and if so, then the King is in check.
 
@@ -1312,18 +1312,60 @@ end
 
 \chapter{Conclusions}
 
-Chesskell is a successful project. ...
+We have presented Chesskell, a Haskell EDSL for describing Chess games where a full encoding of the FIDE 2018 Laws of Chess in the types rules out illegal moves. Reporting on our work in implementing such a complex set of rules encoded in Haskell's type system serves multiple purposes:
 
-\section{Results and Accomplishments}
+\begin{itemize}
+    \item It provides a stress test for GHC's type system that we hope can be used to build regression tests for the compiler's type checking performance.
+    \item We report on areas of friction in developing such type-level models of complex rule sets where improvements could be made to the compiler.
+    \item We identify some techniques for optimising and troubleshooting type-level code.
+\end{itemize}
+
+While our implementation can be considered idiomatic in the sense that the rules are expressed in a human-readable manner and use intuitive representations, the resulting performance does not allow us to describe longer games where memory usage becomes the limiting factor. In our testing, describing a game of around twelve moves will consume more than 20GBs of memory.
+
+Reasoning about our definitions' impact on compile-time performance and memory usage has proved difficult: optimisation techniques we expected to improve performance did not and changes which we expected to make no difference ended up improving performance. These surprising findings make it clear to us that, in order for developers to be able to encode complex business logic in Haskell's type system, it must become more transparent how the compiler will react to a given definition or there must be tools which allow developers to profile and debug their encodings.
 
 \section{Future Work}
 
+Although Chesskell has a full feature set, there is of course room for further work. In this section, we detail the potential areas for improvement and research.
+
+\subsection{Automated Chess Notation Translation}
+
+% TODO: Write this bit
+
 \subsection{Session-typed Chesskell}
+
+The method we have chosen to express Chess at the type-level, as a single function, is just one of many potential methods. During development, we looked into another potential method of expression; implementing Chesskell using session types \cite{torinosessions}. Session types are formalisms of communications between two or more parties within types; that is, the types define a protocol which communicating parties must adhere to.
+
+Interestingly, Chess could very naturally be expressed as a communications protocol between two parties, Black and White, who take turns sending messages describing their respective moves. Modelling Chess through such a protocol would enable interesting comparisons with Chesskell as it is today, and would make certain tasks easier. For instance, enforcing that teams alternate moves, and can only make one move each during their turn, would be trivial to ensure with session types.
+
+Once Chesskell's feature set was completed, we began work on a session-typed version of Chesskell making use of an existing session types implementation \cite{sesstypesincloudhaskell}. Early progress seemed promising; however, expressing Chesskell with this session types implementation proved difficult, due to unexpected type errors.
+
+The sender and receiver in the communication session both communicate with each other across some channel; and in this case, the communication channel was incapable of carrying messages with type variables that were determined at the point of sending. We could not send the positions as \inline{Proxy (a :: Position)} values, and would need to express the position as some other type (such as a \inline{String}) and construct a \inline{Proxy (a :: Position)} type from that value at the receiving end.
+
+However, a function with type signature \inline{String -> Proxy (a :: Position)} proved difficult to express in Haskell, since the type variable \inline{a} has no other type variable to unify with. Due to time constraints, we could not find another session type implementation and start again from scratch; but another Haskell session type library without this restriction could be used to implement Chess at the type level with session types in future.
 
 \subsection{Type-level Bitboards}
 
-% TODO: Map each natural number (with pattern matching) to an 8-tuple of Booleans
-% BUT it would make code less idiomatic, and wouldn't map to hardware bitwise operations (so still slow)
+While our implementation uses a board representation based on two-dimensional, length-indexed vectors and we investigated an equivalent representation using type-level finger trees, neither presented any significant improvements in terms of compile-time over the other. However, we believe it would be worthwhile to examine further representations, with the aim of reducing the memory footprint of GHC and the wider Chesskell type-level code.
+
+One such potential representation is a Bitboard \cite{bitboard}; using type-level \inline{Nat}-s to potentially reduce the amount of memory and, importantly, number of type variables that must be unified.
+
+We could leverage type-level pattern matching to provide fast versions of "bitwise" operations on type level Nats within the range of 0 to 255 (i.e. the range that can be expressed with 8 bits). We give an example implementation of a bitwise left logical shift operation below:
+
+\begin{lstlisting}
+type family LeftShift (n :: Nat) :: Nat where
+    LeftShift 0 = 0
+    LeftShift 1 = 2
+    LeftShift 2 = 4
+    LeftShift 3 = 6
+    -- ...
+    LeftShift 255 = 0
+    LeftShift x = TypeError (Text "Given Nat is outside of the range of 8 bits!")
+\end{lstlisting}
+
+This approach is worthy of investigation, and could bring performance improvements. However, it is not without flaws; it makes code considerably less readable and intuitive. The current board representation follows the natural structure of the Chess board itself, where pieces reside in one of the 64 available positions. Debugging these Nat representations would prove more difficult, since the state of the board would no longer be clear at a glance of the type.
+
+Additionally, while it is likely to bring performance improvements, these "bitwise" operations would not map to hardware bitwise instructions, and so are still likely to be slow when compared to value-level Haskell.
 
 \bibliographystyle{ieeetr}
 
