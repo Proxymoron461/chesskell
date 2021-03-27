@@ -30,59 +30,59 @@ chess cont = cont (Proxy @StartDec)
 data MoveArgs where
     MA :: BoardDecorator -> Position -> PieceName -> Position -> MoveArgs
 
-pawn :: Proxy (b :: BoardDecorator) -> SPosition fromPos -> Spec (Proxy (MA b fromPos 'Pawn))
-pawn (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b fromPos Pawn))
+pawn :: Proxy (b :: BoardDecorator) -> Proxy (fromPos :: Position) -> Spec (Proxy (MA b fromPos 'Pawn))
+pawn (dec :: Proxy b) (from :: Proxy (fromPos :: Position)) cont = cont (Proxy @(MA b fromPos Pawn))
 
-rook :: Proxy (b :: BoardDecorator) -> SPosition fromPos -> Spec (Proxy (MA b fromPos 'Rook))
-rook (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b fromPos Rook))
+rook :: Proxy (b :: BoardDecorator) -> Proxy (fromPos :: Position) -> Spec (Proxy (MA b fromPos 'Rook))
+rook (dec :: Proxy b) (from :: Proxy (fromPos :: Position)) cont = cont (Proxy @(MA b fromPos Rook))
 
-bishop :: Proxy (b :: BoardDecorator) -> SPosition fromPos -> Spec (Proxy (MA b fromPos 'Bishop))
-bishop (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b fromPos Bishop))
+bishop :: Proxy (b :: BoardDecorator) -> Proxy (fromPos :: Position) -> Spec (Proxy (MA b fromPos 'Bishop))
+bishop (dec :: Proxy b) (from :: Proxy (fromPos :: Position)) cont = cont (Proxy @(MA b fromPos Bishop))
 
-queen :: Proxy (b :: BoardDecorator) -> SPosition fromPos -> Spec (Proxy (MA b fromPos 'Queen))
-queen (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b fromPos Queen))
+queen :: Proxy (b :: BoardDecorator) -> Proxy (fromPos :: Position) -> Spec (Proxy (MA b fromPos 'Queen))
+queen (dec :: Proxy b) (from :: Proxy (fromPos :: Position)) cont = cont (Proxy @(MA b fromPos Queen))
 
-knight :: Proxy (b :: BoardDecorator) -> SPosition fromPos -> Spec (Proxy (MA b fromPos 'Knight))
-knight (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b fromPos Knight))
+knight :: Proxy (b :: BoardDecorator) -> Proxy (fromPos :: Position) -> Spec (Proxy (MA b fromPos 'Knight))
+knight (dec :: Proxy b) (from :: Proxy (fromPos :: Position)) cont = cont (Proxy @(MA b fromPos Knight))
 
-king :: Proxy (b :: BoardDecorator) -> SPosition fromPos -> Spec (Proxy (MA b fromPos 'King))
-king (dec :: Proxy b) (from :: SPosition fromPos) cont = cont (Proxy @(MA b fromPos King))
+king :: Proxy (b :: BoardDecorator) -> Proxy (fromPos :: Position) -> Spec (Proxy (MA b fromPos 'King))
+king (dec :: Proxy b) (from :: Proxy (fromPos :: Position)) cont = cont (Proxy @(MA b fromPos King))
 
-to :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) -> SPosition toPos
+to :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) -> Proxy (toPos :: Position)
       -> Spec (Proxy (Eval (IfPieceThenMove n fromPos toPos b)))
-to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: SPosition toPos)  cont
+to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: Proxy toPos)  cont
     = cont (Proxy @(Eval (IfPieceThenMove n fromPos toPos b)))
 
 -- Shorthands
-p :: Proxy (b :: BoardDecorator) -> SPosition toPos -> Spec (Proxy (MoveTo Pawn toPos b))
-p (dec :: Proxy b) (to :: SPosition toPos) cont = cont (Proxy @(MoveTo Pawn toPos b))
+p :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo Pawn toPos b))
+p (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo Pawn toPos b))
 
-n :: Proxy (b :: BoardDecorator) -> SPosition toPos -> Spec (Proxy (MoveTo Knight toPos b))
-n (dec :: Proxy b) (to :: SPosition toPos) cont = cont (Proxy @(MoveTo Knight toPos b))
+n :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo Knight toPos b))
+n (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo Knight toPos b))
 
-r :: Proxy (b :: BoardDecorator) -> SPosition toPos -> Spec (Proxy (MoveTo Rook toPos b))
-r (dec :: Proxy b) (to :: SPosition toPos) cont = cont (Proxy @(MoveTo Rook toPos b))
+r :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo Rook toPos b))
+r (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo Rook toPos b))
 
-b :: Proxy (b :: BoardDecorator) -> SPosition toPos -> Spec (Proxy (MoveTo Bishop toPos b))
-b (dec :: Proxy b) (to :: SPosition toPos) cont = cont (Proxy @(MoveTo Bishop toPos b))
+b :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo Bishop toPos b))
+b (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo Bishop toPos b))
 
-q :: Proxy (b :: BoardDecorator) -> SPosition toPos -> Spec (Proxy (MoveTo Queen toPos b))
-q (dec :: Proxy b) (to :: SPosition toPos) cont = cont (Proxy @(MoveTo Queen toPos b))
+q :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo Queen toPos b))
+q (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo Queen toPos b))
 
-k :: Proxy (b :: BoardDecorator) -> SPosition toPos -> Spec (Proxy (MoveTo King toPos b))
-k (dec :: Proxy b) (to :: SPosition toPos) cont = cont (Proxy @(MoveTo King toPos b))
+k :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo King toPos b))
+k (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo King toPos b))
 
 -- Even though it's a Proxy TypeError, it will split out errors just fine!
 end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
 
-becomes :: Proxy (b :: BoardDecorator) -> SPieceName name
+becomes :: Proxy (b :: BoardDecorator) -> Proxy (name :: PieceName)
            -> Spec (Proxy (PromotePieceTo' name (GetLastPosition b) b))
-becomes (dec :: Proxy b) (n :: SPieceName name) cont = cont (Proxy @(PromotePieceTo' name (GetLastPosition b) b))
+becomes (dec :: Proxy b) (n :: Proxy name) cont = cont (Proxy @(PromotePieceTo' name (GetLastPosition b) b))
 
-promoteTo :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) -> SPieceName promoteTo -> SPosition toPos
+promoteTo :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName)) -> Proxy (promoteTo :: PieceName) -> Proxy (toPos :: Position)
       -> Spec (Proxy (Eval (PromotePawnMove fromPos toPos promoteTo b)))
-promoteTo (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (pro :: SPieceName promoteTo) (to' :: SPosition toPos)  cont
+promoteTo (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (pro :: Proxy (promoteTo :: PieceName)) (to' :: Proxy toPos)  cont
     = cont (Proxy @(Eval (PromotePawnMove fromPos toPos promoteTo b)))
 
 -- data SetPieceAtDec :: Piece -> BoardDecorator -> Position -> Exp BoardDecorator
@@ -92,21 +92,21 @@ data CreateArgs where
 create :: Spec (Proxy JustKingsDec)
 create cont = cont (Proxy @JustKingsDec)
 
-put :: Proxy (b :: BoardDecorator) -> STeam team -> SPieceName name -> Spec (Proxy (CA b team name))
-put (dec :: Proxy b) (t :: STeam team) (p :: SPieceName name) cont = cont (Proxy @(CA b team name))
+put :: Proxy (b :: BoardDecorator) -> Proxy (team :: Team) -> Proxy (name :: PieceName) -> Spec (Proxy (CA b team name))
+put (dec :: Proxy b) (t :: Proxy team) (p :: Proxy name) cont = cont (Proxy @(CA b team name))
 
-at :: Proxy (CA (b :: BoardDecorator) (team :: Team) (name :: PieceName)) -> SPosition toPos
-      -> Spec (Proxy (Eval (SetPieceAtDec (MkPiece team name (Info Z toPos)) b toPos)))
-at (dec :: Proxy (CA b team name)) (p :: SPosition toPos) cont
-    = cont (Proxy @(Eval (SetPieceAtDec (MkPiece team name (Info Z toPos)) b toPos)))
+at :: Proxy (CA (b :: BoardDecorator) (team :: Team) (name :: PieceName)) -> Proxy (toPos :: Position)
+      -> Spec (Proxy (Eval (SetPieceAtDec (MkPiece team name (Info Z toPos False)) b toPos)))
+at (dec :: Proxy (CA b team name)) (p :: Proxy toPos) cont
+    = cont (Proxy @(Eval (SetPieceAtDec (MkPiece team name (Info Z toPos False)) b toPos)))
 
-lastTeam :: Proxy (b :: BoardDecorator) -> STeam team -> Spec (Proxy (SetLastTeam b team))
-lastTeam (dec :: Proxy b) (t :: STeam team) cont
+lastTeam :: Proxy (b :: BoardDecorator) -> Proxy (team :: Team) -> Spec (Proxy (SetLastTeam b team))
+lastTeam (dec :: Proxy b) (t :: Proxy team) cont
     = cont (Proxy @(SetLastTeam b team))
 lastteam = lastTeam
 
-lastMoved :: Proxy (b :: BoardDecorator) -> SPosition pos -> Spec (Proxy (SetLastPosition pos b))
-lastMoved (dec :: Proxy b) (t :: SPosition pos) cont
+lastMoved :: Proxy (b :: BoardDecorator) -> Proxy (pos :: Position) -> Spec (Proxy (SetLastPosition pos b))
+lastMoved (dec :: Proxy b) (t :: Proxy (pos :: Position)) cont
     = cont (Proxy @(SetLastPosition pos b))
 
 lastmoved = lastMoved
