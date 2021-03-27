@@ -71,11 +71,11 @@ type WhiteCanCastleDec = 'Dec
                  'White
                  'Rook
                  ('Info
-                    Z ('At 'A Nat1) 'False))) :-> ('Nothing :-> ('Nothing :-> ('Nothing :-> ('Just
+                    Z ('At 'A Nat1) ))) :-> ('Nothing :-> ('Nothing :-> ('Nothing :-> ('Just
                                       ('MkPiece
                                          'White
                                          'King
-                                         ('Info Z ('At 'E Nat1) 'False))) :-> ('Nothing :-> ('Nothing :<> ('Just
+                                         ('Info Z ('At 'E Nat1) ))) :-> ('Nothing :-> ('Nothing :<> ('Just
                                                         ('MkPiece
                                                            'White
                                                            'Rook
@@ -84,7 +84,7 @@ type WhiteCanCastleDec = 'Dec
                                                               ('At
                                                                  'H
                                                                  Nat1)
-                                                              'False)))))))))
+                                                              )))))))))
            :-> EmptyRow
                  :-> EmptyRow
                        :-> EmptyRow
@@ -100,7 +100,7 @@ type WhiteCanCastleDec = 'Dec
                                                               ('At
                                                                  'A
                                                                  Nat8)
-                                                              'False)))
+                                                              )))
                                                       :-> ('Just
                                                               ('MkPiece
                                                                  'Black
@@ -109,7 +109,7 @@ type WhiteCanCastleDec = 'Dec
                                                                     Z
                                                                     ('At
                                                                        'B Nat8)
-                                                                    'False)))
+                                                                    )))
                                                             :-> ('Nothing
                                                                   :-> ('Nothing
                                                                         :-> ('Just
@@ -121,7 +121,7 @@ type WhiteCanCastleDec = 'Dec
                                                                                       ('At
                                                                                          'E
                                                                                          Nat8)
-                                                                                      'False)))
+                                                                                      )))
                                                                               :-> ('Nothing
                                                                                     :-> ('Just
                                                                                             ('MkPiece
@@ -132,7 +132,7 @@ type WhiteCanCastleDec = 'Dec
                                                                                                   ('At
                                                                                                      'G
                                                                                                      Nat8)
-                                                                                                  'False)))
+                                                                                                  )))
                                                                                           :<> ('Just
                                                                                                   ('MkPiece
                                                                                                      'Black
@@ -142,7 +142,7 @@ type WhiteCanCastleDec = 'Dec
                                                                                                         ('At
                                                                                                            'H
                                                                                                            Nat8)
-                                                                                                        'False))))))))
+                                                                                                        ))))))))
           'Black
           ('At 'E Nat4)
           '( 'At 'E Nat1, 'At 'E Nat8) Nat1
@@ -153,11 +153,11 @@ type BlackLeftCastleWhiteRightCastleDec = 'Dec
                  'White
                  'Rook
                  ('Info
-                    Z ('At 'A Nat1) 'False))) :-> ((Just (MkPiece White Pawn (Info Z (At A Nat2) False))) :-> ('Nothing :-> ('Nothing :-> ('Just
+                    Z ('At 'A Nat1) ))) :-> ((Just (MkPiece White Pawn (Info Z (At A Nat2)))) :-> ('Nothing :-> ('Nothing :-> ('Just
                                       ('MkPiece
                                          'White
                                          'King
-                                         ('Info Z ('At 'E Nat1) 'False))) :-> ('Nothing :-> ('Nothing :<> ('Just
+                                         ('Info Z ('At 'E Nat1) ))) :-> ('Nothing :-> ('Nothing :<> ('Just
                                                         ('MkPiece
                                                            'White
                                                            'Rook
@@ -166,7 +166,7 @@ type BlackLeftCastleWhiteRightCastleDec = 'Dec
                                                               ('At
                                                                  'H
                                                                  Nat1)
-                                                              'False)))))))))
+                                                              )))))))))
            :-> EmptyRow
                  :-> EmptyRow
                        :-> EmptyRow
@@ -182,7 +182,7 @@ type BlackLeftCastleWhiteRightCastleDec = 'Dec
                                                               ('At
                                                                  'A
                                                                  Nat8)
-                                                              'False)))
+                                                              )))
                                                       :-> Nothing
                                                             :-> ('Nothing
                                                                   :-> ('Nothing
@@ -195,7 +195,7 @@ type BlackLeftCastleWhiteRightCastleDec = 'Dec
                                                                                       ('At
                                                                                          'E
                                                                                          Nat8)
-                                                                                      'False)))
+                                                                                      )))
                                                                               :-> ('Nothing
                                                                                     :-> ('Just
                                                                                             ('MkPiece
@@ -206,7 +206,7 @@ type BlackLeftCastleWhiteRightCastleDec = 'Dec
                                                                                                   ('At
                                                                                                      'G
                                                                                                      Nat8)
-                                                                                                  'False)))
+                                                                                                  )))
                                                                                           :<> ('Just
                                                                                                   ('MkPiece
                                                                                                      'Black
@@ -216,7 +216,7 @@ type BlackLeftCastleWhiteRightCastleDec = 'Dec
                                                                                                         ('At
                                                                                                            'H
                                                                                                            Nat8)
-                                                                                                        'False))))))))
+                                                                                                        ))))))))
           'Black
           ('At 'E Nat4)
           '( 'At 'E Nat1, 'At 'E Nat8) Nat1

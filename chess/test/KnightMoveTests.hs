@@ -15,25 +15,25 @@ import ChessTypes
 
 import TestTypes
 
-type WhiteKnight  = MkPiece White Knight (Info Z (At D Nat5) False)
+type WhiteKnight  = MkPiece White Knight (Info Z (At D Nat5))
 type WhiteKnightBoard = EmptyRow
                     :-> EmptyRow
                     :-> EmptyRow
                     :-> EmptyRow
                     :-> (Nothing :-> Nothing :-> Nothing :-> Just WhiteKnight :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :-> EmptyRow
-                    :-> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Just (MkPiece White King (Info Z (At F Nat7) False)) :-> Nothing :<> Nothing)
-                    :<> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Just (MkPiece Black King (Info Z (At H Nat8) False)))
+                    :-> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Just (MkPiece White King (Info Z (At F Nat7))) :-> Nothing :<> Nothing)
+                    :<> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Just (MkPiece Black King (Info Z (At H Nat8))))
 
-type BlackKnight = MkPiece Black Knight (Info Z (At D Nat5) False)
+type BlackKnight = MkPiece Black Knight (Info Z (At D Nat5))
 type BlackKnightBoard = EmptyRow
                     :-> EmptyRow
                     :-> EmptyRow
                     :-> EmptyRow
                     :-> (Nothing :-> Nothing :-> Nothing :-> Just BlackKnight :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :-> EmptyRow
-                    :-> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Just (MkPiece White King (Info Z (At F Nat7) False)) :-> Nothing :<> Nothing)
-                    :<> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Just (MkPiece Black King (Info Z (At H Nat8) False)))
+                    :-> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Just (MkPiece White King (Info Z (At F Nat7))) :-> Nothing :<> Nothing)
+                    :<> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Just (MkPiece Black King (Info Z (At H Nat8))))
 
 type WhiteKnightDec = Dec WhiteKnightBoard Black (At H Nat8) '(At F Nat7, At H Nat8) Nat1
 type BlackKnightDec = Dec BlackKnightBoard White (At F Nat7) '(At F Nat7, At H Nat8) Nat1

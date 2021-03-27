@@ -61,7 +61,7 @@ type CastleDec = 'Dec
                  'White
                  'Rook
                  ('Info
-                    Z ('At 'A (S Nat0)) 'False))
+                    Z ('At 'A (S Nat0))))
             ':-> ('Nothing
                   ':-> ('Nothing
                         ':-> ('Nothing
@@ -69,7 +69,7 @@ type CastleDec = 'Dec
                                       ('MkPiece
                                          'White
                                          'King
-                                         ('Info Z ('At 'E Nat1) 'False))
+                                         ('Info Z ('At 'E Nat1)))
                                     ':-> ('Nothing
                                           ':-> ('Nothing
                                                 ':-> ('Just
@@ -81,7 +81,7 @@ type CastleDec = 'Dec
                                                               ('At
                                                                  'H
                                                                  (S Nat0))
-                                                              'False))
+                                                            ))
                                                       ':-> 'VEnd))))))))
            ':-> (('Nothing
                   ':-> ('Nothing
@@ -142,7 +142,7 @@ type CastleDec = 'Dec
                                                               ('At
                                                                  'A
                                                                  (S Nat7))
-                                                              'False))
+                                                            ))
                                                       ':-> ('Nothing
                                                             ':-> ('Nothing
                                                                   ':-> ('Nothing
@@ -155,7 +155,7 @@ type CastleDec = 'Dec
                                                                                       ('At
                                                                                          'E
                                                                                          Nat8)
-                                                                                      'False))
+                                                                                    ))
                                                                               ':-> ('Nothing
                                                                                     ':-> ('Nothing
                                                                                           ':-> ('Just
@@ -168,7 +168,7 @@ type CastleDec = 'Dec
                                                                                                            'H
                                                                                                            (S
                                                                                                               Nat7))
-                                                                                                        'False))
+                                                                                                      ))
                                                                                                 ':-> 'VEnd))))))))
                                                      ':-> 'VEnd))))))))
           'White

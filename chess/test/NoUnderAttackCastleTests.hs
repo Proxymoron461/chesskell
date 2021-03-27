@@ -15,45 +15,45 @@ import ChessTypes
 
 import TestTypes
 
-type WhiteQueen1 = MkPiece White Queen (Info Z (At D Nat2) False)
-type WhiteQueen2 = MkPiece White Queen (Info Z (At F Nat2) False)
-type BlackQueen1 = MkPiece Black Queen (Info Z (At D Nat7) False)
-type BlackQueen2 = MkPiece Black Queen (Info Z (At F Nat7) False)
-type WhiteNoCastle = (Just (MkPiece White Rook (Info Z (At A Nat1) False)) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1) False))) :-> Nothing :-> Nothing :<> Just (MkPiece White Rook (Info Z (At A Nat1) False)))
+type WhiteQueen1 = MkPiece White Queen (Info Z (At D Nat2))
+type WhiteQueen2 = MkPiece White Queen (Info Z (At F Nat2))
+type BlackQueen1 = MkPiece Black Queen (Info Z (At D Nat7))
+type BlackQueen2 = MkPiece Black Queen (Info Z (At F Nat7))
+type WhiteNoCastle = (Just (MkPiece White Rook (Info Z (At A Nat1))) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1)))) :-> Nothing :-> Nothing :<> Just (MkPiece White Rook (Info Z (At A Nat1))))
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> (Nothing :-> Nothing :-> Nothing :-> Just BlackQueen1 :-> Nothing :-> Just BlackQueen2 :-> Nothing :<> Nothing)
-                 :<> (Just (MkPiece Black Rook (Info Z (At A Nat8) False)) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece Black King (Info Z (At E Nat8) False))) :-> Nothing :-> Nothing :<> Just (MkPiece Black Rook (Info Z (At H Nat8) False)))
+                 :<> (Just (MkPiece Black Rook (Info Z (At A Nat8))) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece Black King (Info Z (At E Nat8)))) :-> Nothing :-> Nothing :<> Just (MkPiece Black Rook (Info Z (At H Nat8))))
 
-type BlackNoCastle = (Just (MkPiece White Rook (Info Z (At A Nat1) False)) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1) False))) :-> Nothing :-> Nothing :<> Just (MkPiece White Rook (Info Z (At A Nat1) False)))
+type BlackNoCastle = (Just (MkPiece White Rook (Info Z (At A Nat1))) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1)))) :-> Nothing :-> Nothing :<> Just (MkPiece White Rook (Info Z (At A Nat1))))
                  :-> (Nothing :-> Nothing :-> Nothing :-> Just WhiteQueen1 :-> Nothing :-> Just WhiteQueen2 :-> Nothing :<> Nothing)
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
-                 :<> (Just (MkPiece Black Rook (Info Z (At A Nat8) False)) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece Black King (Info Z (At E Nat8) False))) :-> Nothing :-> Nothing :<> Just (MkPiece Black Rook (Info Z (At H Nat8) False)))
+                 :<> (Just (MkPiece Black Rook (Info Z (At A Nat8))) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece Black King (Info Z (At E Nat8)))) :-> Nothing :-> Nothing :<> Just (MkPiece Black Rook (Info Z (At H Nat8))))
 
-type BlackCastleLeft = (Just (MkPiece White Rook (Info Z (At A Nat1) False)) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1) False))) :-> Nothing :-> Nothing :<> Just (MkPiece White Rook (Info Z (At A Nat1) False)))
+type BlackCastleLeft = (Just (MkPiece White Rook (Info Z (At A Nat1))) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1)))) :-> Nothing :-> Nothing :<> Just (MkPiece White Rook (Info Z (At A Nat1))))
                  :-> (Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Just WhiteQueen2 :-> Nothing :<> Nothing)
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
-                 :<> (Just (MkPiece Black Rook (Info Z (At A Nat8) False)) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece Black King (Info Z (At E Nat8) False))) :-> Nothing :-> Nothing :<> Just (MkPiece Black Rook (Info Z (At H Nat8) False)))
+                 :<> (Just (MkPiece Black Rook (Info Z (At A Nat8))) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece Black King (Info Z (At E Nat8)))) :-> Nothing :-> Nothing :<> Just (MkPiece Black Rook (Info Z (At H Nat8))))
 
-type WhiteCastleRight = (Just (MkPiece White Rook (Info Z (At A Nat1) False)) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1) False))) :-> Nothing :-> Nothing :<> Just (MkPiece White Rook (Info Z (At A Nat1) False)))
+type WhiteCastleRight = (Just (MkPiece White Rook (Info Z (At A Nat1))) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece White King (Info Z (At E Nat1)))) :-> Nothing :-> Nothing :<> Just (MkPiece White Rook (Info Z (At A Nat1))))
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> EmptyRow
                  :-> (Nothing :-> Nothing :-> Nothing :-> Just BlackQueen1 :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
-                 :<> (Just (MkPiece Black Rook (Info Z (At A Nat8) False)) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece Black King (Info Z (At E Nat8) False))) :-> Nothing :-> Nothing :<> Just (MkPiece Black Rook (Info Z (At H Nat8) False)))
+                 :<> (Just (MkPiece Black Rook (Info Z (At A Nat8))) :-> Nothing :-> Nothing :-> Nothing :-> (Just (MkPiece Black King (Info Z (At E Nat8)))) :-> Nothing :-> Nothing :<> Just (MkPiece Black Rook (Info Z (At H Nat8))))
 
 type WhiteCannotCastleDec = Dec WhiteNoCastle Black (At D Nat7) '(At E Nat1, At E Nat8) Nat1
 type BlackCannotCastleDec = Dec BlackNoCastle White (At D Nat2) '(At E Nat1, At E Nat8) Nat1

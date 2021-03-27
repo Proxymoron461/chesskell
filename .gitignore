@@ -7,9 +7,14 @@
 *.out
 *.bbl
 *.blg
+*.nav
+*.snm
+*.vrb
 stack.yaml
 stack.yaml.lock
 .stack-work/*
 chess/chess.cabal
 chess/stack.yaml.lock
 chess/writing/dissertation/notes.md
+*.bcf
+*.run.xml

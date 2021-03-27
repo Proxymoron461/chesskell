@@ -20,10 +20,10 @@ import TestTypes
 pawnTest1 :: '[ At D Nat3, At D Nat2] :~: Eval (PawnReachableBelow TestDec2 (At D Nat4) 2)
 pawnTest1 = Refl
 
--- whitePawnToQueenTest :: Just (MkPiece White Queen (Info (S Z) (At D Nat8) True)) :~: Eval ((Flip GetPieceAtDec) (At D Nat8) (Eval (Move (At D Nat7) (At D Nat8) (Eval (SetPieceAtDec (MkPiece White Pawn TestInfo) KingDec (At D Nat7))))))
+-- whitePawnToQueenTest :: Just (MkPiece White Queen (Info (S Z) (At D Nat8))) :~: Eval ((Flip GetPieceAtDec) (At D Nat8) (Eval (Move (At D Nat7) (At D Nat8) (Eval (SetPieceAtDec (MkPiece White Pawn TestInfo) KingDec (At D Nat7))))))
 -- whitePawnToQueenTest = Refl
 
--- blackPawnToQueenTest :: Just (MkPiece Black Queen (Info (S Z) (At D Nat1) True)) :~: Eval ((Flip GetPieceAtDec) (At D Nat1) (Eval (Move (At D Nat2) (At D Nat1) (Eval (SetPieceAtDec (MkPiece Black Pawn TestInfo) KingDec (At D Nat2))))))
+-- blackPawnToQueenTest :: Just (MkPiece Black Queen (Info (S Z) (At D Nat1))) :~: Eval ((Flip GetPieceAtDec) (At D Nat1) (Eval (Move (At D Nat2) (At D Nat1) (Eval (SetPieceAtDec (MkPiece Black Pawn TestInfo) KingDec (At D Nat2))))))
 -- blackPawnToQueenTest = Refl
 
 getReachableLeftTest1 :: '[ At C Nat2, At B Nat2, At A Nat2] :~: Eval (AllReachableLeft Black TestDec2 (At D Nat2))
@@ -61,13 +61,13 @@ getPieceAtTest2 = Refl
 getPieceAtTest3 :: Just Z :~: Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z)))
 getPieceAtTest3 = Refl
 
-canMoveToTest1 :: True :~: Eval (CanMoveTo (At A Nat7) (At A Nat6) (Eval (SetPieceAtDec (MkPiece Black Pawn (Info (S Z) TestPosition False)) EmptyDec (At A Nat7))))
+canMoveToTest1 :: True :~: Eval (CanMoveTo (At A Nat7) (At A Nat6) (Eval (SetPieceAtDec (MkPiece Black Pawn (Info (S Z) TestPosition)) EmptyDec (At A Nat7))))
 canMoveToTest1 = Refl
 
-canMoveToTest2 :: True :~: Eval (CanMoveTo (At A Nat7) (At A Nat5) (Eval (SetPieceAtDec (MkPiece Black Pawn (Info Z TestPosition False)) EmptyDec (At A Nat7))))
+canMoveToTest2 :: True :~: Eval (CanMoveTo (At A Nat7) (At A Nat5) (Eval (SetPieceAtDec (MkPiece Black Pawn (Info Z TestPosition)) EmptyDec (At A Nat7))))
 canMoveToTest2 = Refl
 
-canMoveToTest3 :: False :~: Eval (CanMoveTo (At A Nat7) (At A Nat5) (Eval (SetPieceAtDec (MkPiece Black Pawn (Info (S Z) TestPosition False)) EmptyDec (At A Nat7))))
+canMoveToTest3 :: False :~: Eval (CanMoveTo (At A Nat7) (At A Nat5) (Eval (SetPieceAtDec (MkPiece Black Pawn (Info (S Z) TestPosition)) EmptyDec (At A Nat7))))
 canMoveToTest3 = Refl
 
 canMoveToTest4 :: False :~: Eval (CanMoveTo (At A Nat7) (At A Nat5) (Eval (SetPieceAtDec (MkPiece White Pawn TestInfo) (Eval (SetPieceAtDec (MkPiece Black Pawn TestInfo) EmptyDec (At A Nat7))) (At A Nat6))))
@@ -126,7 +126,7 @@ oppositeTeamTest1 = Refl
 oppositeTeamTest2 :: Black :~: Eval (OppositeTeam White)
 oppositeTeamTest2 = Refl
 
-setPieceAtTest1 :: At B Nat6 :~: Eval (PiecePosition (Eval (FromJust (Eval (GetPieceAt (Eval (SetPieceAt (MkPiece Black Pawn (Info Z (At D Nat2) False)) EmptyBoard (At B Nat6))) (At B Nat6))))))
+setPieceAtTest1 :: At B Nat6 :~: Eval (PiecePosition (Eval (FromJust (Eval (GetPieceAt (Eval (SetPieceAt (MkPiece Black Pawn (Info Z (At D Nat2))) EmptyBoard (At B Nat6))) (At B Nat6))))))
 setPieceAtTest1 = Refl
 
 -- :kind! Flip (SetPieceAt piece) :: Position -> Board -> Exp Board

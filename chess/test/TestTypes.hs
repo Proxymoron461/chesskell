@@ -42,7 +42,7 @@ fromProxyTrue (Proxy :: Proxy b) = Refl @(b)
 -- TODO: Remove these and replace with EDSL stuff
 -- NOTE: These boards are upside-down - the first row is the bottom one visually
 type TestPosition = At A Nat1  -- i.e. bottom left
-type TestPiece    = MkPiece Black Pawn (Info Z TestPosition False)
+type TestPiece    = MkPiece Black Pawn (Info Z TestPosition)
 type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :-> EmptyRow
                     :-> EmptyRow
@@ -54,10 +54,10 @@ type TestBoard    = (Just TestPiece :-> Nothing :-> Nothing :-> Nothing :-> Noth
 
 type TestDec = Dec TestBoard Black (At A Nat1) '(At A Z, At H Z) Nat1
 
-type TestWhitePawn = MkPiece White Pawn (Info Z (At A Nat2) False)
-type TestWhitePawn2 = MkPiece White Pawn (Info Z (At A Nat7) False)
-type TestWhitePawn3 = MkPiece White Pawn (Info Z (At B Nat3) False)
-type TestBlackPawn = MkPiece Black Pawn (Info Z (At B Nat8) False)
+type TestWhitePawn = MkPiece White Pawn (Info Z (At A Nat2))
+type TestWhitePawn2 = MkPiece White Pawn (Info Z (At A Nat7))
+type TestWhitePawn3 = MkPiece White Pawn (Info Z (At B Nat3))
+type TestBlackPawn = MkPiece Black Pawn (Info Z (At B Nat8))
 type TestBoard2   = EmptyRow
                     :-> (Just TestWhitePawn :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
                     :-> (Nothing :-> Just TestWhitePawn3 :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :<> Nothing)
@@ -71,7 +71,7 @@ type TestDec2 = Dec TestBoard2 Black (At A Nat1) '(At A Z, At H Z) Nat1
 
 type TestList = Eval (RangeBetween 0 10)
 
-type TestInfo = Info Z (At A Nat1) False
+type TestInfo = Info Z (At A Nat1)
 type TestPieceList = '[MkPiece Black Pawn TestInfo, MkPiece White Pawn TestInfo, MkPiece White King TestInfo]
 
 type KingBoard = Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At A Nat1), '(MkPiece Black King TestInfo, At H Nat8) ] EmptyBoard)

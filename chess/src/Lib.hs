@@ -350,20 +350,23 @@ type family KingMoveList (p :: Piece) (b :: BoardDecorator) :: [Position] where
 
 -- data PieceHasMoveCount :: Nat -> Piece -> Exp Bool
 type family CanCastle (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
-    CanCastle team boardDec = If' (Not' (HasKingMoved team boardDec))
+    CanCastle team boardDec = If' (Not' (Eval (HasKingMoved team boardDec :&&: IsKingInCheck team boardDec)))
         (ID (CanCastleToEitherRook team boardDec))
         (ID '(False, False))
 
+
+-- TODO: Optimise - use new Check check + only check the space the King moves through
+-- TODO: Check that King is not in Check before movement
 type family CanCastleToEitherRook (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
     CanCastleToEitherRook team boardDec = (Eval (PairAnd (HaveRooksNotMoved team boardDec)
         (Eval (PairAnd
-            (Eval (PairPredicate (Eval (CastleSpacesToTest team boardDec)) (Not . AnySpaceInCheck team boardDec)))
+            (Eval (PairPredicate (Eval (CastleSpacesToTest team boardDec)) (Not . IsSpaceInCheck team boardDec)))
             (Eval (PairPredicate (BetweenKingAndRook team) (AllSpacesFree boardDec)))))))
 
 -- TODO: Replace with RangeBetweenExclusive or something like that??
 type family BetweenKingAndRook (t :: Team) :: ([Position], [Position]) where
-    BetweenKingAndRook White = '( SpacesBetweenInc (At D Nat1) (At B Nat1), '[ (At F Nat1), (At G Nat1) ])
-    BetweenKingAndRook Black = '( SpacesBetweenInc (At D Nat8) (At B Nat8), '[ (At F Nat8), (At G Nat8) ])
+    BetweenKingAndRook White = '( '[ (At D Nat1), (At C Nat1), (At B Nat1) ], '[ (At F Nat1), (At G Nat1) ])
+    BetweenKingAndRook Black = '( '[ (At D Nat8), (At C Nat8), (At B Nat8) ], '[ (At F Nat8), (At G Nat8) ])
 
 type family HasKingMoved (t :: Team) (b :: BoardDecorator) :: Bool where
     HasKingMoved team boardDec = Eval (IsPieceAtWhichDec boardDec (GetKingPosition team boardDec) (Not . PieceHasMoveCount Z))
@@ -403,9 +406,11 @@ type family HaveRooksMovedHelper (r :: (Position, Position)) (b :: BoardDecorato
 
 -- data GetUnderAttackPositions :: Team -> BoardDecorator -> Exp [Position]
 -- Checks if any of a particular list of spaces is under attack
-data AnySpaceInCheck :: Team -> BoardDecorator -> [Position] -> Exp Bool
-type instance Eval (AnySpaceInCheck team boardDec xs) = Eval (Any ((Flip In) (Eval (GetUnderAttackPositions (OppositeTeam' team) boardDec))) xs)
+-- data IsKingInCheckHelper :: Position -> Team -> BoardDecorator -> Exp Bool
+data IsSpaceInCheck :: Team -> BoardDecorator -> Position -> Exp Bool
+type instance Eval (IsSpaceInCheck team boardDec pos) = Eval (IsKingInCheckHelper pos team boardDec)
 
+-- TODO: Pattern match over Rook + King positions??
 data AllSpacesFree :: BoardDecorator -> [Position] -> Exp Bool
 type instance Eval (AllSpacesFree boardDec xs) = Eval (All (Not . IsPieceAt boardDec) xs)
 
@@ -422,13 +427,13 @@ type family GetCastlePositionsHelper (x :: (Bool, Bool)) (p :: Position) :: [Pos
     GetCastlePositionsHelper '(False, True)  kingPos = '[ TwoRight kingPos ]
     GetCastlePositionsHelper '(True,  True)  kingPos = '[ TwoLeft kingPos, TwoRight kingPos ]
 
-data CastleSpacesToTest :: Team -> BoardDecorator -> Exp ([Position], [Position])
+data CastleSpacesToTest :: Team -> BoardDecorator -> Exp (Position, Position)
 type instance Eval (CastleSpacesToTest team boardDec)
     = Eval (CastleSpacesToTestHelper (GetKingPosition team boardDec))
 
-data CastleSpacesToTestHelper :: Position -> Exp ([Position], [Position])
-type instance Eval (CastleSpacesToTestHelper pos)
-    = '(SpacesBetweenInc pos (TwoLeft pos), SpacesBetweenInc pos (TwoRight pos))
+data CastleSpacesToTestHelper :: Position -> Exp (Position, Position)
+type instance Eval (CastleSpacesToTestHelper (At col row))
+    = '( At (L col) row, At (R col) row )
 
 -- :kind! Eval (((Flip (CW2 At)) Z) A) = At A Z
 type family SpacesBetween (x :: Position) (y :: Position) :: [Position] where
@@ -552,44 +557,51 @@ type family GetMoveable (n :: PieceName) (p :: Position) (b :: BoardDecorator) :
     GetMoveable piece toPos boardDec -- Uses EmptyDec to ensure no weird piece collisions 
         = IsListSingleton (Eval (
             Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPiece piece .&. HasTeam (GetMovingTeam boardDec)))
-            (Eval (PieceMoveList (MkPiece (GetMovingTeam boardDec) piece (Info Z toPos False)) EmptyDec))))
-          ((TL.Text ("There is not exactly one " ++ TypeShow piece ++ " which can move to: " ++ TypeShow toPos ++ "."))
-            TL.:$$: (TL.Text ("Consider using the long-form Chesskell syntax instead.")))
+            (Eval (PieceMoveList (MkPiece (GetMovingTeam boardDec) piece (Info Z toPos)) EmptyDec))))
+          (GetMovingTeam boardDec) piece toPos
 
 -- FIXME: Currently it's getting their positions - instead, should check that toPos is in their movelist
 type family MoveablePawn (p :: Position) (t :: Team) (b :: BoardDecorator) :: Position where
     MoveablePawn (At A (S (S row))) White boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At A (S (S row))) boardDec))))
             '[ At A (S row), At A row, At B (S row) ])
-        ))) (TL.Text ("There is not exactly one White Pawn which can move to: " ++ TypeShow (At A (S (S row))) ++ "."))
+        ))) White Pawn (At A (S (S row)))
     MoveablePawn (At H (S (S row))) White boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At H (S (S row))) boardDec))))
             '[ At H (S row), At H row, At G (S row) ])
-        ))) (TL.Text ("There is not exactly one White Pawn which can move to: " ++ TypeShow (At H (S (S row))) ++ "."))
+        ))) White Pawn (At H (S (S row)))
     MoveablePawn (At col (S (S row))) White boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At col (S (S row))) boardDec))))
             '[ At col (S row), At col row, At (L col) (S row), At (R col) (S row) ])
-        ))) (TL.Text ("There is not exactly one White Pawn which can move to: " ++ TypeShow (At col (S (S row))) ++ "."))
-    MoveablePawn (At col Nat1) White boardDec = TL.TypeError (TL.Text "A White Pawn can never reach the first row.")
+        ))) White Pawn (At col (S (S row)))
+    MoveablePawn (At col Nat1) White boardDec = IsListSingleton '[] White Pawn (At col Nat1)
     MoveablePawn (At A row) Black boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At A row) boardDec))))
             '[ At A (S row), At A (S (S row)), At B (S row) ])
-        ))) (TL.Text ("There is not exactly one Black Pawn which can move to: " ++ TypeShow (At A row) ++ "."))
+        ))) Black Pawn (At A row)
     MoveablePawn (At H row) Black boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At H row) boardDec))))
             '[ At H (S row), At H (S (S row)), At G (S row) ])
-        ))) (TL.Text ("There is not exactly one Black Pawn which can move to: " ++ TypeShow (At H row) ++ "."))
+        ))) Black Pawn (At H row)
     MoveablePawn (At col row) Black boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At col row) boardDec))))
             '[ At col (S row), At col (S (S row)), At (L col) (S row), At (R col) (S row) ])
-        ))) (TL.Text ("There is not exactly one Black Pawn which can move to: " ++ TypeShow (At col row) ++ "."))
+        ))) Black Pawn (At col row)
 
 data PosInMoveList :: Position -> BoardDecorator -> Piece -> Exp Bool
 type instance Eval (PosInMoveList toPos boardDec piece) = Eval (toPos `In` Eval (PieceMoveList piece boardDec))
 
-type family IsListSingleton (x :: [a]) (t :: TL.ErrorMessage) :: a where
-    IsListSingleton '[ x ] _ = x
-    IsListSingleton _ err = TL.TypeError err
+type family IsListSingleton (x :: [a]) (t :: Team) (y :: PieceName) (z :: Position) :: a where
+    IsListSingleton '[ x ] _ _ _ = x
+    IsListSingleton _ White Pawn (At col Nat1)
+        = TL.TypeError (TL.Text ("A White Pawn can never reach the first row."))
+    IsListSingleton '[] team piece toPos
+        = TL.TypeError ((TL.Text ("There is no " ++ TypeShow team ++ " " ++ TypeShow piece ++ " which can move to: " ++ TypeShow toPos ++ "."))
+            TL.:$$: (TL.Text ("Consider using the long-form Chesskell syntax instead.")))
+    IsListSingleton _ team piece toPos
+        = TL.TypeError ((TL.Text ("There is more than one " ++ TypeShow team ++ " " ++ TypeShow piece ++ " which can move to: " ++ TypeShow toPos ++ "."))
+            TL.:$$: (TL.Text ("Consider using the long-form Chesskell syntax instead.")))
+    
 
 -- Only moves a piece if it is of the correct type
 -- Checks if the piece should have undergone a promotion
@@ -645,7 +657,11 @@ type instance Eval (CanMoveCheck fromPos toPos boardDec)
     = If' (Eval (CanMoveTo fromPos toPos boardDec))
         (ID boardDec)
         (TE' ((TL.Text ("There is no valid move from " ++ TypeShow fromPos ++ " to " ++ TypeShow toPos ++ ".")
-              TL.:$$: TL.Text ("The " ++ TypeShow (Eval ((PieceType . FromJust . GetPieceAtDec boardDec) fromPos)) ++ " at " ++ TypeShow fromPos ++ " can move to: " ++ TypeShow (Eval (PieceMoveList (FromJust' (Eval (GetPieceAtDec boardDec fromPos))) boardDec))))))
+              TL.:$$: (MoveListError (Eval ((PieceType . FromJust . GetPieceAtDec boardDec) fromPos)) fromPos (Eval (PieceMoveList (FromJust' (Eval (GetPieceAtDec boardDec fromPos))) boardDec))))))
+
+type family MoveListError (x :: PieceName) (y :: Position) (z :: [Position]) :: TL.ErrorMessage where
+    MoveListError piece fromPos '[] = TL.Text ("The " ++ TypeShow piece ++ " at " ++ TypeShow fromPos ++ " has no valid moves to any position.")
+    MoveListError piece fromPos xs  = TL.Text ("The " ++ TypeShow piece ++ " at " ++ TypeShow fromPos ++ " can move to: " ++ TypeShow xs)
 
 data NotSamePosCheck :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (NotSamePosCheck fromPos toPos boardDec)

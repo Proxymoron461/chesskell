@@ -42,10 +42,10 @@ findKingTest1 = Proxy @(Eval (FindKing White EmptyDec))
 findKingTest2 :: Proxy (a :: Piece)
 findKingTest2 = Proxy @(Eval (FindKing Black EmptyDec))
 
-findKingTest3 :: MkPiece White King (Info Z (At D Nat4) False) :~: Eval (FindKing White (Eval (SetPieceAtDec (MkPiece White King (Info Z (At A Nat1) False)) EmptyDec (At D Nat4))))
+findKingTest3 :: MkPiece White King (Info Z (At D Nat4)) :~: Eval (FindKing White (Eval (SetPieceAtDec (MkPiece White King (Info Z (At A Nat1))) EmptyDec (At D Nat4))))
 findKingTest3 = Refl
 
-findKingTest4 :: MkPiece Black King (Info Z (At D Nat4) False) :~: Eval (FindKing Black (Eval (SetPieceAtDec (MkPiece Black King (Info Z (At A Nat1) False)) EmptyDec (At D Nat4))))
+findKingTest4 :: MkPiece Black King (Info Z (At D Nat4)) :~: Eval (FindKing Black (Eval (SetPieceAtDec (MkPiece Black King (Info Z (At A Nat1))) EmptyDec (At D Nat4))))
 findKingTest4 = Refl
 
 findKingPositionTest1 :: At D Nat4 :~: GetKingPosition White (Eval (SetPieceAtDec (MkPiece White King TestInfo) EmptyDec (At D Nat4)))
