@@ -72,6 +72,17 @@ q (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo Queen toPos b
 k :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo King toPos b))
 k (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo King toPos b))
 
+type family CastleMove (l :: Bool) (b :: BoardDecorator) :: BoardDecorator where
+    CastleMove True  (Dec board Black pos kings n) = MoveTo King (At G Nat1) (Dec board Black pos kings n)
+    CastleMove True  (Dec board White pos kings n) = MoveTo King (At G Nat8) (Dec board White pos kings n)
+    CastleMove False (Dec board Black pos kings n) = MoveTo King (At C Nat1) (Dec board Black pos kings n)
+    CastleMove False (Dec board White pos kings n) = MoveTo King (At C Nat8) (Dec board White pos kings n)
+
+o_o :: Proxy (b :: BoardDecorator) -> Spec (Proxy (CastleMove True b))
+o_o (dec :: Proxy b) cont = cont (Proxy @(CastleMove True b))
+o_o_o :: Proxy (b :: BoardDecorator) -> Spec (Proxy (CastleMove False b))
+o_o_o (dec :: Proxy b) cont = cont (Proxy @(CastleMove False b))
+
 -- Even though it's a Proxy TypeError, it will split out errors just fine!
 end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
@@ -96,9 +107,9 @@ put :: Proxy (b :: BoardDecorator) -> Proxy (team :: Team) -> Proxy (name :: Pie
 put (dec :: Proxy b) (t :: Proxy team) (p :: Proxy name) cont = cont (Proxy @(CA b team name))
 
 at :: Proxy (CA (b :: BoardDecorator) (team :: Team) (name :: PieceName)) -> Proxy (toPos :: Position)
-      -> Spec (Proxy (Eval (SetPieceAtDec (MkPiece team name (Info Z toPos False)) b toPos)))
+      -> Spec (Proxy (Eval (SetPieceAtDec (MkPiece team name (Info Z toPos)) b toPos)))
 at (dec :: Proxy (CA b team name)) (p :: Proxy toPos) cont
-    = cont (Proxy @(Eval (SetPieceAtDec (MkPiece team name (Info Z toPos False)) b toPos)))
+    = cont (Proxy @(Eval (SetPieceAtDec (MkPiece team name (Info Z toPos)) b toPos)))
 
 lastTeam :: Proxy (b :: BoardDecorator) -> Proxy (team :: Team) -> Spec (Proxy (SetLastTeam b team))
 lastTeam (dec :: Proxy b) (t :: Proxy team) cont
