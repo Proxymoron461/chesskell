@@ -56,21 +56,27 @@ to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceNam
 -- Shorthands
 p :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo Pawn toPos b))
 p (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo Pawn toPos b))
+_5 = p
 
 n :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo Knight toPos b))
 n (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo Knight toPos b))
+_4 = n
 
 r :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo Rook toPos b))
 r (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo Rook toPos b))
+_2 = r
 
 b :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo Bishop toPos b))
 b (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo Bishop toPos b))
+_3 = b
 
 q :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo Queen toPos b))
 q (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo Queen toPos b))
+_1 = q
 
 k :: Proxy (b :: BoardDecorator) -> Proxy (toPos :: Position) -> Spec (Proxy (MoveTo King toPos b))
 k (dec :: Proxy b) (to :: Proxy toPos) cont = cont (Proxy @(MoveTo King toPos b))
+_6 = k
 
 type family CastleMove (l :: Bool) (b :: BoardDecorator) :: BoardDecorator where
     CastleMove True  (Dec board Black pos kings n) = MoveTo King (At G Nat1) (Dec board Black pos kings n)
