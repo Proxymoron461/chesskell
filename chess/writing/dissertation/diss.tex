@@ -1076,7 +1076,7 @@ end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
 \end{lstlisting}
 
-Using the above continuations, we can lay out a chess game, move by move. However, the above continuations are Chesskell's long-form syntax; we discuss the shorter syntax in the next section. Consider the game expressed in the EDSL which we describe in section \ref{examplegame}. It compiles successfully; but should Black attempt to move after checkmate, an error will be logged, since no moves by Black will be valid:
+Using the above continuations, we can lay out a chess game, move by move. However, the above continuations are Chesskell's long-form syntax; we discuss the shorter syntax in the next section. Consider the game expressed in the EDSL which we describe in \cref{examplegame}. It compiles successfully; but should Black attempt to move after checkmate, an error will be logged, since no moves by Black will be valid:
 
 \begin{lstlisting}
 -- Below results in the following type error:
@@ -1421,13 +1421,25 @@ The shorthand syntax allows for us to express games which are longer by 2 moves,
 
 \section{Chesskell EDSL vs Other Chess Notations}
 
-% TODO: Talk about terseness, clarity, etc.
+One of the aims of Chesskell was for the final Chess EDSL to be closer to existing Chess notation than to Haskell syntax. In this section, we lay out how successful Chesskell has been in this regard, with justifications where Chesskell differs from existing notation.
+
+\subsection{Comparison with Algebraic Notation}
+
+Since FIDE uses Algebraic Notation, it was taken as the exemplary Chess notation to aim towards. In this notation, Chess games are described move-by-move, using the destination square and the piece type for each move. A game equivalent to that given in \cref{examplegame} is given below:
+
+\begin{verbatim}
+1. e4 f5 2. Qf3 g5 3. Qh5
+\end{verbatim}
+
+There are some differences between Algebraic Notation and Chesskell syntax that are immediately apparent. First of all, Chesskell includes pawns as a piece type in their movement (e.g. \inline{p e4}), whereas Algebraic Notation only uses the destination square. Pawns are included as a piece type in Chesskell, as leaving them out would complicate the relevant continuations. While it does increase the character count when expressing the move, it simplifies implementation and improves clarity to include them, so we deem this trade-off acceptable.
+
+Other differences (such as the space between the piece type and destination square, or the move count) are made for similar reasons, and for personal taste. Below, we outline a few of the more interesting differences.
 
 \subsection{Captures}
 
 Capture moves are usually treated as a special case, having their own special notation. For instance, in Algebraic Notation, capture moves include an x character to set them apart from non-capture moves. As an example, consider a Knight moving to the square d4. If the Knight does not capture another piece, then this is expressed as \wmove{Nd4}. However, if the Knight does indeed remove another piece from play, then the move should be written \wmove{Nxd4}.
 
-Chesskell notation does not treat capture moves as a special case. A move, whether capturing or otherwise, is expressed the same way; the above move would be \wmove{n d4}.
+Chesskell notation does not treat capture moves as a special case. A move, whether capturing or otherwise, is expressed the same way; the above move would be \wmove{n d4}. Interestingly, this makes Chesskell closer to Minimal Algebraic Notation, which also does not include (similar to Chesskell) special notation for Check, En Passant Capture, and Checkmate.
 
 \subsection{Castling}
 
@@ -1449,6 +1461,38 @@ o_o_o (dec :: Proxy b) cont = cont (Proxy @(CastleMove False b))
 \end{lstlisting}
 
 With the above definitions, Chesskell can include special castling notation if the user wishes to express castling in this more noticeable way; otherwise, they can default to the usual Chesskell notation format.
+
+\subsection{Comparison with other Chess notations}
+
+Algebraic Notation is not the only Chess notation; there are many others. We consider a few here, and how they are similar to and differ from Chesskell.
+
+\subsubsection{Smith Notation}
+
+Smith Notation is one of the more descriptive forms of Chess notation, including both the source and destination squares. Additionally, when a promotion is made, the piece type being promoted to is included; making it rather similar to (although more concise than) Chesskell's long-form syntax.
+
+\subsubsection{ICCF Numeric Notation}
+
+ICCF Numeric Notation is intended for international games of Chess, whereby Algebraic Notation can cause confusion. In Algebraic Notation (and in Chesskell), the English names for pieces are used; but in other languages, there are other names for the piece types, and so for non-English speakers the notation can be confusing. ICCF Numeric Notation remedies this by describing moves in terms of their origin and destination squares, and when piece types are necessary (such as when performing promotion), to use numbers rather than names.
+
+While Chesskell was made in an English-speaking country by an English speaker, there is no reason not to include clearer notation for those from all around the world. As such, we define continuations similar to the piece continuations, but using numbers instead. Below is the same game we describe in \cref{examplegame}, making use of some of these new continuations (\inline{_5} for Pawns, and \inline{_1} for Queens):
+
+\begin{lstlisting}
+game = chess
+    _5 e4 _5 f5
+    _1 f3 _5 g5
+    _1 h5
+end
+\end{lstlisting}
+
+Additionally, as opposed to using the letters a-h to describe columns, we can use a number instead, as in ICCF Numeric Notation:
+
+\begin{lstlisting}
+game = chess
+    _5 _54 _5 _65
+    _1 _63 _5 _75
+    _1 _85
+end
+\end{lstlisting}
 
 
 \chapter{Conclusions}
