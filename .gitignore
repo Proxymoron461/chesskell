@@ -18,3 +18,5 @@ chess/stack.yaml.lock
 chess/writing/dissertation/notes.md
 *.bcf
 *.run.xml
+log.txt
+DemoFile.hs
