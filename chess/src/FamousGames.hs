@@ -1,7 +1,7 @@
 module FamousGames where
 
 import FlatBuilders
-import MakeSingletons
+import MakeProxies
 import qualified GHC.TypeLits as TL
 import ChessTypes
 import FirstClassFunctions
@@ -78,7 +78,7 @@ import Lib
 --     n c3 p a6 end  -- All good, compiles just fine!
     -- b e3 p e5 end
 
-lauVsBastian = chess
-    p e4 p e5
-    n f3 n c6
-    b b5 b c5 end -- FIXME: Fails now, but compiles when removing the last bishop move. Why??
+-- lauVsBastian = chess
+--     p e4 p e5
+--     n f3 n c6
+--     b b5 b c5 end -- FIXME: Fails now, but compiles when removing the last bishop move. Why??
