@@ -16,7 +16,7 @@ As we explain above in \cref{testsection}, the Chesskell library is accompanied 
 
 Below, when we state that a Chesskell game takes $n$ seconds to compile, we mean that it takes $n$ seconds to compile the Chesskell description of the 1964/65 USSR Championship game between Ratmir Kholmov and David Bronstein. We chose this game as the benchmark for compile-time comparison, though others are also used to test the functionality of Chesskell.
 
-\subsection{Finger Trees}
+\subsection{Finger Trees} \label{fingertreesection}
 
 A common operation in Chesskell is creating lists of potential positions (i.e. move lists and attack lists), and combining them with the append \inline{(++)} operator. However, appending singly-linked lists takes $\mathcal{O}(n)$ time. Since this operation is common, we implemented 2-3 Finger trees \cite{fingertrees} to take advantage of better amortized append:
 \begin{lstlisting}
