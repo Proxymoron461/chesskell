@@ -1,7 +1,7 @@
 module KasparovGames where
 
 import FlatBuilders
-import MakeSingletons
+import MakeProxies
 import qualified GHC.TypeLits as TL
 import ChessTypes
 import FirstClassFunctions
