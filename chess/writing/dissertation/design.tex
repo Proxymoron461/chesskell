@@ -1,0 +1,133 @@
+\chapter{Design}
+
+This chapter of the dissertation details the general design of Chesskell. Broadly, Chesskell is split into two main sections; the type-level chess model and ruleset, and the value-level EDSL which acts as an interface for the type-level chess model.
+
+Additionally, we explain some basic Chess knowledge in this chapter, to aid in understanding. However, we tackle the more complex rules when they become relevant; this chapter does not constitute a formal introduction to Chess, but a simple summary to make the design of Chesskell clear.
+
+\section{The Basics of Chess}
+
+Chess is a two-player game, played in alternating moves by teams typically named \emph{Black} and \emph{White}, after the colours of their pieces. In each turn, the player will move a single piece, and cannot abstain from making a move (or move a piece from its position to that same position). Each piece is governed by its own movement rules, which depend on the state of the board and, in some cases, the history of that piece or other pieces' movements.
+
+\subsection{The Board}
+
+The board is an 8x8 grid of 64 square tiles, each of which is coloured Black or White such that each square is next to tiles of the opposite colour (see \cref{chessboard}). The pieces move within this board, and cannot take moves that would wrap around it or take them off of the board.
+
+At the beginning of the game, all Chess pieces lie in a specific arrangement (see \cref{startboard}). All Black and all White pieces are opposite one another, such that their positions are mirrored.
+
+\subsection{The Pieces}
+
+While each team has 16 pieces total, there are only 6 types of pieces; Pawns, Rooks, Knights, Bishops, Queens, and Kings (in rough order of value during play). Each have their own strict movement rules, and in all but a single case, pieces of the opposite team can be \emph{captured} by moving to their square. A capture removes a piece from play; there is no way to regain a piece once captured (although there is a way to transform a Pawn into another piece). We give an example of capturing in \cref{capture}.
+
+\subsection{The Game}
+
+A King is in \emph{check} when they are in the attack path of another piece. The objective of the game is to place the opponent's King into \emph{checkmate}, whereby every move the King could make is to a position where they would be in check (see \cref{checkmate} for an example). Additionally, a move by a team that would place that team's King into check is an invalid move, and cannot be made.
+
+There are additional ways in which a Chess game may end, such as when two opponents agree to a draw; however, these additional rules concern the players of Chess rather than the game itself, and so are not a part of the implementation of Chesskell.
+
+\subsection{Chess Notation} \label{fensection}
+
+There are two main categories of chess notation; those concerning the state of the game, and those concerning the state of the board. Further relevant details on specific Chess notation will be tackled as and when relevant; this section is only aimed as a minor note of their existence.
+
+Chess notation concerning the state of the game tends to be an account of the whole set of moves, starting from the standard start positions. Algebraic notation is the most common chess notation, and is used by FIDE to record matches between professional chess players. Each piece type other than Pawn is denoted with a capital letter: K for King, Q for Queen, B for Bishop, R for Rook, and N for Knight. As such, the move \texttt{Na4} means that a Knight has moved to the position "a4" on the board. Algebraic notation typically does not include the square the piece moved from; only its destination square. \cref{algebraicexample} shows the initial state of the board, followed by a set of moves in algebraic notation, and the resulting state of the board.
+
+There are stylised variants of Algebraic Notation, such as Figurine Algebraic Notation, in which symbols for the pieces replace the capital letter. For example, \texttt{Na4} is written as \wmove{Na4}, whereby the N is replaced with the symbol for a Knight. This is the variant used in the dissertation; future examples use Figurine Algebraic Notation, where chess symbols replace capital letters.
+
+The other class of chess notation is that for board creation or description. Forsyth-Edwards Notation (FEN), a popular example, simply states which pieces are where on a board, line-by-line. White pieces are denoted with uppercase letters, and Black pieces are denoted with lowercase letters. The letters used match those for Algebraic Notation, save for the introduction of P for White Pawns (and p for Black Pawns). Lines are described as series of pieces and empty spaces, such that a row with a White Pawn on every other position would be described as \texttt{P1P1P1P1}. Another row with two spaces between Black Pawns would be described as \texttt{p2p2p1}, since the total number of row positions must equal eight. See \cref{fenexample} for an example of a board created with FEN notation.
+
+\section{Type-Level Data Structures}
+
+As helpful as type families and First Class Families are in enabling computation at the type level, this computation is useless without something to compute on. Chesskell requires some central repository of information for the state of the board, as well as general data structures for passing around information while validating the Chess ruleset. This section describes the type-level data structures in Chesskell.
+
+\subsection{Chess Data Structures}
+
+An important part of any good Chess program is its board representation, since all other parts of the program come from this; move generation, move evaluation, and the entire search space are all defined or influenced by the board representation. A great deal of work has gone into defining memory- or time-efficient Chess boards \cite{bitboard} \cite{searchtables}, including combinations of multiple representations to yield greater speed \cite{bitandccr}. While there is value to be gleaned from examining these representations, Chesskell serves a different purpose; it does not need to search through the valid set of moves to determine which are the best, and speed is not its focus. Chesskell's board representation must be relatively efficient, but it would be naive to expect similar levels of performance from type-level constraint solving computation as from optimised value-level code.
+
+\subsection{Singly-linked Lists}
+
+In Chesskell, Haskell's built-in type-level lists are not used as the primary board type. These lists are singly linked, and so have a variable length which is checkable in $O(n)$ time. Ensuring that the chess board remains an 8x8 grid at all times would incur a repeated cost on the compile time of the program. However, these lists are used for data which can be of variable length; such as the list of available moves for a piece in a specific position.
+
+\subsection{Finger Trees}
+
+An alternative to type-level lists would be to use 2-3 Finger Trees \cite{fingertrees}. Unfortunately, singly-linked lists have no quick "append" operation. As such, combining lists of moves takes $O(n)$ time, which could be considerable for pieces like Queens who have many moves available to them at any one time. However, Finger Trees can be combined in $O(log(min(n_{1}, n_{2})))$ time, where $n_{1}$ and $n_{2}$ are the sizes of the respective FingerTrees. Singly linked lists have an $O(1)$ append, while Finger Trees have an \emph{amortized} $O(1)$ append operation.
+
+Finger Trees are so named because while the main portion of the data is in recursive tree form, each tree maintains two "hands" full of data. Essentially, each of these appendages is a small overflow buffer for the tree itself, since inserting into the tree is more costly ($O(log n))$) than inserting into the buffer ($O(1)$). A pleasant side effect of this approach is that not only can you access data at the beginning of the sequence in $O(1)$ time, you can also access data at the end of the sequence in $O(1)$ time; something impossible with Haskell's built in singly linked lists.
+
+Disappointingly, there exists an implementation of Chesskell using Finger Trees as opposed to lists for variable length data, but as we discuss in the Evaluation chapter, there was no significant increase in compile time relative to the effort spent implementing Finger Trees at the type level.
+
+\subsection{Length-indexed Vectors}
+
+If the intention is to use it for representing a Chess board (or any other structure with a definite length), singly-linked lists have issues; how can we ensure that the chess board is the appropriate size (an 8x8 grid) without a length check each move? This would take at least 56 additions, since list length is computed recursively; as well as 7 more addition operations to put together the list lengths.
+
+A more desirable data structure would be one that had a fixed type, which could be guaranteed to remain at length 8. As such, Chesskell makes use of a variant of singly-linked lists, named length-indexed vectors. A length-indexed vector is a singly linked list which contains its' length in its' type. That is, a length-indexed vector of size 0 has a different type than a length-indexed vector of size 3. As with most things in Haskell, we use recursive definitions; an empty vector has length 0, and you express a vector of length (n + 1) by pushing an element to the front of a vector of length n. We give an example GADT data type definition below:
+
+\begin{lstlisting}
+data Vec (n :: Nat) (a :: *) where
+    VEnd   :: Vec 0 a
+    (:->)  :: a -> Vec n a -> Vec (n + 1) a
+\end{lstlisting}
+
+If the programmer should require the input vector to be of length 5, then all they must do is include its length in the function definition:
+
+\begin{lstlisting}
+someFunc :: Vec 5 a -> b
+someFunc vec = -- ...
+\end{lstlisting}
+
+This makes it a perfect candidate to act as the central chess board type, containing all pieces. To guarantee that a board is an 8x8 grid, it simply needs to contain 8 length-indexed vectors of length 8. Due to the use of the \inline{-XDataKinds} extension to enable promotion, this length-indexed vector definition immediately also defines a type-level length-indexed vector.
+
+Almost all operations available on lists are available on length indexed vectors. However, since length-indexed vectors have an additional type variable (their length), they are difficult to dynamically create without some length type variable. That is, a function \inline{f :: a -> Vec n b} cannot exist, since the type variable \inline{n} will have nothing to unify with when \inline{f} is called.
+
+\subsection{Type-Level Bitboards}
+
+One popular Chess board representation is the Bitboard \cite{bitboard}; using a set of 64-bit binary strings to represent the positions of pieces. Since a chess board is always 8x8, a 64-bit string (when seen as a string of 8 bytes) can hold some binary state of a particular Chess board position. Each piece type and colour needs its own bitboard, since a 1 or a 0 is not enough to differentiate between piece types. For instance, a bitboard describing White Pawns will have a 1 at every index in the 64-bit string that has a Pawn present, and will have 0s in all other positions, where the bottom left of the board is the least significant bit, and the top right of the board is the most significant bit.
+
+The main draw of bitboards is the speed at which potential moves can be generated and the board can be modified. For instance, to move all pieces left by one square, all that is required is a left shift by 1 of the bitboard representation.
+
+Although type-level Haskell has no bitwise operators, they could potentially be emulated through the use of pattern matching. Consider "bitwise" logical AND; each possible pair of inputs could be pattern-matched against, and the outputs enumerated. However, this code would be both laborious to write and harder to read; and a bitboard representation's main benefit is speed. Type-level operations like this would definitely not map directly to hardware bitwise operations, and so the main benefit of Bitboards would be lost. A Bitboard representation of Chesskell may indeed be faster than the vector board representation we explain above; however, it would incur a considerable complexity cost that is unlikely to be worth it, especially since type-level computation will be slow anyway. While it would make an interesting extension to Chesskell someday in the future, it is not part of the final feature set described in this dissertation.
+
+\section{Modelling Chess with Functions}
+
+Ideally, the Chess board alone would be sufficient to calculate whether a move was valid. A value-level function for determining the validity of moves could take in the current state of the board, and two positions (the position moving from and the position moving two), and either return the new board state or some king of error. Since Chess is conducted move by move, to simulate a game, this function could be chained repeatedly, with each new move and the previous generated board as input. Such an ideal function could have type \inline{ChessBoard -> Position -> Position -> Maybe ChessBoard}.
+
+In a game of Chess, the majority of moves are time-agnostic; that is, they are not tied to previous moves, only the current state of the board. There are, however, two exceptions; Castling and \emph{en passant} capture. Castling is a move by both a King and a Rook, and an \emph{en passant} capture is a special form of capture available only to Pawns. However, the only additional information required to calculate whether these moves are valid is the last piece that moved, and for each piece the number of times that piece has moved. As such, the board representation can be defined to include this information; ensuring that not only pieces and teams are recorded, but also the number of moves made and the last piece to make a move. Therefore, with a new type \inline{DecoratedChessBoard} containing the new information (as well as the board state), a function for calculating move validity could have type \inline{DecoratedChessBoard -> Position -> Position -> Maybe DecoratedChessBoard}.
+
+A pure function implementation is therefore possible, making use of a Chess board data structure which includes this information. Translating this approach to the type-level, a Type Family (or First Class Family) can be defined which performs similarly, with kind \inline{'DecoratedChessBoard -> 'Position -> 'Position -> 'DecoratedChessBoard}. This type-level model of Chess, implemented as a single movement Type Family, must be interacted with via the defined EDSL. The EDSL is responsible for gathering move-wise positional information, and chaining together calls of the movement Type Family, which will either return a valid Chess board or a type error depending on whether the described move is permissible or not.
+
+\subsection{Checking Chess Rules} \label{chessrules}
+
+When determining if a given move of Chess is valid or not, the destination squares for all pieces is not sufficient. In other words, a function to generate the valid positions a piece can move to is not enough to enforce all rules of Chess.
+
+Part of the relevant global state for a Chess game is the team that is currently moving; remember, White and Black teams move in an alternating fashion. It breaks the rules of Chess for a White piece to move after a White piece has just moved. There are also a few implicit Chess rules that would be helpful to have more personalised error messages for; such as the fact that no piece can actually take the opposite King. While this information will be encoded in the fact that the opposite King's position will not be in the valid move list for that piece (even though the piece can indeed attack that position), it would be helpful to have a more specific error message for this case. Instead of \inline{error: The Piece cannot move to that position}, it should say something like \inline{error: Pieces cannot take their King}.
+
+In Chesskell, an early idea was to simply check for these invariants with either type-level if statements or pattern matching. However, as the number of invariants with specific error messages grows, so too would the number of nested if statements. While such an approach would work, it is harder to follow and rather ugly.
+
+Being in a functional environment, it is natural to express these rule checks as functions that either successfully compute something, or return a type error. Each function could essentially act as an assertion; either the input fulfils some query, or there is an error. For instance, a function \inline{CannotTakeKing :: DecoratedChessBoard -> Position -> DecoratedChessBoard} that takes in the board state and the position to move to, and generates a type error if the position to move to is the position of either of the Kings. The reason it returns a \inline{DecoratedChessBoard} in the successful case is so that it can be naturally composed together with the core movement function, using a First Class Family version of the Haskell function composition operator, \inline{(.)}. Instead of code of the form \inline{(if firstCondition then (if secondCondition then Move a1 a2 else throw "Second error") else throw "First error")}, with more and more nested if conditions, the rule-checking code has the form \inline{(SecondCheck . FirstCheck . Move a1 a2)}, which is much easier to modify and understand.
+
+\section{Designing an EDSL for Chess}
+
+Since the EDSL is for describing games of Chess, it makes sense that it should draw inspiration from Chess game notation, such as Algebraic Notation (which we explain briefly above). In such notation, the board state is implicit and undescribed; that is, the state of the board must be inferred by the reader from the moves made thus far, assuming that the game started in standard configuration (\cref{startboard}).
+
+One possible match in Haskell for this style is monadic computation. If the board information were stored in a custom monad, then the \emph{bind} operator (written as \inline{>>=)}) could be used to chain together these chess moves, in some way akin to below:
+
+\begin{lstlisting}
+game = chessStart
+    >>= move e2 e4
+    >>= move e7 e5
+    >>= -- ...
+\end{lstlisting}
+
+However, this approach introduces a few problems. Firstly, the EDSL is more difficult to read for those unfamiliar with Haskell. It immediately would be less an EDSL, and more a set of plain Haskell functions with nice names. Secondly, it is not immediately clear how a monad for the type-level chess board could be defined. It could piggyback off of another defined monad, such as the \inline{Maybe} monad, but this is introducing further complexity for no good reason.
+
+Luckily, there exists an alternative; Continuation Passing Style (CPS). The core idea is value transformation through a series of continuation function applications, until the final continuation function returns a value. Due to the left-to-right composition of functions, CPS results in very readable code, and could be utilised to avoid any Haskell-specific operators and appear as a clear stretch of Chess notation.
+
+Consider the following example of CPS code. We give the definition of two functions, \inline{add} and \inline{to}:
+
+\begin{lstlisting}
+add :: Int -> ((Int -> Int) -> m) -> m
+add x cont = cont (+ x)
+
+to :: (Int -> Int) -> Int -> Int
+to f x = f x
+\end{lstlisting}
+
+With the definition of these two functions, the line \inline{add 5 to 7} is well-typed, and evaluates to \inline{12}. This is because \inline{add} takes in a continuation of type \inline{(Int -> Int) -> m}, and returns a value of type \inline{m}. In other words, the continuation (in this case \inline{to} is responsible for the output. Using such a scheme enables Chesskell to be much closer to conventional chess notation than to Haskell code, and avoids wrapping the types in an unrelated monadic context.

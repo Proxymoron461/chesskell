@@ -1,0 +1,61 @@
+\chapter{Appendix}
+
+\begin{figure}
+    \centering
+    \fenboard{8/8/8/8/8/8/8/8 w - - 0 1}
+    \showboard
+    \caption{An empty chess board.}
+    \label{chessboard}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \newgame
+    \showboard
+    \caption{An standard chess board where all pieces are in their starting position.}
+    \label{startboard}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \fenboard{8/8/2Q5/8/4p3/8/8/8 w - - 0 1}
+    \showboard
+    \quad
+    \hidemoves{1.Qe4}
+    \showboard
+    \caption{The White Queen captures a Black Pawn by moving to its position, and removing it from play.}
+    \label{capture}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \fenboard{8/8/8/8/8/4Q3/8/R3k3 w - - 0 1}
+    \showboard
+    \caption{The White Queen and White Rook place the Black King into checkmate.}
+    \label{checkmate}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \newgame
+    \hidemoves{1.e4 e5 2. Nf3 Nc6 3.Bb5 a6}
+    \showboard
+    \caption{The position of the board after: 1.e4 e5 2. Nf3 Nc6 3.Bb5 a6}
+    \label{algebraicexample}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \fenboard{rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b - - 0 1}
+    \showboard
+    \caption{The board created with: (rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1)}
+    \label{fenexample}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \fenboard{8/8/3B4/8/1B6/8/8/8 w - - 0 1}
+    \showboard
+    \caption{A board where two White Bishops can move to c5.}
+    \label{twobishops}
+\end{figure}

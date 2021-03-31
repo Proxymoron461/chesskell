@@ -1,0 +1,216 @@
+\chapter{Evaluation}
+
+\section{Testing} \label{testsection}
+
+\subsection{Type-level Unit Testing}
+
+\subsubsection{Scenario Testing}
+
+\subsection{Testing Chesskell Games}
+
+\section{Compile Time and Memory Usage} \label{problemsection}
+
+Key observations for us while developing Chesskell have been unpredictable compile-time and memory usage. While the extensions to Haskell's type system as implemented in GHC are very exciting and, as demonstrated, allow us to implement complex rule systems, it is difficult to debug them -- GHC's performance with respect to type-level computation is opaque to developers. In this section we outline the issues we faced, and describe approaches we found to solve or avoid them.
+
+As we explain above in \cref{testsection}, the Chesskell library is accompanied by an extensive test suite, implemented using HSpec behaviour-driven tests \cite{hspec} and deferrable type errors to test the outputs of type families adhere to the FIDE ruleset. Compiling this test suite causes GHC memory usage to exceed 27 GB. These memory issues are not specific to the tests, and can be reproduced in longer Chesskell games. Due to these issues, Chesskell games are practically limited to 12 moves before GHC crashes and runs out of memory (on all systems tested), although there is no theoretical limit to the number of moves.
+
+Below, when we state that a Chesskell game takes $n$ seconds to compile, we mean that it takes $n$ seconds to compile the Chesskell description of the 1964/65 USSR Championship game between Ratmir Kholmov and David Bronstein. We chose this game as the benchmark for compile-time comparison, though others are also used to test the functionality of Chesskell.
+
+\subsection{Finger Trees}
+
+A common operation in Chesskell is creating lists of potential positions (i.e. move lists and attack lists), and combining them with the append \inline{(++)} operator. However, appending singly-linked lists takes $\mathcal{O}(n)$ time. Since this operation is common, we implemented 2-3 Finger trees \cite{fingertrees} to take advantage of better amortized append:
+\begin{lstlisting}
+data FingerTree (a :: Type) where
+    Empty  :: FingerTree a
+    Single :: a -> FingerTree a
+    Deep   :: Digit a -> FingerTree (Node a) 
+           -> Digit a -> FingerTree a
+
+data Node a = Node2 a a | Node3 a a a
+data Digit a = One a | Two a a | Three a a a | Four a a a a
+\end{lstlisting}
+
+Additionally, we show parts of the definition for an append operation:
+
+\begin{lstlisting}
+type instance ((Deep leftL leftM leftR) ++ (Deep rightL rightM rightR))
+    = Deep leftL (AddTree1Digit leftM (ToNode leftR rightL) rightM) rightR
+-- ...
+
+type family AddTree1Digit (t1 :: FingerTree a)
+                          (d1 :: Digit a)
+                          (t2 :: FingerTree a)
+                          :: FingerTree a where
+    AddTree1Digit Empty dig rightTree
+        = AddDigitLeft dig rightTree
+    AddTree1Digit (Single x) dig rightTree
+        = x :< AddDigitLeft dig rightTree
+    -- ...
+    AddTree1Digit (Deep leftL leftM leftR) dig (Deep rightL rightM rightR)
+        = Deep leftL (AddTree1Digit leftM (ToNode leftR rightL) rightM) rightR
+\end{lstlisting}
+We replaced all append and mapping operations over lists with corresponding operations on Finger Trees. To our disappointment, changes were negligible: compile time went down by an average of 5 seconds and memory usage was reduced by an average of 0.5 GB. Although this is an improvement, it again shows that algorithmic complexity is not responsible for the compiler performance we observe.
+
+\subsection{Checking for Check}
+
+One of the most complex parts of Chesskell involves detecting when a King is placed in check. As we explain in \cref{checksection}, an initial na\"ive implementation of testing for check (named \inline{CheckNoCheck}) involved assembling all possible moves by pieces of the opposite team, and checking if the King position was in that list. The pre- and post-move checks were composed together within a single type family, along with the actual movement of the pieces themselves, like so:
+\begin{lstlisting}
+data Move :: Position -> Position
+          -> BoardDecorator -> Exp BoardDecorator
+type instance Eval (Move fromPos toPos boardDec) = Eval ((
+    ShouldHavePromotedCheck toPos . CheckNoCheck .  -- Post-move checks
+    MoveNoChecks fromPos toPos .
+        CanMoveCheck fromPos toPos .  -- Pre-move checks
+        NotTakingKingCheck toPos .
+        NotTakingOwnTeamCheck toPos .
+        NotSamePosCheck fromPos toPos .
+        NotLastToMoveCheck fromPos .
+        TeamCheck fromPos) boardDec)
+\end{lstlisting}
+Removing the \inline{CheckNoCheck} post-move check entirely (from the codebase using the old implementation) reduced memory usage of an 8-move Chesskell game from 22-23GB to 7.5-8GB, and average compile time from 1 minute 37 seconds to 24 seconds, proving that testing for check was a performance bottleneck.
+
+Attempting to optimise the codebase and reduce memory usage as the result of an ``out of memory'' crash, we created the new ray implementation \cref{checksection}. Despite the reduced computation performed by GHC with the new implementation, there was no noticeable decrease in memory usage when compiling Chesskell games -- GHC continued to run out of memory and crash.
+
+However, splitting out the pre-move rule checks and the post-move rule checks into separate type families helped GHC to terminate, no longer running out of memory. The new implementation below takes less than 1 minute and 30 seconds to compile, and uses an average of 25GB of memory:
+\begin{lstlisting}
+data Move :: Position
+          -> Position
+          -> BoardDecorator
+          -> Exp BoardDecorator
+type instance Eval (Move fromPos toPos boardDec)
+    = Eval ((ShouldHavePromotedCheck toPos . CheckNoCheck)
+        (Eval (MoveWithPreChecks fromPos toPos boardDec)))
+
+data MoveWithPreChecks :: Position
+                       -> Position
+                       -> BoardDecorator
+                       -> Exp BoardDecorator
+type instance Eval (MoveWithPreChecks fromPos toPos boardDec) = Eval (
+    (MoveNoChecks fromPos toPos .
+        CanMoveCheck fromPos toPos .
+        NotTakingKingCheck toPos .
+        NotTakingOwnTeamCheck toPos .
+        NotSamePosCheck fromPos toPos .
+        NotLastToMoveCheck fromPos .
+        TeamCheck fromPos) boardDec)
+\end{lstlisting}
+While the cause for this increase in performance is unknown, we speculate it may be related to the number of type variables that must be unified at a given time. In any case, this example shows that sometimes improvements to algorithmic complexity of type-level programs can make little difference, while simply restructuring the type families can. Therefore, we believe that there is a need for better tooling as part of GHC to understand what causes such spikes in compile time and memory usage.
+
+\subsection{Type Applications vs. Type Signatures}
+
+We observed a difference in behaviour between type signatures and type applications. Initially, we did not define \inline{StartDec} by hand for use in the definition of \inline{chess} and instead pieced it together through a lengthy series of type family applications:
+\begin{lstlisting}
+type StartDec = MakeDecorator (ExpensiveOperation (...))
+\end{lstlisting}
+With this initial version of \inline{StartDec} to set up the game, we attempted two definitions of \inline{chess}: one using a type application and the other using a type signature. These definitions, given below, should be equivalent:
+\begin{lstlisting}
+chess :: Spec (Proxy StartDec)
+chess cont = cont (Proxy @StartDec)
+
+chess :: Spec (Proxy StartDec)
+chess cont = cont (Proxy :: Proxy StartDec)
+\end{lstlisting}
+The version of \inline{chess} using a type application compiles without issues, but causes lengthy (sometimes unrecoverable) pauses at runtime when used. Conversely, when compiling the type signature version, GHC either fails to terminate or crashes due to a lack of memory. This difference in behaviour between the definitions is unexpected and resulted in GHC bug report\footnote{\url{https://gitlab.haskell.org/ghc/ghc/-/issues/18902}}. As a work-around, we have written out \inline{StartDec}'s definition in full in the Haskell source file, allowing compilation and usage of either definition with no issues.
+
+\subsection{Descriptive Error Messages}
+
+We intended for Chesskell's type errors to include the number of the move which resulted in a rule violation, to make errors as clear as possible. Ideally, this would result in error messages such as the one below:
+
+\begin{lstlisting}
+-- Below results in the following type error:
+-- * There is no valid move from E2 to E5.
+--   The Pawn at E2 can move to: E3, E4
+--   At move: 1
+-- * When checking the inferred type
+--   game :: Data.Proxy.Proxy (...)
+game = chess pawn e2 to e5 end
+\end{lstlisting}
+
+However, adding the move number (taken from the current \inline{BoardDecorator}) to Chesskell's error messages in this manner causes spikes in compile time and memory usage: a game consisting of a single erroneous move, such as the above, results in nearly 26GB of memory usage, and takes close to 2 minutes to compile. For reference, the average compile time and memory usage for that single move game are under 20 seconds and 4.5GB respectively.
+
+Taking other information from the \inline{BoardDecorator} type, such as the position of one of the Kings, and putting it into the error message does not result in similar spikes. Due to its effect on compile time and memory usage, Chesskell error messages do not include the move which broke the rule. Instead, we ensure that Chesskell error messages are detailed enough that the user should be able to find the location of the error.
+
+\subsection{Chesskell Shorthand} \label{shorthand}
+
+One of the most dramatic optimisations in terms of compile-time and memory usage was unexpected and accidental: it resulted from the implementation of the shorthand syntax (\cref{shorthandexplanation}).
+
+With the longhand notation, any Chesskell game longer than 10 moves would cause GHC to crash (on the authors' machines). We predicted that the shorthand syntax would degrade performance and reduce this number, since the type-level model of Chess would not only have to perform all of the move checking, but also determine which piece(s) could move to the destination square. However, since it allowed more concise description of Chess games in line with existing Chess notation, we deemed this trade-off acceptable.
+
+We developed a working version of the shorthand syntax, without going through extensive optimisations or performance testing. Despite the greater amount of work required from GHC to compile these short-hand descriptions, there were notable and significant decreases in average compile time and memory usage: with the longhand syntax, compiling a 10-move Chesskell game took an average of 3 minutes and 25GB of memory, and a 12-move Chesskell game would crash every time. With the shorthand syntax, a 10-move Chesskell game compiles in around 1 minute 20 seconds, using 24GB of memory, and a 12-move Chesskell game compiles in an average of 1 minute 50 seconds, using 25GB of memory.
+
+The shorthand syntax allows for us to express games which are longer by 2 moves, and yet incur no additional penalties on compile time or memory usage. We again speculate that the improvement is due to fewer type variables that need to be unified.
+
+\section{Chesskell EDSL vs Other Chess Notations}
+
+One of the aims of Chesskell was for the final Chess EDSL to be closer to existing Chess notation than to Haskell syntax. In this section, we lay out how successful Chesskell has been in this regard, with justifications where Chesskell differs from existing notation.
+
+\subsection{Comparison with Algebraic Notation}
+
+Since FIDE uses Algebraic Notation, it was taken as the exemplary Chess notation to aim towards. In this notation, Chess games are described move-by-move, using the destination square and the piece type for each move. A game equivalent to that given in \cref{examplegame} is given below:
+
+\begin{verbatim}
+1. e4 f5 2. Qf3 g5 3. Qh5
+\end{verbatim}
+
+There are some differences between Algebraic Notation and Chesskell syntax that are immediately apparent. First of all, Chesskell includes pawns as a piece type in their movement (e.g. \inline{p e4}), whereas Algebraic Notation only uses the destination square. Pawns are included as a piece type in Chesskell, as leaving them out would complicate the relevant continuations. While it does increase the character count when expressing the move, it simplifies implementation and improves clarity to include them, so we deem this trade-off acceptable.
+
+Other differences (such as the space between the piece type and destination square, or the move count) are made for similar reasons, and for personal taste. Below, we outline a few of the more interesting differences.
+
+\subsection{Captures}
+
+Capture moves are usually treated as a special case, having their own special notation. For instance, in Algebraic Notation, capture moves include an x character to set them apart from non-capture moves. As an example, consider a Knight moving to the square d4. If the Knight does not capture another piece, then this is expressed as \wmove{Nd4}. However, if the Knight does indeed remove another piece from play, then the move should be written \wmove{Nxd4}.
+
+Chesskell notation does not treat capture moves as a special case. A move, whether capturing or otherwise, is expressed the same way; the above move would be \wmove{n d4}. Interestingly, this makes Chesskell closer to Minimal Algebraic Notation, which also does not include (similar to Chesskell) special notation for Check, En Passant Capture, and Checkmate.
+
+\subsection{Castling}
+
+Notations such as Algebraic Notation tend to have specific notation for Castling; since it is a unique move which moves more than one piece, it is a useful signpost for the reader to update their mental model. Castling is expressed in algebraic notation as either \wmove{0-0} or \wmove{0-0-0}, to represent kingside and queenside castling, respectively.
+
+In Chesskell, castling can be expressed as a King movement: such as \inline{k c1}, and requires no special notation. However, some people may prefer a clearer sign that a move is a castle, and so we include castling notation with the help of a single type family:
+
+\begin{lstlisting}
+type family CastleMove (l :: Bool) (b :: BoardDecorator) :: BoardDecorator where
+    CastleMove True  (Dec board Black pos kings n) = MoveTo King (At G Nat1) (Dec board Black pos kings n)
+    CastleMove True  (Dec board White pos kings n) = MoveTo King (At G Nat8) (Dec board White pos kings n)
+    CastleMove False (Dec board Black pos kings n) = MoveTo King (At C Nat1) (Dec board Black pos kings n)
+    CastleMove False (Dec board White pos kings n) = MoveTo King (At C Nat8) (Dec board White pos kings n)
+
+o_o :: Proxy (b :: BoardDecorator) -> Spec (Proxy (CastleMove True b))
+o_o (dec :: Proxy b) cont = cont (Proxy @(CastleMove True b))
+o_o_o :: Proxy (b :: BoardDecorator) -> Spec (Proxy (CastleMove False b))
+o_o_o (dec :: Proxy b) cont = cont (Proxy @(CastleMove False b))
+\end{lstlisting}
+
+With the above definitions, Chesskell can include special castling notation if the user wishes to express castling in this more noticeable way; otherwise, they can default to the usual Chesskell notation format.
+
+\subsection{Comparison with other Chess notations}
+
+Algebraic Notation is not the only Chess notation; there are many others. We consider a few here, and how they are similar to and differ from Chesskell.
+
+\subsubsection{Smith Notation}
+
+Smith Notation is one of the more descriptive forms of Chess notation, including both the source and destination squares. Additionally, when a promotion is made, the piece type being promoted to is included; making it rather similar to (although more concise than) Chesskell's long-form syntax.
+
+\subsubsection{ICCF Numeric Notation}
+
+ICCF Numeric Notation is intended for international games of Chess, whereby Algebraic Notation can cause confusion. In Algebraic Notation (and in Chesskell), the English names for pieces are used; but in other languages, there are other names for the piece types, and so for non-English speakers the notation can be confusing. ICCF Numeric Notation remedies this by describing moves in terms of their origin and destination squares, and when piece types are necessary (such as when performing promotion), to use numbers rather than names.
+
+While Chesskell was made in an English-speaking country by an English speaker, there is no reason not to include clearer notation for those from all around the world. As such, we define continuations similar to the piece continuations, but using numbers instead. Below is the same game we describe in \cref{examplegame}, making use of some of these new continuations (\inline{_5} for Pawns, and \inline{_1} for Queens):
+
+\begin{lstlisting}
+game = chess
+    _5 e4 _5 f5
+    _1 f3 _5 g5
+    _1 h5
+end
+\end{lstlisting}
+
+Additionally, as opposed to using the letters a-h to describe columns, we can use a number instead, as in ICCF Numeric Notation:
+
+\begin{lstlisting}
+game = chess
+    _5 _54 _5 _65
+    _1 _63 _5 _75
+    _1 _85
+end
+\end{lstlisting}
