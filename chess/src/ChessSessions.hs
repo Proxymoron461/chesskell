@@ -9,7 +9,7 @@ import Data.Proxy
 import Data.Singletons
 import Data.Type.Nat hiding (SNat(..))
 
-import MakeSingletons
+import MakeProxies
 import ChessTypes
 
 prog :: Monad m => STTerm m ('Cap '[] (Int :?> Sel '[Bool :!> r, String :!> r])) ('Cap '[] r) ()

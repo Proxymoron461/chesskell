@@ -1,6 +1,6 @@
 module FlatBuilders where
 
-import MakeSingletons
+import MakeProxies
 import ChessTypes
 import Data.Singletons
 import Data.Singletons.Prelude.Bool

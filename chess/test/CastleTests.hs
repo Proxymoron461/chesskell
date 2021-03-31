@@ -13,7 +13,7 @@ import Vec
 import FirstClassFunctions
 import ChessTypes
 import FlatBuilders
-import MakeSingletons
+import MakeProxies
 
 import TestTypes
 import CanCastleTests
