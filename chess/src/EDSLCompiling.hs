@@ -1,7 +1,7 @@
 module EDSLCompiling where
 
 import FlatBuilders
-import MakeSingletons
+import MakeProxies
 import qualified GHC.TypeLits as TL
 import ChessTypes
 import FirstClassFunctions
@@ -39,3 +39,9 @@ import FirstClassFunctions
 --     startMoves
 --         pawn h7 to h8
 --     end
+
+-- FINE
+-- castle = create put _Wh _R at a1 put _Wh _R at h1 put _Bl _R at a8 put _Bl _R at h8 startMoves o_o o_o_o end
+-- castle = create put _Wh _R at a1 put _Wh _R at h1 put _Bl _R at a8 put _Bl _R at h8 startMoves o_o_o o_o end
+-- castle = create put _Wh _R at a1 put _Wh _R at h1 put _Bl _R at a8 put _Bl _R at h8 startMoves o_o_o o_o_o end
+-- castle = create put _Wh _R at a1 put _Wh _R at h1 put _Bl _R at a8 put _Bl _R at h8 startMoves o_o o_o end
