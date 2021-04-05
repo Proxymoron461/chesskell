@@ -16,6 +16,27 @@ A growing number of new languages have type systems which support \emph{Dependen
 
 Since these are relatively recent developments, there are few examples of their usage in complex applications. For developers to adopt such techniques and express sophisticated invariants in the types of their program, these GHC extensions should not negatively impact development experience; particularly compile time. In this project, to stress-test GHC with a complex set of invariants, we show how to utilise type-level programming features in Haskell in order to model the classic board game Chess in Haskell's type system, ruling out invalid moves with types. A Haskell-Embedded Domain-Specific Language (DSL), for describing games of Chess, will interact with the type-level model. This Embedded DSL (EDSL) will be modelled on Algebraic Notation, a method of writing down the moves associated with a particular match of Chess. We implement the full, official International Chess Federation (FIDE) ruleset for Chess.
 
+Consider a Pawn (one of the pieces) which moves from square e2 to square e5, as shown in \cref{badpawnmove}. This move is not allowed in Chess, but a human could accidentally miss such an invalid move. In Chesskell, we express this move as \inline{pawn e2 to e5} and, if we try to compile it, we receive the following type error from GHC:
+
+\begin{verbatim}
+* There is no valid move from E2 to E5.
+The Pawn at E2 can move to: E3, E4.
+\end{verbatim}
+
+In fact, if any FIDE 2018 Chess rule is violated, the described game will simply not compile. The type error produced by Chesskell also explains the cause of the problem to the user and suggests corrective action: the Pawn moved to a square that it cannot reach. To rectify the problem, we can move the Pawn to e3 or e4 instead, one of the squares mentioned by the error message. The resulting program then compiles successfully.
+
+\begin{figure}[h]
+    \centering
+    \vspace*{1cm}
+    \fenboard{8/8/8/8/8/8/4P3/8 w - - 0 1}
+    \showboard
+    \quad
+    \fenboard{8/8/8/4P3/8/8/8/8 w - - 0 1}
+    \showboard
+    \caption{A White Pawn moves from e2 to e5: an invalid move.}
+    \label{badpawnmove}
+\end{figure}
+
 \section{Related Work}
 
 Chesskell is, at the time of writing, unique; we are aware of no other type-level Chess implementations. There have been allusions to Chess at the type-level through solving the N-queens problem in dependently typed languages, such as Idris\footnote{\url{https://github.com/ExNexu/nqueens-idris}}. The N-queens problem makes use of some Chess rules, including the Queen's attack positions\footnote{A Queen can attack in a straight line in any direction.}; but as the end goal is not to successfully model a game of Chess, it is not a full type-level Chess implementation.
@@ -63,4 +84,4 @@ The objective of this project is to develop a model of Chess at the type level, 
     \item Ensure (through testing) that valid Chess games compile, and invalid Chess games do not.
 \end{itemize}
 
-We define a "valid Chess game" as any game which adheres to the FIDE 2018 Laws of Chess\footnote{\url{https://handbook.fide.com/chapter/E012018}}. The FIDE laws also contain rules for the players themselves to adhere to; but these are outside the scope of the project, since they are not directly concerning the game of Chess itself.
+We define a "valid Chess game" as any game which adheres to the FIDE 2018 Laws of Chess \cite{lawsofchess}. The FIDE laws also contain rules for the players themselves to adhere to; but these are outside the scope of the project, since they are not directly concerning the game of Chess itself.
