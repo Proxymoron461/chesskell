@@ -1,12 +1,110 @@
 \chapter{Evaluation}
 
+In this chapter, we evaluate Chesskell in the context of both Haskell and other Chess notations. Additionally, we describe the testing process used to ensure Chesskell meets its specification.
+
 \section{Testing} \label{testsection}
+
+One of the priorities during development was a robust testing procedure. We explain below the various methods of testing employed, including details on how these tests were conceived.
 
 \subsection{Type-level Unit Testing}
 
-\subsubsection{Scenario Testing}
+Usually, unit tests exist to model dynamic behaviour; to check whether running code can perform (or fails to perform) specific operations. However, in Chesskell, the runtime behaviour is very minimal, as all of the Chess rules are enforced statically through the types. Fortunately, other works \cite{mezzo} detail how to craft dynamic assertions which pass if a specific expression type-checks, making use of deferred type errors \cite{deferredtypeerrors} and definitions from \inline{Data.Type.Equality}.
 
-\subsection{Testing Chesskell Games}
+These unit tests rely on two assertions, \inline{shouldTypecheck} and \inline{shouldNotTypecheck}, which pass or fail depending on whether a code snippet compiles successfully, or fails to compile with a type error. For instance, \inline{shouldTypecheck (2 == 3)} should pass, since even though \inline{2} is not equal to \inline{3}, checking for equality between two numbers in this manner is well-typed. However, \inline{shouldTypecheck (not 5)} should fail, since the function \inline{not} has type \inline{Bool -> Bool}, and the value \inline{5} does not have the type \inline{Bool}.
+
+These dynamic assertions are used in conjunction with Haskell's HSpec library, for behaviour-driven testing \cite{hspec}, to create many unit tests with which to test the project. Most commonly, we employ these individual unit tests to test the behaviour of individual type families and First Class Families, such as in the example we give below:
+
+\begin{lstlisting}
+oppositeTeamTest1 :: White :~: Eval (OppositeTeam Black)
+oppositeTeamTest1 = Refl
+
+-- ...
+
+it "1: OppositeTeam Black = White" $
+    shouldTypecheck oppositeTeamTest1
+\end{lstlisting}
+
+\subsubsection{Scenario Testing} \label{scenariosection}
+
+The behaviour of many of the type families in Chesskell depends greatly on the current board state. As an example, consider Pawn movement; the valid moves for a Pawn vary based on whether it is that Pawn's first move, on the pieces around the Pawn, and on the last move made. To test corner cases, we construct test boards which should bring about specific behaviour in the type families tested, perhaps even causing those type families to cause a type error. During development, this manner of testing was nicknamed "Scenario Testing", and it shall henceforth be referred to as such.
+
+For instance, both team's Kings should always be on the board. To have a King absent from one of the teams should result in undefined behaviour, as such an event signals a clear departure from the rules of Chess. To test this behaviour, we create a unit test on a board missing a King (we use a completely empty board for testing), and ensure that failing to find the King on that board generates a type error:
+
+\begin{lstlisting}
+findKingTest1 :: Proxy (a :: Piece)
+findKingTest1 = Proxy @(Eval (FindKing White EmptyDec))
+\end{lstlisting}
+
+For a more involved example, consider the Castling move (which we detail in \cref{castlesection}). There are situations in which a Team can castle in one direction, but not in the other direction; and in those situations, the type family \inline{CanCastle} should return \inline{True} for the valid direction, and \inline{False} for the invalid one. To test this behaviour, we create a custom Chess board (see \cref{castleboard}) in which the Black King can castle left but not right, and the White King can castle right but not left. We pair this custom board with two unit tests, to ensure that \inline{CanCastle} has the expected behaviour:
+
+\begin{lstlisting}
+canCastleTest4 :: '(True, False) :~: CanCastle Black BlackLeftCastleWhiteRightCastleDec
+canCastleTest4 = Refl
+
+canCastleTest5 :: '(False, True) :~: CanCastle White BlackLeftCastleWhiteRightCastleDec
+canCastleTest5 = Refl
+\end{lstlisting}
+
+\subsubsection{FIDE Laws of Chess Unit Tests}
+
+To ensure correctness as far as possible, we create unit and scenario tests for each FIDE Law of Chess which is amenable to testing in this manner. For instance, the FIDE laws describe the movement rules for Knights, including the directions they cannot move in; and so we write unit tests to ensure that Knights are not permitted to move in those invalid directions:
+
+\begin{lstlisting}
+it "1: A White Knight cannot move left in a straight line" $
+    shouldNotTypecheck whiteCannotGoLeft
+it "2: A White Knight cannot move right in a straight line" $
+    shouldNotTypecheck whiteCannotGoRight
+-- ...
+it "15: A Black Knight cannot move South-West in a straight line" $
+    shouldNotTypecheck blackCannotGoSW
+it "16: A Black Knight cannot move South-East in a straight line" $
+    shouldNotTypecheck blackCannotGoSE
+\end{lstlisting}
+
+\subsection{Chesskell Game Tests} \label{gametestsection}
+
+To test Chesskell EDSL correctness, we use a similar process to the one we lay out in \cref{scenariosection}. We lay out specific Chess scenarios which should elicit certain behaviour, and manually ensure that the EDSL either compiles, or fails to compile with a specific type error. To illustrate, we give an example below. As we discuss in \cref{promotionsection}, Pawn promotion is mandatory, and it breaks the rules of Chess if a Pawn reaches the opposite end of the board and is not promoted. To test this, we create a custom Chess board and describe a Chess game in which a Pawn should have been promoted, but has not been. We then compile this described game, ensuring that GHC generates the expected type error:
+
+\begin{lstlisting}
+-- Below fails with the following type error:
+-- * Promotion should have occurred at: h8. Pawns must be promoted when they reach the opposite end of the board.
+-- * When checking the inferred type:
+--     didntPromote :: Data.Proxy.Proxy (TypeError ...)
+didntPromote = create
+        put _Wh _P at h7
+        put _Bl _P at a2
+    startMoves
+        pawn h7 to h8
+    end
+\end{lstlisting}
+
+Additionally, we express the first few moves of a variety of famous Chess games in Chesskell notation, to ensure that Chesskell also successfully compiles error-free Chess games. For instance, 20 famous Gary Kasparov games have been expressed in Chesskell notation and compiled successfully, to test Chesskell's capabilities.
+
+To add to the previous test suite, for some of the games, we have replicated them but with a few minor errors. Consider the first 10 moves of the famous game between Loop and Deep Gandalf, two Chess AIs, which compiles successfully:
+
+\begin{lstlisting}
+loopVsGandalf = chess
+        p e4 p c5
+        n f3 p d6
+        p d4 p d4
+        n d4 n f6
+        n c3 p a6
+    end
+\end{lstlisting}
+
+We create a variation of this game including a subtle error---move 10 has been modified to ensure that the Pawn's destination square is the same as its origin square, a move disallowed in Chess:
+
+\begin{lstlisting}
+loopVsGandalfError = chess
+        p e4 p c5
+        n f3 p d6
+        p d4 p d4
+        n d4 n f6
+        n c3 p a7  -- Pawn moves to same place!
+    end
+\end{lstlisting}
+
+As expected, the error-free version compiles successfully, and the erroneous version fails to compile.
 
 \section{Compile Time and Memory Usage} \label{problemsection}
 
@@ -14,7 +112,7 @@ Key observations for us while developing Chesskell have been unpredictable compi
 
 As we explain above in \cref{testsection}, the Chesskell library is accompanied by an extensive test suite, implemented using HSpec behaviour-driven tests \cite{hspec} and deferrable type errors to test the outputs of type families adhere to the FIDE ruleset. Compiling this test suite causes GHC memory usage to exceed 27 GB. These memory issues are not specific to the tests, and can be reproduced in longer Chesskell games. Due to these issues, Chesskell games are practically limited to 12 moves before GHC crashes and runs out of memory (on all systems tested), although there is no theoretical limit to the number of moves.
 
-Below, when we state that a Chesskell game takes $n$ seconds to compile, we mean that it takes $n$ seconds to compile the Chesskell description of the 1964/65 USSR Championship game between Ratmir Kholmov and David Bronstein. We chose this game as the benchmark for compile-time comparison, though others are also used to test the functionality of Chesskell.
+Below, when we state that a Chesskell game takes $n$ seconds to compile, we mean that it takes $n$ seconds to compile the Chesskell description of the 1964/65 USSR Championship game between Ratmir Kholmov and David Bronstein. We chose this game as the benchmark for compile-time comparison, though others are also used to test the functionality of Chesskell (as we explain in \cref{gametestsection}).
 
 \subsection{Finger Trees} \label{fingertreesection}
 
