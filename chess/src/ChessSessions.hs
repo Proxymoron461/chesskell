@@ -45,10 +45,33 @@ prog_recursion_dual = recurse $ go 0
         send n
         (weaken0 >> eps n) <&> (var $ go (n + 1))
 
--- -- recurse :: MonadSession m => m ('Cap (s : ctx) s) r a -> m ('Cap ctx ('R s)) r a
--- chess_recursion :: SPosition pos1 -> SPosition pos2
---     -> STTerm m ('Cap ctx (R ((SPosition pos1, SPosition pos2) :!> (SPosition pos3, SPosition pos4) :?> Off '[V, Wk Eps])))
+-- recurse :: MonadSession m => m ('Cap (s : ctx) s) r a -> m ('Cap ctx ('R s)) r a
+-- TODO: Explain that this doesn't work since ModifyPos pos3 ~ pos1 may not hold
+  -- R and V are responsible for repeating the body of the recursive session type description - and so ensuring that the input to this session typed call must unify with its output
+-- chess_recursion :: MonadSession m => Proxy (pos1 :: Position)
+--     -> Proxy (pos2 :: Position)
+--     -> m ('Cap ctx (R ((Proxy pos1, Proxy pos2)
+--         :!> (Proxy (pos3 :: Position), Proxy (pos4 :: Position))
+--         :?> Off '[V, Wk Eps])))
 --         ('Cap ctx Eps) ()
+-- chess_recursion x y = recurse $ f x y
+--     where
+--         f from to = do
+--             send (from, to)
+--             (pair :: (Proxy p1, Proxy p2)) <- recv
+--             (var0 >> uncurry f
+--               (Proxy @(ModifyPos p1), Proxy @(ModifyPos p2)))
+--               <&> (weaken0 >> eps0)
+--             return ()
+
+-- type family ModifyPos (x :: Position) :: Position where
+--     ModifyPos (At col row) = At col (S row)
+
+-- recurse :: MonadSession m => m ('Cap (s : ctx) s) r a -> m ('Cap ctx ('R s)) r a
+-- TODO: This is successful, include this in the report
+-- chess_recursion :: MonadSession m => Position -> Position
+--     -> m ('Cap '[] (R ((Position, Position) :!> (Position, Position) :?> Off '[V, Wk Eps])))
+--          ('Cap '[] Eps) ()
 -- chess_recursion x y = recurse $ f x y
 --     where
 --         f from to = do
@@ -56,18 +79,6 @@ prog_recursion_dual = recurse $ go 0
 --             pair <- recv
 --             (var0 >> uncurry f pair) <&> (weaken0 >> eps0)
 --             return ()
-
--- recurse :: MonadSession m => m ('Cap (s : ctx) s) r a -> m ('Cap ctx ('R s)) r a
-chess_recursion :: MonadSession m => Position -> Position
-    -> m ('Cap '[] (R ((Position, Position) :!> (Position, Position) :?> Off '[V, Wk Eps])))
-         ('Cap '[] Eps) ()
-chess_recursion x y = recurse $ f x y
-    where
-        f from to = do
-            send (from, to)
-            pair <- recv
-            (var0 >> uncurry f pair) <&> (weaken0 >> eps0)
-            return ()
 
 -- sendPos :: MonadSession m => SPosition pos1 -> m ('Cap '[] ((SPosition pos1) :!> Eps)) ('Cap '[] Eps) ()
 -- sendPos x = do
