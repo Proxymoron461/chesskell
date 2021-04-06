@@ -12,6 +12,10 @@ While our implementation can be considered idiomatic in the sense that the rules
 
 Reasoning about our definitions' impact on compile-time performance and memory usage has proved difficult: optimisation techniques we expected to improve performance did not and changes which we expected to make no difference ended up improving performance. These surprising findings make it clear to us that, in order for developers to be able to encode complex business logic in Haskell's type system, it must become more transparent how the compiler will react to a given definition or there must be tools which allow developers to profile and debug their encodings.
 
+\section{Haskell Symposium 2021 Paper}
+
+% TODO: Write about this mate
+
 \section{Future Work}
 
 Although Chesskell has a full feature set, there is of course room for further work. In this section, we detail the potential areas for improvement and research.
@@ -28,9 +32,64 @@ Interestingly, Chess could very naturally be expressed as a communications proto
 
 Once Chesskell's feature set was completed, we began work on a session-typed version of Chesskell making use of an existing session types implementation \cite{sesstypesincloudhaskell}. Early progress seemed promising; however, expressing Chesskell with this session types implementation proved difficult, due to unexpected type errors.
 
-The sender and receiver in the communication session both communicate with each other across some channel; and in this case, the communication channel was incapable of carrying messages with type variables that were determined at the point of sending. We could not send the positions as \inline{Proxy (a :: Position)} values, and would need to express the position as some other type (such as a \inline{String}) and construct a \inline{Proxy (a :: Position)} type from that value at the receiving end.
+We created an early draft of a session-typed communication protocol, using values of type \inline{Position}, before attempting to migrate this early version to use \inline{Proxy} values with type \inline{Proxy Position}. This early version involves the sender sending two positions (the destination square and the target square), and then receiving two positions from the other party, before recursively calling the function again to keep the game going for arbitrary length. We give the definition below, which compiles successfully:
 
-However, a function with type signature \inline{String -> Proxy (a :: Position)} proved difficult to express in Haskell, since the type variable \inline{a} has no other type variable to unify with. Due to time constraints, we could not find another session type implementation and start again from scratch; but another Haskell session type library without this restriction could be used to implement Chess at the type level with session types in future.
+\begin{lstlisting}
+chess_recursion :: MonadSession m => Position -> Position
+    -> m ('Cap '[] (R ((Position, Position) :!> (Position, Position)
+                                            :?> Off '[V, Wk Eps])))
+         ('Cap '[] Eps) ()
+chess_recursion x y = recurse $ f x y
+    where
+        f from to = do
+            send (from, to)
+            pair <- recv
+            (var0 >> uncurry f pair) <&> (weaken0 >> eps0)
+            return ()
+\end{lstlisting}
+
+Note that the session protocol is visible in the types: \inline{R ((Position, Position) :!> (Position, Position) :?> Off '[V, Wk Eps])}. This essentially instructs the type checker to only accept session typed programs which recursively send two positions and then receive two positions.
+
+However, the use of \inline{Cap}, \inline{R}, and \inline{V} to enable recursion through a stack of session types, which comes from a previous session types implementation in Haskell \cite{sessalmostnoclass}, has the constraint that the types in each send-receive phase must unify with each other. This constraint makes sense; a protocol promising that an integer will be sent should fail to compile if a value with a different type is sent.
+
+When introducing the type variables with kind \inline{'Position} into the protocol, this constraint no longer holds; there is no guarantee that a Chess game will repeat itself every few moves, and such a guarantee would rule out many valid Chess games.
+
+Below, we use additional type family, \inline{ModifyPos}, to generate new \inline{Position} types to mimic a Chess game. This definition fails to compile as the type variables describing the movement of the next turn of Chess will not unify with the current turn's type variables:
+
+\begin{lstlisting}
+-- The below fails to compile with the following type error:
+    -- * Couldn't match type 'pos1' with 'ModifyPos pos3'
+    -- 'pos1' is a rigid type variable bound by
+    --   the type signature for:
+    --     chess_recursion :: (...)
+chess_recursion :: MonadSession m => Proxy (pos1 :: Position)
+    -> Proxy (pos2 :: Position)
+    -> m ('Cap ctx (R ((Proxy pos1, Proxy pos2)
+        :!> (Proxy (pos3 :: Position), Proxy (pos4 :: Position))
+        :?> Off '[V, Wk Eps])))
+        ('Cap ctx Eps) ()
+chess_recursion x y = recurse $ f x y
+    where
+        f from to = do
+            send (from, to)
+            (pair :: (Proxy p3, Proxy p4)) <- recv
+            (var0 >> uncurry f
+              (Proxy @(ModifyPos p3), Proxy @(ModifyPos p4)))
+              <&> (weaken0 >> eps0)
+            return ()
+
+type family ModifyPos (x :: Position) :: Position where
+    ModifyPos (At col row) = At col (S row)
+\end{lstlisting}
+
+The given input argument to the next round of the session typed protocol, a tuple with type \inline{(Proxy (ModifyPos pos3), Proxy (ModifyPos pos4))} cannot be used as the formal input parameter of type \inline{(Proxy pos1, Proxy pos2)} since \inline{pos1 ~ ModifyPos pos3} may not hold. However, it makes sense that the next moves are dependent on the previous moves in the game; and all moves before that point. The use of \inline{ModifyPos}, while a little crude, mimics the structure of the game, whereby each move depends upon the last.
+
+Since this unification constraint cannot be met, expressing a Chess game with session types in this recursive manner is impossible, since there are many valid Chess games in which the moves do not repeat every $N$ terms, for some fixed positive integer $N$.
+
+One possible solution could be to express Chess games of fixed length in this manner, simply writing new definitions for each possible Chess game length (which rarely exceeds 200). While this is technically a working solution, it is not general and would involve much shared code, complicating debugging and ensuring that if you need to remedy an issue in one definition, you must also remedy it in many other places.
+
+Ultimately, due to time constraints, we have been unable to further investigate a potential session-typed implementation of Chesskell. However, there is room for further research into and progress within this area, perhaps through findings ways to circumvent these unification constraints through other methods of implementing recursive session typed protocols.
+
 
 \subsection{Type-level Bitboards}
 
