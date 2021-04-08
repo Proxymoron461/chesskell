@@ -43,11 +43,14 @@ shouldNotTypecheck findKingTest
 For a more involved example, consider the Castling move (which we detail in \cref{castlesection}). There are situations in which a team can castle in one direction, but not in the other direction; and in those situations, calling \inline{CanCastle} for that team should return \inline{True} for the valid direction, and \inline{False} for the invalid one. To test this behaviour, we create a custom Chess board (see \cref{castleboard}) in which the Black King can castle left but not right, and the White King can castle right but not left. We pair this custom board with two unit tests, to ensure that \inline{CanCastle} has the expected behaviour:
 
 \begin{lstlisting}
-canCastleTest4 :: '(True, False) :~: CanCastle Black BlackLeftCastleWhiteRightCastleDec
-canCastleTest4 = Refl
+canCastleBlackTest :: '(True, False) :~: CanCastle Black BlackLeftCastleWhiteRightCastleDec
+canCastleBlackTest = Refl
 
-canCastleTest5 :: '(False, True) :~: CanCastle White BlackLeftCastleWhiteRightCastleDec
-canCastleTest5 = Refl
+canCastleWhiteTest :: '(False, True) :~: CanCastle White BlackLeftCastleWhiteRightCastleDec
+canCastleWhiteTest = Refl
+-- ...
+shouldTypecheck canCastleBlackTest
+shouldTypecheck canCastleWhiteTest
 \end{lstlisting}
 
 \begin{figure}
@@ -60,18 +63,38 @@ canCastleTest5 = Refl
 
 \subsubsection{FIDE Laws of Chess Unit Tests}
 
-To ensure correctness as far as possible, we create unit and scenario tests for each FIDE Law of Chess which is amenable to testing in this manner. For instance, the FIDE laws describe the movement rules for Knights, including the directions they cannot move in; and so we write unit tests to ensure that Knights are not permitted to move in those invalid directions:
+To ensure correctness as far as possible, we create unit and scenario tests for each FIDE Law of Chess which is amenable to testing in this manner. One of the primary aims of Chesskell, as we state in \cref{introobjectives}, was to implement all FIDE laws concerning the game of Chess itself. An appropriate way of determining the success of this objective is to test as many laws of Chess as possible, to ensure that Chesskell's behaviour matches that of the FIDE ruleset.
+
+As an example, consider the FIDE law outlining how Knights move around the board:
+
+\begin{quoting}
+    The knight may move to one of the squares nearest to that on which it stands but not on the same rank, file or diagonal.
+\end{quoting}
+
+To test this behaviour, we write a total of 16 unit tests. For both teams, eight tests encompassing movement in the four cardinal directions, as well as the four intercardinal ones. This movement is tested on boards which only contain the relevant Knight, and the two Kings (to avoid the aforementioned "missing King" error). While these tests do not involve testing every possible target and destination square, they give reasonable assurances that Knights move correctly around the board:
 
 \begin{lstlisting}
-it "1: A White Knight cannot move left in a straight line" $
-    shouldNotTypecheck whiteCannotGoLeft
-it "2: A White Knight cannot move right in a straight line" $
-    shouldNotTypecheck whiteCannotGoRight
+whiteCannotGoLeft :: Proxy (a :: BoardDecorator)
+whiteCannotGoLeft = Proxy @(Eval (Move (At D Nat5) (At B Nat5) WhiteKnightDec))
+
+whiteCannotGoRight :: Proxy (a :: BoardDecorator)
+whiteCannotGoRight = Proxy @(Eval (Move (At D Nat5) (At E Nat5) WhiteKnightDec))
+
 -- ...
-it "15: A Black Knight cannot move South-West in a straight line" $
-    shouldNotTypecheck blackCannotGoSW
-it "16: A Black Knight cannot move South-East in a straight line" $
-    shouldNotTypecheck blackCannotGoSE
+
+blackCannotGoNW :: Proxy (a :: BoardDecorator)
+blackCannotGoNW = Proxy @(Eval (Move (At D Nat5) (At B Nat7) BlackKnightDec))
+
+blackCannotGoNE :: Proxy (a :: BoardDecorator)
+blackCannotGoNE = Proxy @(Eval (Move (At D Nat5) (At F Nat7) BlackKnightDec))
+\end{lstlisting}
+
+None of these tests should type check, as they involve invalid movement; so we use the \inline{shouldNotTypecheck} assertion:
+
+\begin{lstlisting}
+shouldNotTypecheck whiteCannotGoLeft
+-- ...
+shouldNotTypecheck blackCannotGoNE
 \end{lstlisting}
 
 \subsection{Chesskell Game Tests} \label{gametestsection}

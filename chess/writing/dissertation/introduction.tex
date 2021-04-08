@@ -73,7 +73,7 @@ Given the previous discussion on dependent type systems, and how Haskell is inch
 
 However, choosing to write Chesskell in Haskell means figuring out how to perform typically value-level computation at the type-level. Indeed, the majority of the code for Chesskell is reusable, since much of it is not specifically about expressing the rules of Chess, but building components to enable complex computation with types. The project is both more difficult, and more interesting, for having been completed in a language without a fully dependent type system.
 
-\section{Objectives}
+\section{Objectives} \label{introobjectives}
 
 The objective of this project is to develop a model of Chess at the type level, which will compile a given program if and only if it is a valid game of Chess. The primary method of interfacing with this type level model will be via a custom EDSL, through which Chess games are expressed. During compilation, the game of Chess will be simulated, such that any invalid move (or the lack of a move where one should have occurred) will result in a type error. The main goals are thus:
 
