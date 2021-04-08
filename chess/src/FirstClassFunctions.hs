@@ -148,12 +148,12 @@ type instance Eval (Apply (f ': fs) xs) = Eval (f <$> xs) ++ Eval (Apply fs xs)
 data (<*>) :: f (a -> Exp b) -> f a -> Exp (f b)
 type instance Eval (f <*> x) = Eval (Apply f x)
 
-data Bind :: (a -> Exp (f b)) -> f a -> Exp (f b)
-type instance Eval (Bind f Nothing)  = Nothing
-type instance Eval (Bind f (Just x)) = Eval (f x)
+data Bind :: m a -> (a -> Exp (m b)) -> Exp (m b)
+type instance Eval (Bind Nothing  f)  = Nothing
+type instance Eval (Bind (Just x) f)  = Eval (f x)
 
 data (>>=) :: m a -> (a -> Exp (m b)) -> Exp (m b)
-type instance Eval (x >>= f) = Eval (Bind f x)
+type instance Eval (x >>= f) = Eval (Bind x f)
 
 data Join :: m (m a) -> Exp (m a)
 type instance Eval (Join Nothing)  = Nothing

@@ -54,7 +54,7 @@ getPieceAtTest1 :: Just TestPiece :~: Eval (GetPieceAt TestBoard (At A Nat1))
 getPieceAtTest1 = Refl
 
 -- :k VecAtR Z :: Vec n a -> Exp (Maybe a)
-getPieceAtTest2 :: Just TestPiece :~: Eval (Join (Eval (Bind ((Flip (!!) (Nat0))) (Eval (TestBoard !! Nat0)))))
+getPieceAtTest2 :: Just TestPiece :~: Eval (Join (Eval ((Eval (TestBoard !! Nat0)) >>= ((Flip (!!) (Nat0))))))
 getPieceAtTest2 = Refl
 
 -- :kind! VecAt (Z :<> (S Z)) :: Nat -> Exp (Maybe Nat)
