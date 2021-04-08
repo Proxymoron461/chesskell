@@ -509,6 +509,14 @@ FIGURE HERE PLEASE % TODO: Make a figure
 
 Then, this list of squares is filtered based on whether there is a valid piece in the original \inline{BoardDecorator} of the correct team in any of those squares. If the resulting filtered list has length 1 (i.e. it contains a single piece), then the position of that single piece extracted; otherwise, there are either no valid origin squares, or multiple valid origin squares, in which case the longer Chesskell syntax should be used.
 
+\begin{figure}
+    \centering
+    \fenboard{8/8/3B4/8/1B6/8/8/8 w - - 0 1}
+    \showboard
+    \caption{A board where two White Bishops can move to c5.}
+    \label{twobishops}
+\end{figure}
+
 As an example of the latter case, consider the board state in \cref{twobishops}. There are two bishops who could potentially move to square c5, and as such Chesskell will not be able to tell which bishop should move to that location, and will fail to compile with a type error:
 
 \begin{lstlisting}
