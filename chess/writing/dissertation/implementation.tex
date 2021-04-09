@@ -379,11 +379,15 @@ The EDSL has gone through multiple changes during development, not only in synta
 
 Before the final format and syntax of the EDSL was decided upon, it was important to determine whether the creation of a value-level interface for the type level model was possible at all. The earliest version of the EDSL was essentially just a set of named Haskell functions, to test if the type-level model was usable.
 
-This Minimum Viable Product version does not include many of the Chesskell EDSL's more advanced features, such as board creation, but allows the user to describe a Chess game move by move. A single core function, named \inline{move}, made use of singletons and a first class family version of bind to move a piece on a board from one position to another:
+This Minimum Viable Product version does not include many of the Chesskell EDSL's more advanced features, such as board creation, but allows the user to describe a Chess game move by move. A single core function, named \inline{move}, made use of \inline{Proxy} types and a First Class Family version of bind to move a piece on a board from one position to another:
 
 \begin{lstlisting}
-move :: SPosition from -> SPosition to -> Proxy (b :: Maybe Board) -> Proxy (Eval (b >>= Move from to))
-move (sFrom :: SPosition from) (sTo :: SPosition to) (pBoard :: Proxy (b :: Maybe Board)) = Proxy @(Eval (b >>= Move from to))
+move :: Proxy (from :: Position)
+     -> Proxy (to :: Position)
+     -> Proxy (b :: Maybe Board)
+     -> Proxy (Eval (b >>= Move from to))
+move (sFrom :: Proxy from) (sTo :: Proxy to) (pBoard :: Proxy (b :: Maybe Board))
+    = Proxy @(Eval (b >>= Move from to))
 \end{lstlisting}
 
 Despite its simple nature, \inline{move} provides enough for a user to interact with the type-level model of Chess and describe a game. It is a sufficiently viable and minimal version of Chesskell---but of course, it's not much of an EDSL.
@@ -410,7 +414,7 @@ Finally, the \inline{Term t r} type ends the continuation stream by taking no co
 type Term t r = t -> r
 \end{lstlisting}
 
-The above continuation types are combined with type-level rule checking, to create a Chess EDSL that operates through passing continuations. Using a combination of singletons, proxies, kind signatures, and type applications, the value-level Haskell code for the EDSL can have specific type variables and involve type family application. Essentially, the term-level EDSL can involve type-level rule checking.
+The above continuation types are combined with type-level rule checking, to create a Chess EDSL that operates through passing continuations. Using a combination of proxies, kind signatures, and type applications, the value-level Haskell code for the EDSL can have specific type variables and involve type family application. Essentially, the term-level EDSL can involve type-level rule checking.
 
 The chess game starts with a \inline{Proxy} value, its type parameterised with a \inline{BoardDecorator} type. Continuations are applied, transforming that value, until the chess game ends or a rule is broken. Chess games begin with the board in a set configuration; and so a type \inline{StartDec} of kind \inline{BoardDecorator} was defined to contain all of this information.
 
@@ -419,7 +423,7 @@ chess :: Spec (Proxy StartDec)
 chess cont = cont (Proxy @StartDec)
 \end{lstlisting}
 
-The core continuations are named after the pieces, such as \inline{pawn} and \inline{king}. Each of them takes in an \inline{SPosition}, a singleton version of \inline{Position}. We define a new datatype, \inline{MoveArgs}, in order to simplify the process of passing information between the continuations; \inline{MoveArgs} can be partially applied, whereas a regular type family cannot. The \inline{pawn} continuation is used below as an example; however, all of the piece continuations are similar, and only differ in the \inline{PieceName} type passed to the continuation via \inline{MoveArgs}.
+The core continuations are named after the pieces, such as \inline{pawn} and \inline{king}. Each of them takes in a \inline{Proxy (a :: Position)}, a \inline{Proxy} value whose type is parameterised with the relevant \inline{Position} types. We define a new datatype, \inline{MoveArgs}, in order to simplify the process of passing information between the continuations; \inline{MoveArgs} can be partially applied, whereas a regular type family cannot. The \inline{pawn} continuation is used below as an example; however, all of the piece continuations are similar, and only differ in the \inline{PieceName} type passed to the continuation via \inline{MoveArgs}.
 
 \begin{lstlisting}
 data MoveArgs where
@@ -430,19 +434,19 @@ data MoveArgs where
        -> MoveArgs
 
 pawn :: Proxy (b :: BoardDecorator)
-     -> SPosition fromPos
+     -> Proxy (fromPos :: Position)
      -> Spec (Proxy (MA b fromPos 'Pawn))
-pawn (dec :: Proxy b) (from :: SPosition fromPos) cont
+pawn (dec :: Proxy b) (from :: Proxy fromPos) cont
     = cont (Proxy @(MA b fromPos Pawn))
 \end{lstlisting}
 
-The next continuation, \inline{to}, takes in another \inline{SPosition} as well as the \lstinline{MoveArgs}, performs the move computation, puts the resulting board decorator into a \inline{Proxy} type, and passes that \inline{Proxy} into the continuation given.
+The next continuation, \inline{to}, takes in another \inline{Proxy (a :: Position)} as well as the \lstinline{MoveArgs}, performs the move computation, puts the resulting board decorator into a \inline{Proxy} type, and passes that \inline{Proxy} into the continuation given.
 
 \begin{lstlisting}
 to :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))
-   -> SPosition toPos
+   -> Proxy (toPos :: Position)
    -> Spec (Proxy (Eval (MoveWithStateCheck n fromPos toPos b)))
-to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: SPosition toPos) cont
+to (args :: Proxy (MA (b :: BoardDecorator) (fromPos :: Position) (n :: PieceName))) (to' :: Proxy toPos) cont
     = cont (Proxy @(Eval (MoveWithStateCheck n fromPos toPos b)))
 \end{lstlisting}
 
@@ -495,9 +499,9 @@ Consider the original continuation for moving a Pawn, named \inline{pawn}. To mo
 
 \begin{lstlisting}
 p :: Proxy (b :: BoardDecorator)
-  -> SPosition toPos
+  -> Proxy (toPos :: Position)
   -> Spec (Proxy (MoveTo Pawn toPos b))
-p (dec :: Proxy b) (to :: SPosition toPos) cont
+p (dec :: Proxy b) (to :: Proxy toPos) cont
     = cont (Proxy @(MoveTo Pawn toPos b))
 \end{lstlisting}
 
@@ -539,7 +543,7 @@ Despite the late introduction of this shorthand syntax, it fits naturally into C
 
 While Chesskell was originally intended only to describe complete games of Chess, testing of the project was complicated through the fact that Chess games always start in a fixed configuration. To test something like Castling or Check required many moves before these game states became possible. Chesskell was extended to include arbitrary board creation syntax, to simplify this process.
 
-Individual pieces can be placed down on the board using the \inline{put} and \inline{at} continuations, which are used in combination with singleton piece names, teams, and positions to modify a \inline{BoardDecorator} type wrapped within the \inline{Proxy} type constructor. Placing a Black Pawn on square a4 is done like so: \inline{Put _Bl _P at a4}.
+Individual pieces can be placed down on the board using the \inline{put} and \inline{at} continuations, which are used in combination with \inline{Proxy}-wrapped piece names, teams, and positions to modify a \inline{BoardDecorator} type wrapped within the \inline{Proxy} type constructor. Placing a Black Pawn on square a4 is done like so: \inline{Put _Bl _P at a4}.
 
 These commands are paired with a new beginning continuation, \inline{create}, which passes a \inline{Proxy JustKingsDec} value to a continuation, where \inline{JustKingsDec} is a \inline{BoardDecorator} type where the board only contains the Black and White King; nothing else. Along with a few other utility continuations to do things like set the last moved position, these continuations can be used to build custom boards. The below Chesskell snippet builds the board seen in \cref{twobishops}:
 
@@ -549,70 +553,85 @@ create put _Wh _B at d6 put _Wh _B at b4 end
 
 \subsubsection{FEN board creation}
 
-However, Chesskell board creation syntax becomes overly lengthy when dealing with placing down a large number of pieces. It fails to be even half as concise as FEN board creation syntax (which we detail in \cref{fensection}). As such, a new board creation syntax, based on FEN notation, was also implemented in Chesskell to speed up board creation.
+However, Chesskell board creation syntax becomes overly lengthy when dealing with placing down a large number of pieces. FEN board creation syntax (which we detail in \cref{fensection}) is notably more concise, able to express an entire row of pieces in a maximum of eight characters. To achieve more compact board creation notation, we implemented new syntax based on FEN notation.
 
-Just like real FEN notation, this Chesskell variant of FEN notation (henceforth abbreviated to CFEN) specifies the chess board line by line. A new data type, named \inline{Fen}, is used to encapsulate the idea of a row of 8 items:
+Just like real FEN notation, this Chesskell variant of FEN notation (henceforth abbreviated to CFEN) specifies the chess board line by line. We define a new data type, named \inline{Fen}, to encapsulate the idea of a row of 8 items. Each type constructor represents some amount of empty spaces in the row (much like the numbers in FEN notation), such that they increase the length of the row by that amount:
 
 \begin{lstlisting}
 data Fen (n :: Nat) where
     FF  :: Fen Nat0
     F1  :: Fen n -> Fen (S n)
     F2  :: Fen n -> Fen (S (S n))
-    F3  :: Fen n -> Fen (S (S (S n)))
-    F4  :: Fen n -> Fen (S (S (S (S n))))
-    F5  :: Fen n -> Fen (S (S (S (S (S n)))))
-    F6  :: Fen n -> Fen (S (S (S (S (S (S n))))))
+    -- ...
     F7  :: Fen n -> Fen (S (S (S (S (S (S (S n)))))))
     F8  :: Fen Nat8
+\end{lstlisting}
+
+These definitions do not go beyond 8 empty spaces, since Chess board rows are only 8 spaces long.
+
+To this data type, we also add type constructors for pieces, all of which take up a single space, and so increment the length of the row. We suffix the type constructor with -\inline{w} for White pieces, and with -\inline{b} for Black pieces:
+
+\begin{lstlisting}
+data Fen (n :: Nat) where
+    -- ...
     Pw  :: Fen n -> Fen (S n)
     Nw  :: Fen n -> Fen (S n)
-    Qw  :: Fen n -> Fen (S n)
-    Kw  :: Fen n -> Fen (S n)
-    Bw  :: Fen n -> Fen (S n)
-    Rw  :: Fen n -> Fen (S n)
-    Pb  :: Fen n -> Fen (S n)
-    Nb  :: Fen n -> Fen (S n)
-    Qb  :: Fen n -> Fen (S n)
-    Kb  :: Fen n -> Fen (S n)
+    -- ...
     Bb  :: Fen n -> Fen (S n)
     Rb  :: Fen n -> Fen (S n)
 \end{lstlisting}
 
-Essentially, the \inline{Fen} type is used to create a type-level stack of elements; for example, \inline{F5 (Nw (Qw (F1 FF)))}. Each of these \inline{Fen} type constructors can be pattern-matched on to create a list (or vector) of items.
+This \inline{Fen} type is used to create a type-level stack of elements; for example, \inline{F5 (Nw (Qw (F1 FF)))}. Each of these \inline{Fen} type constructors can be pattern-matched on to create a list (or vector) of items.
 
-In fact, the type family \inline{FenToRow} does exactly that; given a type of kind \inline{Fen n}, it outputs a \inline{Vec n (Maybe Piece)}, essentially transforming it into the row of a board. It also takes another \inline{Nat}, so that each piece's position can be set correctly:
+The type family \inline{FenToRow} does exactly that; given a type of kind \inline{Fen n}, it outputs a \inline{Vec n (Maybe Piece)}, essentially transforming it into the row of a board. It also takes another \inline{Nat}, so that each piece's position can be set correctly. Below, the type family \inline{FenReverse'} reverses a \inline{Fen} stack. Since stacks are LIFO structures, and we want the input piece types to be places left-to-right, the stack must be reversed before use:
 
 \begin{lstlisting}
 type family FenToRow (f :: Fen Eight) (r :: Nat) :: Row where
     FenToRow x r = FenHelper (FenReverse' x) r A
-
-type family FenHelper (f :: Fen n) (r :: Nat) (c :: Column) :: Vec n (Maybe Piece) where
-    FenHelper FF       row col = VEnd
-    FenHelper F8       row col = EmptyRow
-    FenHelper (F1 fen) row col = Nothing :-> FenHelper fen row (R col)
-    FenHelper (F2 fen) row col = Nothing :-> Nothing :-> FenHelper fen row (R (R col))
-    FenHelper (F3 fen) row col = Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R col)))
-    FenHelper (F4 fen) row col = Nothing :-> Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R (R col))))
-    FenHelper (F5 fen) row col = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R (R (R col)))))
-    FenHelper (F6 fen) row col = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R (R (R (R col))))))
-    FenHelper (F7 fen) row col = Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> Nothing :-> FenHelper fen row (R (R (R (R (R (R (R col)))))))
-    FenHelper (Pw fen) row col = Just (MkPiece White Pawn (Info Z (At col row))) :-> FenHelper fen row (R col)
-    FenHelper (Nw fen) row col = Just (MkPiece White Knight (Info Z (At col row))) :-> FenHelper fen row (R col)
-    FenHelper (Qw fen) row col = Just (MkPiece White Queen (Info Z (At col row))) :-> FenHelper fen row (R col)
-    FenHelper (Kw fen) row col = Just (MkPiece White King (Info Z (At col row))) :-> FenHelper fen row (R col)
-    FenHelper (Bw fen) row col = Just (MkPiece White Bishop (Info Z (At col row))) :-> FenHelper fen row (R col)
-    FenHelper (Rw fen) row col = Just (MkPiece White Rook (Info Z (At col row))) :-> FenHelper fen row (R col)
-    FenHelper (Pb fen) row col = Just (MkPiece Black Pawn (Info Z (At col row))) :-> FenHelper fen row (R col)
-    FenHelper (Nb fen) row col = Just (MkPiece Black Knight (Info Z (At col row))) :-> FenHelper fen row (R col)
-    FenHelper (Qb fen) row col = Just (MkPiece Black Queen (Info Z (At col row))) :-> FenHelper fen row (R col)
-    FenHelper (Kb fen) row col = Just (MkPiece Black King (Info Z (At col row))) :-> FenHelper fen row (R col)
-    FenHelper (Bb fen) row col = Just (MkPiece Black Bishop (Info Z (At col row))) :-> FenHelper fen row (R col)
-    FenHelper (Rb fen) row col = Just (MkPiece Black Rook (Info Z (At col row))) :-> FenHelper fen row (R col)
 \end{lstlisting}
 
-Predictably, \inline{FenReverse'} reverses a \inline{Fen} stack, to ensure that the pieces are in the correct order when they are placed down.
+The definition of \inline{FenHelper} is lengthy, but it exists to, given some \inline{Fen} stack of length $n$, a natural number, and a column, return a \inline{Vec n (Maybe Piece)} by transforming the stack elements into a Chess board row. For instance, given an empty stack, it should return a vector of size 0, and given a stack describing 8 empty spaces, it should return a vector of length 8, populated with \inline{Nothing} types:
 
-The end user requires a way to create these stacks of \inline{Fen} types. A continuation is defined for each type constructor of \inline{Fen}, with a few example definitions below:
+\begin{lstlisting}
+type family FenHelper (f :: Fen n) (r :: Nat) (c :: Column) :: Vec n (Maybe Piece) where
+    FenHelper FF row col = VEnd
+    FenHelper F8 row col = EmptyRow
+    -- ...
+\end{lstlisting}
+
+For each type constructor representing $n$ empty spaces, \inline{FenHelper} returns a vector with those empty spaces pushed to the front. Note that the \inline{Column} argument is incremented to the right by the amount of empty spaces -- knowing the exact column being operated on is helpful for giving pieces correct starting positions:
+
+\begin{lstlisting}
+type family FenHelper (f :: Fen n) (r :: Nat) (c :: Column) :: Vec n (Maybe Piece) where
+    -- ...
+    FenHelper (F1 fen) row col
+        = Nothing :-> FenHelper fen row (R col)
+    FenHelper (F2 fen) row col
+        = Nothing :-> Nothing :-> FenHelper fen row (R (R col))
+    -- ...
+\end{lstlisting}
+
+Finally, for each of the constructors representing a piece, a corresponding piece (of the given team) is pushed to the front of the vector, with its position populated using the given column and row information:
+
+\begin{lstlisting}
+type family FenHelper (f :: Fen n) (r :: Nat) (c :: Column) :: Vec n (Maybe Piece) where
+    -- ...
+    FenHelper (Pw fen) row col
+        = Just (MkPiece White Pawn (Info Z (At col row)))
+            :-> FenHelper fen row (R col)
+    FenHelper (Nw fen) row col
+        = Just (MkPiece White Knight (Info Z (At col row)))
+            :-> FenHelper fen row (R col)
+    -- ...
+    FenHelper (Bb fen) row col
+        = Just (MkPiece Black Bishop (Info Z (At col row)))
+            :-> FenHelper fen row (R col)
+    FenHelper (Rb fen) row col
+        = Just (MkPiece Black Rook (Info Z (At col row)))
+            :-> FenHelper fen row (R col)
+\end{lstlisting}
+
+To give the end user a value-level way to create these \inline{Fen} types, we define continuations for each type constructor of \inline{Fen}. We give some example definitions below:
 
 \begin{lstlisting}
 fn7 :: (Proxy (b :: Fen n))
@@ -628,7 +647,7 @@ wP (Proxy :: Proxy (b :: Fen n)) cont
     = cont (Proxy @(Pw b))
 \end{lstlisting}
 
-\inline{fn0} and \inline{ff} are delimiters; their definition is different since they are intended to bookend each use of these FEN continuations:
+\inline{fn0} and \inline{ff} are delimiters; their definitions are different as they are intended to bookend each use of these FEN continuations:
 
 \begin{lstlisting}
 ff :: Spec (Proxy FF)
@@ -638,17 +657,17 @@ fn0 :: Term (Proxy (b :: Fen n)) (Proxy (b :: Fen n))
 fn0 = id
 \end{lstlisting}
 
-Stacks of \inline{Fen} types can now be created like so: \inline{ff fn1 wQ wN fn5 fn0}. Now that these stacks can be created, there must be a way to use them. A series of continuations for setting the row of the board with CFEN notation, named \inline{fen1}, \inline{fen2}, \dots, \inline{fen8}, are defined and make use of \inline{FenToRow}. The definition of \inline{fen5} is given below as an example, but the only differences between the continuations are the rows they operate on:
+Stacks of \inline{Fen} types can now be created like so: \inline{ff fn1 wQ wN fn5 fn0}. Now that users can create these stacks via value-level constructs, we provide functionality to make use of them. Using \inline{FenToRow}, we define a series of continuations for setting each row of the board with CFEN notation. Each continuation has naming convention "fen-n", where $n$ is the row being populated: \inline{fen1}, \inline{fen2}, and so on. To illustrate, we give the definition of \inline{fen5} is given below:
 
 \begin{lstlisting}
 fen5 :: (Proxy (b :: BoardDecorator))
      -> (Proxy (f :: Fen Eight))
      -> Spec (Proxy (SetRowDec' b Nat5 (FenToRow f Nat5)))
-fen5 (Proxy :: Proxy (b :: BoardDecorator)) (Proxy :: Proxy (f :: Fen n)) cont
+fen5 (Proxy :: Proxy b) (Proxy :: Proxy f)) cont
     = cont (Proxy @(SetRowDec' b Nat5 (FenToRow f Nat5)))
 \end{lstlisting}
 
-Note that these stacks of \inline{Fen} types must be of length 8 (i.e. they must have kind \inline{Fen Eight}) to be accepted by the continuations, ensuring that the user cannot create rows of the wrong size. To put it all together, these commands can be used together to create a board row-by-row. Below is the Chesskell FEN notation for creation of the board seen in \cref{fenexample}, which would be excessively lengthy in the base Chesskell board creation notation:
+Note that these stacks of \inline{Fen} types must be of length 8 (i.e. they must have kind \inline{Fen Eight}) to be accepted by the continuations, ensuring that the user cannot create rows of the wrong size. To put it all together, these commands can be used together to create a board row-by-row. Below is the CFEN notation to create the board seen in \cref{fenexample}, which would be excessively lengthy if using the basic Chesskell board creation notation:
 
 \begin{lstlisting}
 fenBoard = create
