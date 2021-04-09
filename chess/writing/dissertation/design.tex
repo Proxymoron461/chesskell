@@ -59,7 +59,7 @@ There are additional ways in which a Chess game may end, such as when two oppone
     \label{checkmate}
 \end{figure}
 
-\subsection{Chess Notation} \label{fensection}
+\subsection{Chess Notation}
 
 There are two main categories of chess notation; those concerning the state of the game, and those concerning the state of the board. Further relevant details on specific Chess notation will be tackled as and when relevant; this section is only aimed as a minor note of their existence.
 
@@ -76,7 +76,9 @@ Chess notation concerning the state of the game tends to be an account of the wh
 
 There are stylised variants of Algebraic Notation, such as Figurine Algebraic Notation, in which symbols for the pieces replace the capital letter. For example, \texttt{Na4} is written as \wmove{Na4}, whereby the N is replaced with the symbol for a Knight. We use Figurine Algebraic Notation, where chess symbols replace capital letters, within this dissertation.
 
-The other class of chess notation is that for board creation or description. Forsyth-Edwards Notation (FEN), a popular example, simply states which pieces are where on a board, line-by-line. White pieces are denoted with uppercase letters, and Black pieces are denoted with lowercase letters. The letters used match those for Algebraic Notation, save for the introduction of P for White Pawns (and p for Black Pawns). Lines are described as series of pieces and empty spaces, such that a row with a White Pawn on every other position would be described as \texttt{P1P1P1P1}. Another row with two spaces between Black Pawns would be described as \texttt{p2p2p1}, since the total number of row positions must equal eight. See \cref{fenexample} for an example of a board created with FEN notation.
+\subsubsection{Forsyth-Edwards Notation} \label{fensection}
+
+The other class of chess notation is that for board creation or description. Forsyth-Edwards Notation (FEN), a popular example, simply states which pieces are where on a board, line-by-line. White pieces are denoted with uppercase letters, and Black pieces are denoted with lowercase letters. The letters used match those for Algebraic Notation, save for the introduction of P for White Pawns (and p for Black Pawns). Lines are described as series of pieces (with letters) and empty spaces (with numbers), such that a row with a White Pawn on every other position would be described as \texttt{P1P1P1P1}. Another row with two spaces between Black Pawns would be described as \texttt{p2p2p1}. Note that the total number of positions described should always be equal to 8. See \cref{fenexample} for an example of a board created with: \texttt{rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR}.
 
 \begin{figure}[h]
     \centering
