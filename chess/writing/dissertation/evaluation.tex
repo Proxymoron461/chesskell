@@ -296,7 +296,7 @@ Capture moves are usually treated as a special case, having their own special no
 
 Chesskell notation does not treat capture moves as a special case. A move, whether capturing or otherwise, is expressed the same way; the above move would be \wmove{n d4}. Interestingly, this makes Chesskell closer to Minimal Algebraic Notation, which also does not include (similar to Chesskell) special notation for Check, En Passant Capture, and Checkmate.
 
-\subsection{Castling}
+\subsection{Castling} \label{castleextension}
 
 Notations such as Algebraic Notation tend to have specific notation for Castling; since it is a unique move which moves more than one piece, it is a useful signpost for the reader to update their mental model. Castling is expressed in algebraic notation as either \wmove{0-0} or \wmove{0-0-0}, to represent kingside and queenside castling, respectively.
 
@@ -325,7 +325,7 @@ Algebraic Notation is not the only Chess notation; there are many others. We con
 
 Smith Notation is one of the more descriptive forms of Chess notation, including both the source and destination squares. Additionally, when a promotion is made, the piece type being promoted to is included; making it rather similar to (although more concise than) Chesskell's long-form syntax.
 
-\subsubsection{ICCF Numeric Notation}
+\subsubsection{ICCF Numeric Notation} \label{numberextension}
 
 ICCF Numeric Notation is intended for international games of Chess, whereby Algebraic Notation can cause confusion. In Algebraic Notation (and in Chesskell), the English names for pieces are used; but in other languages, there are other names for the piece types, and so for non-English speakers the notation can be confusing. ICCF Numeric Notation remedies this by describing moves in terms of their origin and destination squares, and when piece types are necessary (such as when performing promotion), to use numbers rather than names.
 
