@@ -103,7 +103,7 @@ data PieceName = Pawn
 
 \subsubsection{Position}
 
-The \inline{Position} type holds the positions of pieces on the chess board. It makes use of two more types; one for columns and the other for rows. In chess, columns are labelled with letters and rows are labelled with numbers; "a1" is the bottom-left of the board, and "h8" is the top-right. The \inline{Column} type is another simple algebraic data type enumerating all columns that a piece can reside within. The row type is a type-level implementation of Peano natural numbers, named \inline{Nat}. Early versions of Chesskell had a custom implementation, but the final version uses definitions provided in \inline{Data.Type.Nat}.
+The \inline{Position} type holds the positions of pieces on the chess board. It makes use of two more types; one for columns and the other for rows (We explain details on columns and rows in \cref{boarddetails}). The \inline{Column} type is another simple algebraic data type enumerating all columns that a piece can reside within. The row type is a type-level implementation of Peano natural numbers, named \inline{Nat}. Early versions of Chesskell had a custom implementation, but the final version uses definitions provided in \inline{Data.Type.Nat}.
 
 \begin{lstlisting}
 data Column = A | B | C | D | E | F | G | H
