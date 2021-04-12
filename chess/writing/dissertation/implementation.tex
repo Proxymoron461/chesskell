@@ -388,7 +388,7 @@ Despite its simple nature, \inline{move} alone is sufficient for a user to inter
 
 \subsection{Flat Builders}
 
-Once the feasibility of a Chesskell EDSL was proven, the actual format and logic of the EDSL was to be decided upon. A Continuation Passing Style~\cite{cps} scheme forms the foundation for the EDSL, with inspiration taken from Dmitrij Szamozvancev's Flat Builders pattern~\cite{mezzo}. The core idea is value transformation through a series of continuation function applications, until the final continuation function returns a value.
+Once the feasibility of a Chesskell EDSL was proven, the actual format and logic of the EDSL was to be decided upon. A Continuation Passing Style scheme (as we briefly outline in \cref{cpsshortexample}) forms the foundation for the EDSL, with inspiration taken from Dmitrij Szamozvancev's Flat Builders pattern~\cite{mezzo}. The core idea is value transformation through a series of continuation function applications, until the final continuation function returns a value.
 
 The type \inline{Spec t} is the type of functions which take in a continuation to operate on a value of type \inline{t}. For instance, a function with type \inline{Int -> Spec Int} would take in an integer, and then a continuation to operate on that integer.
 
@@ -408,7 +408,7 @@ Finally, the \inline{Term t r} type ends the continuation stream by taking no co
 type Term t r = t -> r
 \end{lstlisting}
 
-As an illustrative example, consider the implementation of a sentence-like structure for mathematical operations, such as \inline{to 5 add 7 add 9 increment then print}, which should return a string version of the final result. We can achieve this using the Flat Builders pattern. We define \inline{to} like so, passing a number into a continuation which performs some computation on the input:
+As an illustrative example of how we use these types, consider the implementation of a sentence-like structure for mathematical operations, such as \inline{to 5 add 7 add 9 increment then print}, which should return a string version of the final result. We can achieve this using the Flat Builders pattern. We define \inline{to} like so, passing a number into a continuation which performs some computation on the input:
 
 \begin{lstlisting}
 to :: Int -> Spec Int
