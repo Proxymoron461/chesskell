@@ -80,13 +80,13 @@ There are stylised variants of Algebraic Notation, such as Figurine Algebraic No
 
 \subsubsection{Forsyth-Edwards Notation} \label{fensection}
 
-The other class of chess notation is that for board creation/description. Forsyth-Edwards Notation (FEN), a popular example, simply states which pieces are where on a board, line-by-line. White pieces are denoted with uppercase letters, and Black pieces are denoted with lowercase letters. The letters used match those for Algebraic Notation, save for the introduction of P for White Pawns (and p for Black Pawns). Lines are described as series of pieces (with letters) and empty spaces (with numbers), such that a row with a White Pawn on every other position would be described as \texttt{P1P1P1P1}. A row with two spaces between Black Pawns would be described as \texttt{p2p2p1}. (Note that the total number of positions described should always be equal to 8.) Rows are separated with a backslash, and a total of eight rows should be described. See \cref{fenexample} for an example of a board created with: \texttt{rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR}.
+The other class of chess notation is that for board creation/description. Forsyth-Edwards Notation (FEN), a popular example, simply states which pieces are where on a board, line-by-line. White pieces are denoted with uppercase letters, and Black pieces are denoted with lowercase letters. The letters used match those for Algebraic Notation, save for the introduction of P for White Pawns (and p for Black Pawns). Lines are described as series of pieces (with letters) and empty spaces (with numbers), such that a row with a White Pawn on every other position would be described as \texttt{P1P1P1P1}. A row with two spaces between Black Pawns would be described as \texttt{p2p2p1}. (Note that the total number of positions described should always be equal to 8.) Rows are separated with a backslash, and a total of eight rows should be described. See \cref{fenexample} for an example of a board created with: \texttt{rnbqkbnr/\-pppppppp/\-8/\-8/\-4P3/\-8/\-PPPP1PPP/\-RNBQKBNR}.
 
 \begin{figure}[h]
     \centering
     \fenboard{rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b - - 0 1}
     \showboard
-    \caption{The board created with: (rnbqkbnr/pppppppp/8/8/4P3/8/\\PPPP1PPP/RNBQKBNR b KQkq e3 0 1)}
+    \caption{The board created with: (rnbqkbnr/\-pppppppp/\-8/\-8/\-4P3/\-8/\-PPPP1PPP/\-RNBQKBNR b KQkq e3 0 1)}
     \label{fenexample}
 \end{figure}
 
