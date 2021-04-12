@@ -371,9 +371,9 @@ The EDSL has gone through multiple changes during development, not only in synta
 
 \subsection{Minimum Viable Product}
 
-Before the final format and syntax of the EDSL was decided upon, it was important to determine whether the creation of a value-level interface for the type level model was possible at all. The earliest version of the EDSL was essentially just a set of named Haskell functions, to test if the type-level model was usable.
+Before the final format and syntax of the EDSL was decided upon, it was important to determine whether the creation of a value-level interface for the type level model was possible at all. The earliest version of the "EDSL" was a set of named Haskell functions, to test if the type-level model was usable by value-level functions.
 
-This Minimum Viable Product version does not include many of the Chesskell EDSL's more advanced features, such as board creation, but allows the user to describe a Chess game move by move. A single core function, named \inline{move}, made use of \inline{Proxy} types and a First Class Family version of bind to move a piece on a board from one position to another:
+This Minimum Viable Product version does not include any of the final EDSL's more advanced features (such as board creation), but successfully allows the user to describe a Chess game move by move. A single core function, named \inline{move}, made use of \inline{Proxy} types and a First Class Family version of bind to move a piece on a board from one position to another:
 
 \begin{lstlisting}
 move :: Proxy (from :: Position)
@@ -384,11 +384,11 @@ move (sFrom :: Proxy from) (sTo :: Proxy to) (pBoard :: Proxy (b :: Maybe Board)
     = Proxy @(Eval (b >>= Move from to))
 \end{lstlisting}
 
-Despite its simple nature, \inline{move} provides enough for a user to interact with the type-level model of Chess and describe a game. It is a sufficiently viable and minimal version of Chesskell---but of course, it's not much of an EDSL.
+Despite its simple nature, \inline{move} alone is sufficient for a user to interact with the type-level model of Chess and describe a game. It is a viable and minimal version of Chesskell -- if not much of an EDSL.
 
 \subsection{Flat Builders}
 
-Once the possibility of a Chesskell EDSL was proven, the actual format and logic of the EDSL was to be decided upon. A Continuation Passing Style~\cite{cps} scheme forms the foundation for the EDSL, with inspiration taken from Dmitrij Szamozvancev's Flat Builders pattern~\cite{mezzo}. The core idea is value transformation through a series of continuation function applications, until the final continuation function returns a value.
+Once the feasibility of a Chesskell EDSL was proven, the actual format and logic of the EDSL was to be decided upon. A Continuation Passing Style~\cite{cps} scheme forms the foundation for the EDSL, with inspiration taken from Dmitrij Szamozvancev's Flat Builders pattern~\cite{mezzo}. The core idea is value transformation through a series of continuation function applications, until the final continuation function returns a value.
 
 The type \inline{Spec t} is the type of functions which take in a continuation to operate on a value of type \inline{t}. For instance, a function with type \inline{Int -> Spec Int} would take in an integer, and then a continuation to operate on that integer.
 
@@ -402,22 +402,63 @@ A function with type \inline{Int -> Spec Int} can be represented with \inline{Co
 type Conv s t = s -> Spec t
 \end{lstlisting}
 
-Finally, the \inline{Term t r} type ends the continuation stream by taking no continuations, and simply taking in a value of type \inline{t} and returning a value of type \inline{r}. If \inline{t} and \inline{r} are equal, then an example definition would be \inline{id}.
+Finally, the \inline{Term t r} type ends the continuation stream by taking no continuations; instead, we pass in a value of type \inline{t}, returning a value of type \inline{r}. If \inline{t} and \inline{r} are equal, then an implementation would match that of \inline{id}, the identity function.
 
 \begin{lstlisting}
 type Term t r = t -> r
 \end{lstlisting}
 
-The above continuation types are combined with type-level rule checking, to create a Chess EDSL that operates through passing continuations. Using a combination of proxies, kind signatures, and type applications, the value-level Haskell code for the EDSL can have specific type variables and involve type family application. Essentially, the term-level EDSL can involve type-level rule checking.
+As an illustrative example, consider the implementation of a sentence-like structure for mathematical operations, such as \inline{to 5 add 7 add 9 increment then print}, which should return a string version of the final result. We can achieve this using the Flat Builders pattern. We define \inline{to} like so, passing a number into a continuation which performs some computation on the input:
 
-The chess game starts with a \inline{Proxy} value, its type parameterised with a \inline{BoardDecorator} type. Continuations are applied, transforming that value, until the chess game ends or a rule is broken. Chess games begin with the board in a set configuration; and so a type \inline{StartDec} of kind \inline{BoardDecorator} was defined to contain all of this information.
+\begin{lstlisting}
+to :: Int -> Spec Int
+to x cont = cont x
+\end{lstlisting}
+
+\inline{add} is defined to take in two input numbers, adding them together, and passing the result to a third input continuation:
+
+\begin{lstlisting}
+add :: Int -> Int -> Spec Int
+add x y cont = cont (x + y)
+\end{lstlisting}
+
+We define \inline{increment} like so:
+
+\begin{lstlisting}
+increment :: Int -> Spec Int
+increment x cont = cont (x + 1)
+\end{lstlisting}
+
+The continuation \inline{then} is intended purely to clarify operations, not to perform any new computation:
+
+\begin{lstlisting}
+then :: Int -> Spec Int
+then x cont = cont x
+\end{lstlisting}
+
+And finally, we define the \inline{print} continuation, which enables us to end the continuation stream and return a string:
+
+\begin{lstlisting}
+print :: Term Int String
+print x = show x
+\end{lstlisting}
+
+Using all of these continuations, the sentence-like expression \inline{to 5 add 7 add 9 increment then print} is well-typed and returns \inline{"22"}, a string. Note that none of these continuations make assumptions about the kinds of operations performed within (only that they take in an integer). Adding new operations, such as multiplication or division, is simple -- just add a new continuation which performs this operation. Such an approach is a natural fit for Chesskell, since the various Chess moves can be (relatively) encapsulated, and the syntax can be modified with extensions (such as those we discuss in \cref{castleextension,numberextension}).
+
+We combine these Flat Builders continuation types with type-level rule checks, to create a Chess EDSL that operates through passing continuations. Using a combination of proxies, kind signatures, and type applications, we enforce type-level rule checking upon the value-level EDSL.
+
+\subsection{Chess Continuations}
+
+In this section, we discuss the the rationale behind and definitions created for Chesskell's long-form syntax. For details on the shorthand syntax, see \cref{shorthandexplanation}.
+
+The chess game starts with a \inline{Proxy} value, its type parameterised with a \inline{BoardDecorator} type. We apply continuations, transforming that value, until the chess game ends\footnote{Note that users can still express games which break rules; these games are just not well-typed.}. Chess games begin with the board in a set configuration; and so we define a type \inline{StartDec} of kind \inline{BoardDecorator} to contain all of this information.
 
 \begin{lstlisting}
 chess :: Spec (Proxy StartDec)
 chess cont = cont (Proxy @StartDec)
 \end{lstlisting}
 
-The core continuations are named after the pieces, such as \inline{pawn} and \inline{king}. Each of them takes in a \inline{Proxy (a :: Position)}, a \inline{Proxy} value whose type is parameterised with the relevant \inline{Position} types. We define a new datatype, \inline{MoveArgs}, in order to simplify the process of passing information between the continuations; \inline{MoveArgs} can be partially applied, whereas a regular type family cannot. The \inline{pawn} continuation is used below as an example; however, all of the piece continuations are similar, and only differ in the \inline{PieceName} type passed to the continuation via \inline{MoveArgs}.
+Each core continuation is named after a piece type, such as \inline{pawn} or \inline{king}. All take in a \inline{Proxy (a :: Position)}, a \inline{Proxy} value whose type is parameterised with the relevant \inline{Position} type. We define a new datatype, \inline{MoveArgs}, in order to simplify the process of passing information between the continuations; \inline{MoveArgs} can be partially applied, whereas a regular type family cannot. We give the definition of the \inline{pawn} continuation below as an example; however, all of the piece continuations are similar, and only differ in the \inline{PieceName} type passed to the continuation via \inline{MoveArgs}.
 
 \begin{lstlisting}
 data MoveArgs where
@@ -451,7 +492,7 @@ end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
 \end{lstlisting}
 
-Using the above continuations, we can lay out a chess game, move by move. However, the above continuations are Chesskell's long-form syntax; we discuss the shorter syntax in the next section. Consider the game expressed in the EDSL which we describe in \cref{examplegame}. It compiles successfully; but should Black attempt to move after checkmate, an error will be logged, since no moves by Black will be valid:
+Using the above continuations, we can lay out a chess game, move by move. Consider the game expressed in the EDSL which we describe in \cref{examplegame}. It compiles successfully; but should we modify the game so that Black attempts to move after checkmate, an error will be logged, since no moves by Black will be valid:
 
 \begin{lstlisting}
 -- Below results in the following type error:
@@ -473,7 +514,7 @@ Or, should White attempt an impossible move in the middle of the game, such as m
 \begin{lstlisting}
 -- Below results in the following type error:
     -- * There is no valid move from D1 to D3.
-    -- The Queen at D1 can move to: E2, F3, G4, H5
+    -- The Queen at D1 can move to: E2, F3, G4, H5, ...
     -- * When checking the inferred type
     -- game :: Data.Proxy.Proxy (...)
 game = chess
@@ -487,9 +528,9 @@ end
 
 \subsubsection{Shorthand syntax} \label{shorthandexplanation}
 
-While the above continuations are feature-complete, and allow the user to fully describe a game of Chess, the resulting notation is considerably more lengthy than Algebraic Notation or other comparable chess notations. As such, a shorthand syntax was introduced towards the end of development, to allow more concise description of Chess games.
+While the above continuations are feature-complete, and allow the user to fully describe a game of Chess, the resulting notation is considerably more lengthy than Algebraic Notation or other comparable chess notations. As such, we introduced a shorthand syntax towards the end of development, to allow more concise description of Chess games. (This is the syntax we demonstrate in \cref{examplegame}.)
 
-Consider the original continuation for moving a Pawn, named \inline{pawn}. To move using \inline{pawn}, both the origin and destination squares are required, as well as the use of the continuation \inline{to}. The new shorthand continuation is a single letter, \inline{p}, which takes in the destination position and a continuation and performs the move immediately; calculating the origin square is left to the type-level model, via a type family \inline{MoveTo}:
+Consider the original continuation for moving a Pawn, named \inline{pawn}. To move using \inline{pawn}, both the origin and destination squares are required, as well as the use of the continuation \inline{to}. The new shorthand equivalent is a single letter, \inline{p}, which takes in the destination position (and a continuation) and performs the move immediately; calculating the origin square is left to the type-level model, via a type family \inline{MoveTo}:
 
 \begin{lstlisting}
 p :: Proxy (b :: BoardDecorator)
@@ -503,9 +544,9 @@ p (dec :: Proxy b) (to :: Proxy toPos) cont
 
 For example, to determine the potential origin squares for a Bishop moving to destination square c5, the Bishop's movement rules are applied to an empty board to see the squares that the Bishop can move to from c5.
 
-FIGURE HERE PLEASE % TODO: Make a figure
+% TODO: Make a figure
 
-Then, this list of squares is filtered based on whether there is a valid piece in the original \inline{BoardDecorator} of the correct team in any of those squares. If the resulting filtered list has length 1 (i.e. it contains a single piece), then the position of that single piece extracted; otherwise, there are either no valid origin squares, or multiple valid origin squares, in which case the longer Chesskell syntax should be used.
+Then, this move list is filtered based on whether there is a valid piece in the original \inline{BoardDecorator} of the correct team in any of those squares. If the resulting filtered list has length 1 (i.e. it contains a single piece), then the position of that single piece extracted; otherwise, there are either no valid origin squares, or multiple valid origin squares, in which case the longer Chesskell syntax should be used.
 
 \begin{figure}
     \centering
@@ -531,15 +572,30 @@ startMoves
 end
 \end{lstlisting}
 
-Despite the late introduction of this shorthand syntax, it fits naturally into Chesskell as a form of Chess notation as well as a demonstration of type-level modelling. In fact, as we discuss in \cref{shorthand}, it resulted in unexpected performance improvements.
+Or, consider the opposite case, whereby there are no White Bishops which can move to c5 (such as in the Chess board at the start of the game). Chesskell will fail with a different type error, explaining the issue:
 
-\subsection{Setting up a board} \label{boardcreation}
+\begin{lstlisting}
+-- Below results in the following type error:
+    -- * There is no White Bishop which can move to: C5.
+    -- Consider using the long-form Chesskell syntax instead.
+    -- When checking the inferred type
+    -- noBishops :: Data.Proxy.Proxy (...)
+noBishops = chess
+    b c5
+end
+\end{lstlisting}
 
-While Chesskell was originally intended only to describe complete games of Chess, testing of the project was complicated through the fact that Chess games always start in a fixed configuration. To test something like Castling or Check required many moves before these game states became possible. Chesskell was extended to include arbitrary board creation syntax, to simplify this process.
+Despite the late introduction of this shorthand syntax, it fits into Chesskell as a form of Chess notation as well as a demonstration of type-level modelling. In fact, as we discuss in \cref{shorthand}, it resulted in unexpected performance improvements.
 
-Individual pieces can be placed down on the board using the \inline{put} and \inline{at} continuations, which are used in combination with \inline{Proxy}-wrapped piece names, teams, and positions to modify a \inline{BoardDecorator} type wrapped within the \inline{Proxy} type constructor. Placing a Black Pawn on square a4 is done like so: \inline{Put _Bl _P at a4}.
+\subsection{Creating Chess Boards} \label{boardcreation}
 
-These commands are paired with a new beginning continuation, \inline{create}, which passes a \inline{Proxy JustKingsDec} value to a continuation, where \inline{JustKingsDec} is a \inline{BoardDecorator} type where the board only contains the Black and White King; nothing else. Along with a few other utility continuations to do things like set the last moved position, these continuations can be used to build custom boards. The below Chesskell snippet builds the board seen in \cref{twobishops}:
+While Chesskell was originally intended only to describe complete games of Chess, testing of the project was complicated through the fact that Chess games always start in a fixed configuration. To test something like Castling or Check required many moves before these game states became possible. We extended Chesskell to include arbitrary board creation syntax, to simplify this process.
+
+Individual pieces can be placed down on the board using the \inline{put} and \inline{at} continuations, which are used in combination with \inline{Proxy}-wrapped piece names, teams, and positions to modify a \inline{BoardDecorator} type wrapped within the \inline{Proxy} type constructor. Placing a Black Pawn on square a4 is done like so: \inline{put _Bl _P at a4}.
+
+These commands are paired with a new start continuation, \inline{create}, which passes a \inline{Proxy JustKingsDec} value to a continuation. \inline{JustKingsDec} is a \inline{BoardDecorator} type where the board only contains the Black and White King in their start positions; nothing else.
+
+We use these continuations to build custom boards, along with utility continuations for purposes such as setting the last position moved to. The below Chesskell snippet describes the board seen in \cref{twobishops}:
 
 \begin{lstlisting}
 create put _Wh _B at d6 put _Wh _B at b4 end
@@ -651,7 +707,7 @@ fn0 :: Term (Proxy (b :: Fen n)) (Proxy (b :: Fen n))
 fn0 = id
 \end{lstlisting}
 
-Stacks of \inline{Fen} types can now be created like so: \inline{ff fn1 wQ wN fn5 fn0}. Now that users can create these stacks via value-level constructs, we provide functionality to make use of them. Using \inline{FenToRow}, we define a series of continuations for setting each row of the board with CFEN notation. Each continuation has naming convention "fen-n", where $n$ is the row being populated: \inline{fen1}, \inline{fen2}, and so on. To illustrate, we give the definition of \inline{fen5} is given below:
+Stacks of \inline{Fen} types can now be created like so: \inline{ff fn1 wQ wN fn5 fn0}. Now that users can create these stacks via value-level constructs, we provide functionality to make use of them. Using \inline{FenToRow}, we define a series of continuations for setting each row of the board with CFEN notation. Each continuation has naming convention "fen-n", where $n$ is the row being populated: \inline{fen1}, \inline{fen2}, and so on. To illustrate, we give the definition of \inline{fen5} below:
 
 \begin{lstlisting}
 fen5 :: (Proxy (b :: BoardDecorator))
