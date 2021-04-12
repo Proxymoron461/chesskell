@@ -74,7 +74,7 @@ data Hand a where
     Five  :: Int  -> Bool -> Int  -> Bool -> Int  -> Hand Int
 \end{lstlisting}
 
-\section{Type-level Programming}
+\section{Type-level Programming} \label{typelevelprogrammingbackground}
 
 While GADTs are certainly useful, they are not enough to achieve type-level computation. Luckily, there are many more GHC extensions, some of which bring the language closer to have a dependent type system. In this section, we explain those used in Chesskell, to aid understanding.
 
