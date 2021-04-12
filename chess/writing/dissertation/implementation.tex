@@ -55,7 +55,8 @@ In Chesskell, we can express similar behaviour through the use of a new data typ
 \begin{lstlisting}
 data Foldr :: (a -> b -> Exp b) -> b -> f a -> Exp b
 type instance Eval (Foldr f z '[])       = z
-type instance Eval (Foldr f z (x ': xs)) = Eval (f x (Eval (Foldr f z xs)))
+type instance Eval (Foldr f z (x ': xs))
+    = Eval (f x (Eval (Foldr f z xs)))
 \end{lstlisting}
 
 Now, type-level versions of common \inline{Foldable} functions, such as \inline{sum} and \inline{length}, can be implemented using this definition of \inline{Foldr}. We give the definition of \inline{Sum} below, along with a simple First Class Family version of natural number addition:
@@ -158,7 +159,12 @@ Previous versions of the program, to find the King positions (for the frequent o
 
 \begin{lstlisting}
 data BoardDecorator where
-    Dec :: Board -> Team -> Position -> (Position, Position) -> Nat -> BoardDecorator
+    Dec :: Board
+        -> Team
+        -> Position
+        -> (Position, Position)
+        -> Nat
+        -> BoardDecorator
 \end{lstlisting}
 
 \subsection{Chess Rules}
@@ -284,7 +290,7 @@ A Pawn can perform an \emph{en passant} capture if a Pawn of the opposite team h
 
 This capture rule is dependent on several factors; the last move made, as well as the relative positions of the pieces. Furthermore, the capture move does not result in the attacking piece landing on the square of the piece being captured; making it distinct from all other capture rules.
 
-The majority of the \emph{en passant} logic is implemented via a type family, \inline{GetEnPassantPosition}, which is responsible for determining if an \emph{en passant} capture is a valid move for a pawn at a given position:
+We define a type family, \inline{GetEnPassantPosition}, which is responsible for determining if an \emph{en passant} capture is a valid move for a pawn at a given position:
 
 \begin{lstlisting}
 data GetEnPassantPosition :: Position
@@ -415,7 +421,7 @@ to :: Int -> Spec Int
 to x cont = cont x
 \end{lstlisting}
 
-\inline{add} is defined to take in two input numbers, adding them together, and passing the result to a third input continuation:
+We define \inline{add} to take in two input numbers, adding them together, and passing the result to an input continuation:
 
 \begin{lstlisting}
 add :: Int -> Int -> Spec Int

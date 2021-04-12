@@ -25,7 +25,7 @@ oppositeTeamTest = Refl
 shouldTypecheck oppositeTeamTest
 \end{lstlisting}
 
-Note the use of the \inline{(:~:)} type in the above test; this type is taken from \inline{Data.Type.Equality}, and is used as a value-level proof of type equality. It has a single value, \inline{Refl}, with type \inline{a :~: a}. In other words, if you define a \inline{Refl} value with the type \inline{t1 :~: t2}, then this definition will only type check if \inline{t1 ~ t2}; that is, if they can unify with each other. Above, we can see this put to use -- the \inline{Refl} value with type \inline{White :~: Eval (OppositeTeam Black)} will produce a type error if the opposite team of Black is not White. We use the \inline{(:~:)} type often in Chesskell unit tests, as it provides a simple way of asserting that two types are equal.
+Note the use of the \inline{(:~:)} type in the above test; this type is defined in \inline{Data.Type.Equality}, and is used as a value-level proof of type equality. It has a single value, \inline{Refl}, with type \inline{a :~: a}. In other words, if you define a \inline{Refl} value with the type \inline{t1 :~: t2}, then this definition will only type check if \inline{t1 ~ t2}; that is, if they can unify with each other. Above, we can see this put to use -- the \inline{Refl} value with type \inline{White :~: Eval (OppositeTeam Black)} will produce a type error if the opposite team of Black is not White. We use the \inline{(:~:)} type often in Chesskell unit tests, as it provides a simple way of asserting that two types are equal.
 
 \subsubsection{Scenario Testing} \label{scenariosection}
 
