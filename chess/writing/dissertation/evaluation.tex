@@ -209,7 +209,8 @@ We replaced all append and mapping operations over lists with corresponding oper
 
 \subsection{Checking for Check}
 
-One of the most complex parts of Chesskell involves detecting when a King is placed in check. As we explain in \cref{checksection}, an initial na\"ive implementation of testing for check (named \inline{CheckNoCheck}) involved assembling all possible moves by pieces of the opposite team, and checking if the King position was in that list. The pre- and post-move checks were composed together within a single type family, along with the actual movement of the pieces themselves, like so:
+One of the most complex parts of Chesskell involves detecting when a King is placed in check. As we explain in \cref{checksection}, an initial na\"ive implementation of testing for check (named \inline{CheckNoCheck}) involved assembling all possible moves by pieces of the opposite team, and checking if the King position was in that list. The pre- and post-move checks were composed together within a single family, along with the actual movement of the pieces themselves, like so:
+
 \begin{lstlisting}
 data Move :: Position -> Position
           -> BoardDecorator -> Exp BoardDecorator
@@ -223,20 +224,14 @@ type instance Eval (Move fromPos toPos boardDec) = Eval ((
         NotLastToMoveCheck fromPos .
         TeamCheck fromPos) boardDec)
 \end{lstlisting}
+
 Removing the \inline{CheckNoCheck} post-move check entirely (from the codebase using the old implementation) reduced memory usage of an 8-move Chesskell game from 22-23GB to 7.5-8GB, and average compile time from 1 minute 37 seconds to 24 seconds, proving that testing for check was a performance bottleneck.
 
 Attempting to optimise the codebase and reduce memory usage as the result of an ``out of memory'' crash, we created the new ray implementation \cref{checksection}. Despite the reduced computation performed by GHC with the new implementation, there was no noticeable decrease in memory usage when compiling Chesskell games -- GHC continued to run out of memory and crash.
 
-However, splitting out the pre-move rule checks and the post-move rule checks into separate type families helped GHC to terminate, no longer running out of memory. The new implementation below takes less than 1 minute and 30 seconds to compile, and uses an average of 25GB of memory:
-\begin{lstlisting}
-data Move :: Position
-          -> Position
-          -> BoardDecorator
-          -> Exp BoardDecorator
-type instance Eval (Move fromPos toPos boardDec)
-    = Eval ((ShouldHavePromotedCheck toPos . CheckNoCheck)
-        (Eval (MoveWithPreChecks fromPos toPos boardDec)))
+However, splitting out the pre-move rule checks and the post-move rule checks into separate type families helped GHC to terminate, no longer running out of memory. The new implementation (which we give below) takes less than 1 minute and 30 seconds to compile, and uses an average of 25GB of memory. We put the pre-move checks into a new \inline{MoveWithPreChecks} family:
 
+\begin{lstlisting}
 data MoveWithPreChecks :: Position
                        -> Position
                        -> BoardDecorator
@@ -250,6 +245,19 @@ type instance Eval (MoveWithPreChecks fromPos toPos boardDec) = Eval (
         NotLastToMoveCheck fromPos .
         TeamCheck fromPos) boardDec)
 \end{lstlisting}
+
+However, we leave the post-move checks in the original \inline{Move} family, joining the two with a call to \inline{MoveWithPreChecks}:
+
+\begin{lstlisting}
+data Move :: Position
+          -> Position
+          -> BoardDecorator
+          -> Exp BoardDecorator
+type instance Eval (Move fromPos toPos boardDec)
+    = Eval ((ShouldHavePromotedCheck toPos . CheckNoCheck)
+        (Eval (MoveWithPreChecks fromPos toPos boardDec)))
+\end{lstlisting}
+
 While the cause for this increase in performance is unknown, we speculate it may be related to the number of type variables that must be unified at a given time. In any case, this example shows that sometimes improvements to algorithmic complexity of type-level programs can make little difference, while simply restructuring the type families can. Therefore, we believe that there is a need for better tooling as part of GHC to understand what causes such spikes in compile time and memory usage.
 
 \subsection{Type Applications vs. Type Signatures}
