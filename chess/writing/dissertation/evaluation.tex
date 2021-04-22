@@ -322,15 +322,27 @@ Chesskell notation does not treat capture moves as a special case. A move, wheth
 
 Notations such as Algebraic Notation tend to have specific notation for Castling; since it is a unique move which moves more than one piece, it is a useful signpost for the reader to update their mental model. Castling is expressed in algebraic notation as either \wmove{0-0} or \wmove{0-0-0}, to represent kingside and queenside castling, respectively.
 
-In Chesskell, castling can be expressed as a King movement: such as \inline{k c1}, and requires no special notation. However, some people may prefer a clearer sign that a move is a castle, and so we include castling notation with the help of a single type family:
+In Chesskell, castling can be expressed as a King movement: such as \inline{k c1}, and requires no special notation. However, some people may prefer a clearer sign that a move is a castle, and so we include castling notation with the help of a single type family: \inline{CastleMove}. This type family takes in a \inline{BoardDecorator}, representing the current state of the board, and a boolean argument, stating whether the castle move is to the left or right. It returns the new state of the board in which the relevant castling move has been made.
+
+For instance, when the boolean argument is \inline{True}, the relevant King is castling to the right. If the last team to move was \inline{Black}, then the currently moving team is \inline{White} -- and so the target castle position must be g1:
 
 \begin{lstlisting}
 type family CastleMove (l :: Bool) (b :: BoardDecorator) :: BoardDecorator where
     CastleMove True  (Dec board Black pos kings n) = MoveTo King (At G Nat1) (Dec board Black pos kings n)
-    CastleMove True  (Dec board White pos kings n) = MoveTo King (At G Nat8) (Dec board White pos kings n)
-    CastleMove False (Dec board Black pos kings n) = MoveTo King (At C Nat1) (Dec board Black pos kings n)
-    CastleMove False (Dec board White pos kings n) = MoveTo King (At C Nat8) (Dec board White pos kings n)
+    -- ...
+\end{lstlisting}
 
+Conversely, if the last team was \inline{White}, and the castle is to the left, then the Black King will be moving to c1:
+
+\begin{lstlisting}
+    -- ...
+    CastleMove False (Dec board White pos kings n) = MoveTo King (At C Nat8) (Dec board White pos kings n)
+    -- ...
+\end{lstlisting}
+
+We use this type family in the definition of new continuations, modelled after the Algebraic Notation castling descriptors:
+
+\begin{lstlisting}
 o_o :: Proxy (b :: BoardDecorator) -> Spec (Proxy (CastleMove True b))
 o_o (dec :: Proxy b) cont = cont (Proxy @(CastleMove True b))
 o_o_o :: Proxy (b :: BoardDecorator) -> Spec (Proxy (CastleMove False b))
