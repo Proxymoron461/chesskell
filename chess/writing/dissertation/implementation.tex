@@ -338,28 +338,28 @@ type instance Eval (PromotePawnMove fromPos toPos promoteTo boardDec)
 
 The type family \inline{PromotePieceTo} of kind \inline{PieceName -> Position -> BoardDecorator -> Exp BoardDecorator} is responsible for changing the \inline{PieceName} of the Pawn piece once it has reached the opposite end of the board. It applies a First Class Family, \inline{PromoteTo}, to the piece at the given position to change its \inline{PieceName} to some given one. Additionally, it generates type errors if the user attempts to promote the Pawn to a King or another Pawn.
 
-However, \inline{PromotePieceTo} and \inline{PromotePawnMove} alone are not enough; because a Pawn must always promote when it reaches the opposite end of the board. To enforce this rule, we define a post-move check named \inline{ShouldHavePromotedCheck}, which is responsible for determining whether a promotion should have occurred at the last move or not:
+However, \inline{PromotePieceTo} and \inline{PromotePawnMove} alone are not enough; because a Pawn must always promote when it reaches the opposite end of the board. To enforce this rule, we define a post-move check named \inline{ShouldHavePromotedCheck}, which is responsible for determining whether a promotion should have occurred at the last move or not. The First Class Family definition simply calls a type family:
 
 \begin{lstlisting}
 data ShouldHavePromotedCheck :: Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (ShouldHavePromotedCheck toPos boardDec)
     = ShouldHavePromotedCheck' toPos boardDec
-
-type family ShouldHavePromotedCheck' (t :: Position) (b :: BoardDecorator) :: BoardDecorator where
-    ShouldHavePromotedCheck' (At col Nat8) boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col Nat8) (IsPawn .&. HasTeam White)))
-            (TE' (TL.Text ("Promotion should have occurred at: " ++ TypeShow (At col Nat8) ++ ". Pawns must be promoted when they reach the opposite end of the board.")))
-            (ID boardDec)
-    ShouldHavePromotedCheck' (At col Nat1) boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col Nat1) (IsPawn .&. HasTeam Black)))
-            (TE' (TL.Text ("Promotion should have occurred at: " ++ TypeShow (At col Nat1) ++ ". Pawns must be promoted when they reach the opposite end of the board.")))
-            (ID boardDec)
-    ShouldHavePromotedCheck' _ boardDec = boardDec
 \end{lstlisting}
 
-It takes in the last position moved to, and the post-movement \inline{BoardDecorator}.  If the last move was to the 8th row or the first row, it checks if there is a Pawn at that position and if so, generates a type error (since such a Pawn should have promoted). Otherwise, it returns the input \inline{BoardDecorator}.
+The \inline{ShouldHavePromotedCheck'} type family takes in the last position moved to, and the post-movement \inline{BoardDecorator}. If the last move was to the top or bottom rows (i.e. the 8th or the 1st), it checks if there is a Pawn at that position. If so, it generates a type error (since such a Pawn should have been promoted). Otherwise, it returns the input \inline{BoardDecorator}. We give part of the definition below, to illustrate:
 
-Pawn promotion is successfully implemented in Chesskell -- if a pawn should fail to promote during a game of Chess, then a descriptive type error is output:
+\begin{lstlisting}
+type family ShouldHavePromotedCheck' (t :: Position) (b :: BoardDecorator) :: BoardDecorator where
+    -- ...
+    ShouldHavePromotedCheck' (At col Nat8) boardDec
+        = If'
+            (Eval (IsPieceAtWhichDec boardDec (At col Nat8) (IsPawn .&. HasTeam White))) -- condition
+                (TE' (TL.Text ("Promotion should have occurred at: " ++ TypeShow (At col Nat8) ++ ". Pawns must be promoted when they reach the opposite end of the board.")))  -- then
+            (ID boardDec) -- else
+    -- ...
+\end{lstlisting}
+
+Pawn promotion is successfully implemented in Chesskell -- if a pawn should fail to promote during a game of Chess, then a descriptive type error is generated:
 
 \begin{lstlisting}
 -- Below results in the following type error:
