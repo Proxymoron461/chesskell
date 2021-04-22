@@ -464,7 +464,7 @@ chess :: Spec (Proxy StartDec)
 chess cont = cont (Proxy @StartDec)
 \end{lstlisting}
 
-Each core continuation is named after a piece type, such as \inline{pawn} or \inline{king}. All take in a \inline{Proxy (a :: Position)}, a \inline{Proxy} value whose type is parameterised with the relevant \inline{Position} type. We define a new datatype, \inline{MoveArgs}, in order to simplify the process of passing information between the continuations; \inline{MoveArgs} can be partially applied, whereas a regular type family cannot. We give the definition of the \inline{pawn} continuation below as an example; however, all of the piece continuations are similar, and only differ in the \inline{PieceName} type passed to the continuation via \inline{MoveArgs}.
+Each core continuation is named after a piece type, such as \inline{pawn} or \inline{king}. All take in a \inline{Proxy (a :: Position)}, a \inline{Proxy} value whose type is parameterised with the relevant \inline{Position} type. We define a new datatype, \inline{MoveArgs}, in order to simplify the process of passing information between the continuations; while the \inline{Move} family is a First Class Family, and can be partially applied, it takes in no \inline{PieceName} argument, and so cannot contain all the relevant types which must pass between the continuations.
 
 \begin{lstlisting}
 data MoveArgs where
@@ -473,7 +473,11 @@ data MoveArgs where
        -> PieceName
        -> Position
        -> MoveArgs
+\end{lstlisting}
 
+We give the definition of the \inline{pawn} continuation below as an example; however, all of the piece continuations are similar, and only differ in the \inline{PieceName} type passed to the continuation via \inline{MoveArgs}.
+
+\begin{lstlisting}
 pawn :: Proxy (b :: BoardDecorator)
      -> Proxy (fromPos :: Position)
      -> Spec (Proxy (MA b fromPos 'Pawn))
