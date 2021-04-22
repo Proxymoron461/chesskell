@@ -343,15 +343,29 @@ With the above definitions, Chesskell can include special castling notation if t
 
 Algebraic Notation is not the only Chess notation; there are many others. We consider a few here, and how they are similar to and differ from Chesskell.
 
-\subsubsection{Smith Notation}
+\subsubsection{Smith Notation} \label{smithsection}
 
-Smith Notation is one of the more descriptive forms of Chess notation, including both the source and destination squares. Additionally, when a promotion is made, the piece type being promoted to is included; making it rather similar to (although more concise than) Chesskell's long-form syntax.
+Smith Notation, developed for the International Chess Club online server, is one of the more descriptive forms of Chess notation\footnote{\url{https://web.archive.org/web/20160117212352/https://www.chessclub.com/chessviewer/smith.html}}. To describe a move, both the source and the destination squares are included; as well as the piece captured, if any. Smith Notation expresses piece types similarly to Algebraic Notation -- with capital letters. Additionally, when a promotion is made, the piece type being promoted to is included. The additional detail makes this notation rather similar to (although more concise than) Chesskell's long-form syntax. Consider the move by a Queen from a2 to b3: in Chesskell, we express this as follows:
+
+\begin{lstlisting}
+queen a2 to b3
+\end{lstlisting}
+
+In Smith notation, this becomes:
+
+\begin{verbatim}
+    a2b3Q
+\end{verbatim}
 
 \subsubsection{ICCF Numeric Notation} \label{numberextension}
 
-ICCF Numeric Notation is intended for international games of Chess, whereby Algebraic Notation can cause confusion. In Algebraic Notation (and in Chesskell), the English names for pieces are used; but in other languages, there are other names for the piece types, and so for non-English speakers the notation can be confusing. ICCF Numeric Notation remedies this by describing moves in terms of their origin and destination squares, and when piece types are necessary (such as when performing promotion), to use numbers rather than names.
+ICCF Numeric Notation~\cite{iccfnotation} is intended for international games of Chess, whereby Algebraic Notation can cause confusion. In Algebraic Notation (and in Chesskell), the English names for pieces are used; but in other languages, there are other names for the piece types, and so for non-English speakers the notation can be confusing. ICCF Numeric Notation remedies this by describing moves in terms of their origin and destination squares, thereby negating the need to include a piece type in the move description -- and when piece types are necessary (such as when performing promotion), to use numbers rather than names. For instance, the example move in \cref{smithsection} can be expressed as follows, using numeric representations for the positions (a2 becomes 12, and b3 becomes 23):
 
-While Chesskell was made in an English-speaking country by an English speaker, there is no reason not to include clearer notation for those from all around the world. As such, we define continuations similar to the piece continuations, but using numbers instead. Below is the same game we describe in \cref{examplegame}, making use of some of these new continuations (\inline{_5} for Pawns, and \inline{_1} for Queens):
+\begin{verbatim}
+    1223
+\end{verbatim}
+
+While Chesskell was made in an English-speaking country by an English speaker, there is no reason not to include clearer notation for those from all around the world. As such, we define continuations similar to the piece continuations, but using numbers instead. Below is the same game as the one we describe in \cref{examplegame}, making use of some of these new continuations (\inline{_5} for Pawns, and \inline{_1} for Queens):
 
 \begin{lstlisting}
 game = chess
