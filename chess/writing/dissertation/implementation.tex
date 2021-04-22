@@ -167,6 +167,49 @@ data BoardDecorator where
         -> BoardDecorator
 \end{lstlisting}
 
+\subsection{Custom Type Errors}
+
+In Chesskell, we use definitions found in \inline{GHC.TypeLits} to express custom type errors. These definitions include a type family, \inline{TypeError}, and a data type \inline{ErrorMessage}, to enable programmers to generate type errors with arbitrary error messages. For instance, the type below (when type-checked) will cause GHC to halt compilation and generate a type error:
+
+\begin{lstlisting}
+type ErrTest = TypeError (Text "Custom error!")
+\end{lstlisting}
+
+As expected, the generated type error matches the input \inline{ErrorMessage} argument:
+
+\begin{lstlisting}
+-- Below results in the following type error:
+    -- * Custom error!
+    -- * In the type synonym declaration for 'ErrTest'
+type ErrTest = TypeError (Text "Custom error!")
+\end{lstlisting}
+
+In GHC, the kind returned by \inline{TypeError} is polymorphic; and so the output of a \inline{TypeError} application can be returned from type families with no issues. The book Thinking With Types~\cite{twt} contains a First Class Family equivalent definition, named \inline{TE'}:
+
+\begin{lstlisting}
+data TE' :: ErrorMessage -> Exp a
+type instance Eval (TE' msg) = TypeError msg
+\end{lstlisting}
+
+In Chesskell, we use this definition to return a type error in circumstances where an \inline{Exp a} type is expected (for some type \inline{a}). To illustrate, consider the below definition:
+
+\begin{lstlisting}
+type TETest = Eval (If ('True)
+    ('Just 5) -- then
+    (TE' (Text "Some error"))) -- else
+\end{lstlisting}
+
+Assuming that the \inline{If} First Class Family behaves similarly to if-then-else expressions in Haskell, we expect \inline{TETest} to unify with \inline{'Just 5}. This is the case -- it compiles successfully. However, if we pass in a \inline{'False} type instead of a \inline{'True} type, as expected, the custom type error is thrown:
+
+\begin{lstlisting}
+-- Below results in the following type error:
+    -- * Some error
+    -- * In the type synonym declaration for 'TETest'
+type TETest = Eval (If ('False)
+    ('Just 5) -- then
+    (TE' (Text "Some error"))) -- else
+\end{lstlisting}
+
 \subsection{Chess Rules}
 
 In Chesskell, the rules of Chess are expressed as First Class Families that either return a \inline{BoardDecorator} or a type error (as we explain in \cref{chessrules}). Each such rule-check type family has the suffix \inline{-Check}, such as \inline{NotTakingKingCheck} and \inline{NotTakingOwnTeamCheck}. These checks are broadly split into pre-move checks, and post-move checks; each check has a custom error message to make clear to the user where exactly the rule violation occurs.
