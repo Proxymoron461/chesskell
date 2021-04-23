@@ -1,9 +1,28 @@
 \chapter{Self-assessment}
 
-% TODO: Answer the following questions:
+This chapter details the author's self-assessment of the project; as such, it will be written in first person, and address the relevant questions directly.
 
-% What is the (technical) contribution of this project?
-% Why should this contribution be considered relevant and important for the subject of your degree?
-% How can others make use of the work in this project?
-% Why should this project be considered an achievement?
-% What are the limitations of this project?
+\section{What is the (technical) contribution of this project?}
+
+The primary contribution is a full type-level model of Chess in Haskell, paired with a value-level EDSL which uses the type-level model for \emph{all} rule-checking. Additionally, it provides useful points of friction for GHC, which is useful for the implementors as it points out the current limitations of type-level programming in Haskell.
+
+% TODO: Haskell symposium paper??
+
+\section{Why should this contribution be considered relevant and important for the subject of your degree?}
+
+As the subject of my degree is Computer Science, any contributions towards relevant CS fields would be appropriate. The study of type systems is a broad and mature topic, and Chesskell demonstrates a complex application of academic type theory, with a view to assessing the expressivity of Haskell's type system. The achievement of implementing Chess at the type level shows knowledge of type systems, functional programming, and practical experience with Haskell and GHC; all of which are relevant to Computer Science in general, and therefore to my degree.
+
+\section{How can others make use of the work in this project?}
+
+Currently, Chesskell is technically usable, but is not as useful as existing Haskell Chess engines, which perform computation at the value level (and so avoid the memory issues brought about by Chesskell). Chesskell, while a practical project, is more of a proof of concept; an experiment with GHC's type level facilities. However, the type-level programming patterns used in Chesskell, chiefly First Class Families, are reusable in other projects. Furthermore, Chesskell itself could be used as a GHC stress test, checking the performance of GHC's type level computation.
+
+\section{Why should this project be considered an achievement?}
+
+Implementing Chess at the type level was difficult, necessitating much research, planning, and programming. Furthermore, such a thing has never been achieved before; and to my knowledge, it is one of the most complex rule sets expressed at the type level in Haskell.
+
+\section{What are the limitations of this project?}
+
+Currently, the severe limit to the game size (12 moves or less) is the biggest limitation, brought about by excessive memory usage. Addressing this problem would require more knowledge of GHC internals themselves, which (while not impossible) is difficult to achieve under time constraints.
+
+Additionally, Chesskell is useful as a move checker, but currently cannot be used for many other common Chess engine operations -- such as move generation. A worthy extension could be to broaden the scope of Chesskell in this manner, making it more appropriate for use.
+
