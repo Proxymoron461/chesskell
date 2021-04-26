@@ -304,6 +304,40 @@ We developed a working version of the shorthand syntax, without going through ex
 
 The shorthand syntax allows for us to express games which are longer by 2 moves, and yet incur no additional penalties on compile time or memory usage. We again speculate that the improvement is due to fewer type variables that need to be unified.
 
+\section{Detailed Performance Analysis} \label{performanceanalysis}
+
+As compile-time and memory usage proved to be a prevalent issue, we performed a more rigorous form of performance analysis towards the end of development, comparing how multiple Chess games affected Chesskell in terms of memory usage and compile time.
+
+All of the Chess games mentioned were expressed in Chesskell's shorthand syntax (see \cref{shorthand}), with a variable number of moves: either 6, 8, or 10. For each game, we tabulate the information gathered on compile time and memory usage, both of which were averaged over three runs of each game for each move limit.
+
+The games compared are:
+
+\begin{itemize}
+    \item The 1964/65 USSR Championship game between Ratmir Kholmov and David Bronstein (mentioned in \cref{problemsection});
+    \item The 1918 "Berlin Four Masters" game between Akiba Rubinstein and Milan Vidmar;
+    \item The 2019 Chinese League game between Zeyu Xiang and Yibo Zhou;
+    \item The 2004 Calvia Olympiad game between Julio Ernesto Granda Zuniga and Pedro Mascaro March.
+\end{itemize}
+
+As we can see in \cref{performancetable}, the results are consistent with previous behaviour; as the number of moves increases, so too does the memory usage and compile time.
+
+% TODO: Write more??
+
+\begin{table}[h]
+    \centering
+    \caption{A table displaying the memory usage (in GB) and the compile time (in minutes) for a selection of Chesskell games.}
+    \label{performancetable}
+    \begin{tabular}{l|ll|ll|ll}
+                   & \multicolumn{2}{l}{6 moves} & \multicolumn{2}{l}{8 moves} & \multicolumn{2}{l}{10 moves}                      \\
+                   & GB                          & Mins                        & GB                           & Mins & GB   & Mins \\
+        \hline
+        Kholmov    & 13.1                        & 1:41                        & 15.2                         & 2:07 & 24.4 & 2:59 \\
+        Rubinstein & 12.4                        & 1:27                        & 24.8                         & 3:27 & 25.9 & 6:10 \\
+        Xiang      & 13.0                        & 1:31                        & 25.0                         & 3:02 & 25.8 & 4:28 \\
+        Zuniga     & 12.9                        & 1:32                        & 15.2                         & 2:05 & 22.8 & 2:48
+    \end{tabular}
+\end{table}
+
 \section{Chesskell EDSL vs Other Chess Notations}
 
 One of the aims of Chesskell was for the final Chess EDSL to be closer to existing Chess notation than to Haskell syntax. In this section, we lay out how successful Chesskell has been in this regard, with justifications where Chesskell differs from existing notation.
