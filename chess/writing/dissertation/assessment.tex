@@ -1,28 +1,31 @@
-\chapter{Self-assessment}
+\section{Self-assessment}
 
-This chapter details the author's self-assessment of the project; as such, it will be written in first person, and address the relevant questions directly.
+This section details the author's self-assessment of the project; as such, it is written in first person singular, and addresses the relevant questions directly.
 
-\section{What is the (technical) contribution of this project?}
+\subsection{What is the (technical) contribution of this project?}
 
-The primary contribution is a full type-level model of Chess in Haskell, paired with a value-level EDSL which uses the type-level model for \emph{all} rule-checking. Additionally, it provides useful points of friction for GHC, which is useful for the implementors as it points out the current limitations of type-level programming in Haskell.
+The primary contribution is a full type-level model of Chess in Haskell, paired with value-level EDSLs which are typed with the type-level Chess model. The Haskell compiler GHC uses the type-level model to type-check games described with the EDSLs. Additionally, the project highlights points of friction for GHC's performance, which is useful for the implementors of GHC as it points out some current limitations of type-level programming in Haskell.
 
-% TODO: Haskell symposium paper??
+% TODO: Write sentence on Haskell symposium paper
 
-\section{Why should this contribution be considered relevant and important for the subject of your degree?}
+\subsection{Why should this contribution be considered relevant and important for the subject of your degree?}
 
-As the subject of my degree is Computer Science, any contributions towards relevant CS fields would be appropriate. The study of type systems is a broad and mature topic, and Chesskell demonstrates a complex application of academic type theory, with a view to assessing the expressivity of Haskell's type system. The achievement of implementing Chess at the type level shows knowledge of type systems, functional programming, and practical experience with Haskell and GHC; all of which are relevant to Computer Science in general, and therefore to my degree.
+The study of type systems is a broad and mature topic, and Chesskell demonstrates a complex application of academic type theory, with a view to assessing the expressivity of Haskell's type system. The achievement of implementing Chess at the type level shows knowledge of type systems, functional programming, and practical experience with Haskell and GHC; all of which are relevant to Computer Science in general, and therefore to my degree.
 
-\section{How can others make use of the work in this project?}
+% TODO: Stress that you're looking at the applied side of type systems, in Haskell and GHC specifically
+% TODO: Talk about why it's useful to Computer Science in general, not just you
+% Useful because: want to push limits + assess how GHC copes with code that makes use of these features
 
-Currently, Chesskell is technically usable, but is not as useful as existing Haskell Chess engines, which perform computation at the value level (and so avoid the memory issues brought about by Chesskell). Chesskell, while a practical project, is more of a proof of concept; an experiment with GHC's type level facilities. However, the type-level programming patterns used in Chesskell, chiefly First Class Families, are reusable in other projects. Furthermore, Chesskell itself could be used as a GHC stress test, checking the performance of GHC's type level computation.
+\subsection{How can others make use of the work in this project?}
 
-\section{Why should this project be considered an achievement?}
+Chesskell is a complete type-level model of the FIDE laws of Chess. The code is open source, so anyone who wishes to write programs which use static verification involving Chess rules (such as a typed Chess engine) can make use of Chesskell to check invariants in the types of their program. Furthermore, the benchmarks we have developed can be used by Haskell compiler implementors to check performance of Haskell's type system.
 
-Implementing Chess at the type level was difficult, necessitating much research, planning, and programming. Furthermore, such a thing has never been achieved before; and to my knowledge, it is one of the most complex rule sets expressed at the type level in Haskell.
+\subsection{Why should this project be considered an achievement?}
 
-\section{What are the limitations of this project?}
+Implementing Chess at the type level was difficult, necessitating much research, planning, and programming. Furthermore, such a thing has never been achieved before; and to my knowledge, it is one of the most complex rule sets expressed at the type level in Haskell to date.
 
-Currently, the severe limit to the game size (12 moves or less) is the biggest limitation, brought about by excessive memory usage. Addressing this problem would require more knowledge of GHC internals themselves, which (while not impossible) is difficult to achieve under time constraints.
+% TODO: Explain why it was difficult: learning a lot of techniques for type-level programming (going beyond course + familiarising with state-of-the art research in the field); then, figuring out how to use those techniques to implement Chesskell (which has never been achieved before); and mention the paper! (The paper is another achievement - hard to write, got fairly positive reviews on feedback)
 
-Additionally, Chesskell is useful as a move checker, but currently cannot be used for many other common Chess engine operations -- such as move generation. A worthy extension could be to broaden the scope of Chesskell in this manner, making it more appropriate for use.
+\subsection{What are the limitations of this project?}
 
+Currently, the limit to the game size on the author's hardware (12 moves or less) is the biggest limitation, brought about by the excessive memory usage of the GHC Haskell compiler. Addressing this problem would require improving the performance of the compiler itself, which is outside the scope of the project and would require very intimate knowledge of GHC's internals. Conceptually, with more/infinitely powerful hardware, there is no limit to Chesskell game length.
