@@ -21,3 +21,6 @@ chess/writing/dissertation/notes.md
 log.txt
 DemoFile.hs
 chess/writing/dissertation/diss.pdf
+*.dvi
+*.markdown.lua
+*.out.ps
