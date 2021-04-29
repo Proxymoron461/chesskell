@@ -4,27 +4,19 @@ This section details the author's self-assessment of the project; as such, it is
 
 \subsection{What is the (technical) contribution of this project?}
 
-The primary contribution is a full type-level model of Chess in Haskell, paired with value-level EDSLs which are typed with the type-level Chess model. The Haskell compiler GHC uses the type-level model to type-check games described with the EDSLs. Additionally, the project highlights points of friction for GHC's performance, which is useful for the implementors of GHC as it points out some current limitations of type-level programming in Haskell.
-
-% TODO: Write sentence on Haskell symposium paper
+The primary contribution is a full type-level model of Chess in Haskell, paired with value-level EDSLs which are typed with the type-level Chess model. The Haskell compiler GHC uses the type-level model to type-check games described with the EDSLs. Additionally, the project highlights points of friction for GHC's performance, which is useful for the implementors of GHC as it points out some current limitations of type-level programming in Haskell. The final major contribution is a paper submission to the Haskell Symposium 2021, detailing notable aspects of Chesskell's development.
 
 \subsection{Why should this contribution be considered relevant and important for the subject of your degree?}
 
-The study of type systems is a broad and mature topic, and Chesskell demonstrates a complex application of academic type theory, with a view to assessing the expressivity of Haskell's type system. The achievement of implementing Chess at the type level shows knowledge of type systems, functional programming, and practical experience with Haskell and GHC; all of which are relevant to Computer Science in general, and therefore to my degree.
-
-% TODO: Stress that you're looking at the applied side of type systems, in Haskell and GHC specifically
-% TODO: Talk about why it's useful to Computer Science in general, not just you
-% Useful because: want to push limits + assess how GHC copes with code that makes use of these features
+Chesskell is useful to Computer Science as a whole due to its focus; the applied side of type systems, in Haskell and GHC specifically. As I discuss above, Haskell's type system has been the subject of much academic research and years of real-world, practical use. The newer, more advanced features of Haskell's type system have yet to see widespread adoption, and so it is worthwhile to test their limits and assess how GHC copes with code that makes extensive use of them. These features will not be used if they have no utility, after all; and so practical testing is a must.
 
 \subsection{How can others make use of the work in this project?}
 
-Chesskell is a complete type-level model of the FIDE laws of Chess. The code is open source, so anyone who wishes to write programs which use static verification involving Chess rules (such as a typed Chess engine) can make use of Chesskell to check invariants in the types of their program. Furthermore, the benchmarks we have developed can be used by Haskell compiler implementors to check performance of Haskell's type system.
+Chesskell is a complete type-level model of the FIDE laws of Chess. The code is open source, so anyone who wishes to write programs which use static verification involving Chess rules (such as a typed Chess engine) can make use of Chesskell to check invariants in the types of their program. Furthermore, the benchmarks we have developed can be used by Haskell compiler implementors to check performance of Haskell's type system. Finally, the First Class Family type-level versions of common value-level Haskell type classes (such as Monads, Foldable  data structures, and Functors) are reusable and can be included in Haskell projects involving type-level programming.
 
 \subsection{Why should this project be considered an achievement?}
 
-Implementing Chess at the type level was difficult, necessitating much research, planning, and programming. Furthermore, such a thing has never been achieved before; and to my knowledge, it is one of the most complex rule sets expressed at the type level in Haskell to date.
-
-% TODO: Explain why it was difficult: learning a lot of techniques for type-level programming (going beyond course + familiarising with state-of-the art research in the field); then, figuring out how to use those techniques to implement Chesskell (which has never been achieved before); and mention the paper! (The paper is another achievement - hard to write, got fairly positive reviews on feedback)
+Implementing Chess at the type level involved learning many techniques for type-level programming, going beyond course content and familiarising myself with state-of-the-art research in the field. Once I had learned these techniques, I had to figure out how to use them to implement Chess at the type level, which has never been achieved before; and to my knowledge, it is one of the most complex rule sets expressed at the type level in Haskell to date. Furthermore, the Haskell Symposium 2021 paper concerning Chesskell is an achievement on its own -- and the feedback on the paper is fairly positive and recognises the technical achievement of Chesskell itself.
 
 \subsection{What are the limitations of this project?}
 
