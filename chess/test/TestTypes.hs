@@ -9,7 +9,7 @@ import Control.Exception (evaluate, try, TypeError(..))
 import Data.Type.Equality ((:~:)(..))
 import Data.Proxy(Proxy(..))
 
-import Lib
+import Chesskell
 import Vec
 import FirstClassFunctions
 import ChessTypes

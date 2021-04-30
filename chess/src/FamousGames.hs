@@ -5,7 +5,7 @@ import MakeProxies
 import qualified GHC.TypeLits as TL
 import ChessTypes
 import FirstClassFunctions
-import Lib
+import Chesskell
 
 -- kholmovVsBronstein = chess
 --     pawn e2 to e4

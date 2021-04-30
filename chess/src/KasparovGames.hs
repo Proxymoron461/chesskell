@@ -5,7 +5,7 @@ import MakeProxies
 import qualified GHC.TypeLits as TL
 import ChessTypes
 import FirstClassFunctions
-import Lib
+import Chesskell
 
 -- SUCCESS!
 -- game = chess p e4 p c5 n f3 p d6 b b5 n d7 p d4 p d4 end -- q d4 p a6 end --b d7 b d7 n c3 

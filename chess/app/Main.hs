@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import Chesskell
 
 main :: IO ()
 main = someFunc

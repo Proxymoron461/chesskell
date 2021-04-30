@@ -5,12 +5,14 @@ import MakeProxies
 import qualified GHC.TypeLits as TL
 import ChessTypes
 import FirstClassFunctions
-import Lib
+import Chesskell
+
+-- /usr/bin/time -v stack ghc -- src/BenchmarkGames.hs -freduction-depth=0
 
 -- kholmovVsBronsteinShort = chess
 --     p e4 p c5
 --     n f3 n f6
---     n c3 p d6 -- end -- 13.1 GB, 1:41
+--     n c3 p d6 -- 13.1 GB, 1:41
 --     p d4 p d4 -- end  -- 15.2 GB, 2:07
 --     n d4 p a6 end  -- 24.4 GB, 2:59
 
