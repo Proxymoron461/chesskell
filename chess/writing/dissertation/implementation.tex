@@ -298,9 +298,7 @@ There are a few Chess rules that are dissimilar from all other Chess rules; and 
 
 Most Chess rules move a single piece, and can capture another piece to remove it from play. However, the \emph{Castling} move involves the movement of two pieces; the King, and one of their Rooks. Castling can only occur if neither the King nor the Rooks have moved, and as long as none of the positions the King would move through are under check and there are no other pieces between the King and the Rook. It is one of the most complex rules of Chess, and requires many tests before it can proceed.
 
-% TODO: figures for queen-side and king-side castling
-
-There are two varieties of Castle; Queen-side Castle and King-side Castle, depending on the direction that the King moves in (either left or right, respectively). Both varieties are shown for the Black team in \cref{queensidecastle,kingsidecastle}. Essentially, the King moves either 2 or 3 spaces towards the Rook, and the Rook wraps around to the other side of the King.
+There are two varieties of Castle; Queen-side Castle and King-side Castle, depending on the direction that the King moves in (either left or right, respectively). Both varieties are shown for the White team in \cref{queensidecastle,kingsidecastle}. Essentially, the King moves either 2 or 3 spaces towards the Rook, and the Rook wraps around to the other side of the King.
 
 In Chesskell, we model castling as a move by the King; valid castling positions are added to the King's move list. A type family, \inline{CanCastle}, is responsible for checking if the King of a certain team can indeed perform castling in either direction, returning a pair of Booleans to state whether the King can castle left or right. The below code snippet illustrates a part of this process:
 
@@ -318,6 +316,28 @@ These checks must pass for the King to be able to castle in that direction; and 
 This extended Castling check illustrates why it is useful to have each piece's move count in the \inline{PieceInfo} type; it enables quickly determining if a King or either of the Rooks have moved. Simply checking if the King or Rooks are in their starting positions is not enough, since they could have just moved back to those positions.
 
 There are no circumstances under which a King is obligated to castle, and so there are no pre- or post-move rule checks. However, a King cannot castle to capture another piece; so these castle positions are not a part of the King's attack list.
+
+\begin{figure}[h]
+    \centering
+    \fenboard{8/8/8/8/8/8/8/R3K3 w KQkq - 0 1}
+    \showboard
+    \hidemoves{1. O-O-O}
+    \quad
+    \showboard
+    \label{queensidecastle}
+    \caption{A pair of figures, showing a Queen-side Castle involving the White King.}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \fenboard{8/8/8/8/8/8/8/4K2R w KQkq - 0 1}
+    \showboard
+    \hidemoves{1. O-O}
+    \quad
+    \showboard
+    \label{kingsidecastle}
+    \caption{A pair of figures, showing a King-side Castle involving the White King.}
+\end{figure}
 
 \paragraph{Pawn Movement and En Passant} \label{passantsection}
 
