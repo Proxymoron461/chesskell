@@ -4,7 +4,7 @@ This section details the author's self-assessment of the project; as such, it is
 
 \subsection{What is the (technical) contribution of this project?}
 
-The primary contribution is a full type-level model of Chess in Haskell, paired with value-level EDSLs which are typed with the type-level Chess model. The Haskell compiler GHC uses the type-level model to type-check games described with the EDSLs. Additionally, the project highlights points of friction for GHC's performance -- which is useful for the implementors of GHC as it identifies some current limitations of type-level programming in Haskell. The final major contribution is a paper submission to the Haskell Symposium 2021, detailing notable aspects of Chesskell's development.
+The primary contribution is a full type-level model of Chess in Haskell, paired with value-level EDSLs which are typed with the type-level Chess model. The Haskell compiler GHC uses the type-level model to type-check games described with the EDSLs. Additionally, the project highlights points of friction for GHC performance -- which is useful for the implementors of GHC as it identifies some current limitations of type-level programming in Haskell. The final major contribution is a paper submission to the Haskell Symposium 2021, detailing notable aspects of Chesskell's development.
 
 \subsection{Why should this contribution be considered relevant and important for the subject of your degree?}
 
@@ -20,4 +20,4 @@ Implementing Chess at the type level involved learning many techniques for type-
 
 \subsection{What are the limitations of this project?}
 
-Currently, the limit to the game size on the author's hardware (12 moves or less) is the biggest limitation, brought about by the excessive memory usage of the GHC Haskell compiler. Addressing this problem would require improving the performance of the compiler itself, which is outside the scope of the project and would require very intimate knowledge of GHC's internals. Conceptually, with more/infinitely powerful hardware, there is no limit to Chesskell game length.
+Currently, the limit to the game size on the author's hardware (12 moves or less) is the biggest limitation, brought about by the excessive memory usage of the GHC Haskell compiler. Addressing this problem would require improving the performance of the compiler itself, which is outside the scope of the project and would require very intimate knowledge of GHC internals. Conceptually, with more/infinitely powerful hardware, there is no limit to Chesskell game length.
