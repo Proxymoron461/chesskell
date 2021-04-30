@@ -24,3 +24,4 @@ chess/writing/dissertation/diss.pdf
 *.dvi
 *.markdown.lua
 *.out.ps
+.vscode/*
