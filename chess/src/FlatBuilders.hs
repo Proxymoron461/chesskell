@@ -5,7 +5,7 @@ import ChessTypes
 import Data.Singletons
 import Data.Singletons.Prelude.Bool
 import Data.Type.Nat hiding (SNat(..))
-import Lib
+import Chesskell
 import Vec
 import FirstClassFunctions
 import qualified GHC.TypeLits as TL

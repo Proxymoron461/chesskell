@@ -8,7 +8,7 @@ import Data.Proxy(Proxy(..))
 import qualified GHC.TypeLits as TL (Nat)
 import Data.Type.Nat hiding (SNat(..))
 
-import Lib
+import Chesskell
 import Vec
 import FirstClassFunctions
 import ChessTypes

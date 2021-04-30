@@ -7,7 +7,7 @@ import qualified GHC.TypeLits as TL (Nat)
 import Data.Proxy(Proxy(..))
 import Data.Type.Nat hiding (SNat(..))
 
-import Lib
+import Chesskell
 import Vec
 import FirstClassFunctions
 import ChessTypes
