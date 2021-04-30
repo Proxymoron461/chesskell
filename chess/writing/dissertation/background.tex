@@ -92,7 +92,7 @@ data Book where
     NonFiction :: Book
 \end{lstlisting}
 
-With the \inline{-XDataKinds} extension enabled, the above code not only produces the two values \inline{Fiction} and \inline{NonFiction} with type \inline{Book}, but also the \emph{types} \inline{'Fiction} and \inline{'NonFiction}, of kind \inline{Book}. The key point of understanding is that there are no values of type \inline{'Fiction} or \inline{'NonFiction}---they exist solely at the type level. See \cref{promotiondiagram} for a graphical representation; note that the type \inline{Book} has kind \inline{*}, as it is a type with associated values.
+With the \inline{-XDataKinds} extension enabled, the above code not only produces the two values \inline{Fiction} and \inline{NonFiction} with type \inline{Book}, but also two new \emph{types}: \inline{'Fiction} and \inline{'NonFiction}, of kind \inline{Book}. The key point of understanding is that there are no values of type \inline{'Fiction} or \inline{'NonFiction}---they exist solely at the type level. See \cref{promotiondiagram} for a graphical representation; note that the type \inline{Book} has kind \inline{*}, as it is a type with associated values.
 
 \begin{figure}
     \centering
@@ -137,7 +137,7 @@ type family IsEitherFiction (x :: Book) (y :: Book) :: Bool where
     IsEitherFiction 'NonFiction 'NonFiction = False
 \end{lstlisting}
 
-While the function \inline{isEitherFiction} can be partially applied, the type family \inline{IsEitherFiction} cannot. One could feasibly map \inline{isEitherFiction} over a list of books, but mapping with the type family \inline{IsEitherFiction} is impossible. Imagine a type family \inline{Map}, of kind \inline{(a -> b) -> [a] -> [b]}, analogous to the value-level function \inline{map}. While the value-level expression \inline{map (isEitherFiction NonFiction) [NonFiction, Fiction]} evaluates to \inline{[False, True]}, the type-level equivalent (\inline{Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ]}) causes a type error. Much of functional programming relies on partial application, but these design patterns are impossible when using Haskell's Type Families.
+While the function \inline{isEitherFiction} can be partially applied, the corresponding type family \inline{IsEitherFiction} cannot. One could feasibly map \inline{isEitherFiction} over a list of books, but mapping with the type family \inline{IsEitherFiction} is impossible. Imagine a type family \inline{Map}, of kind \inline{(a -> b) -> [a] -> [b]}, analogous to the value-level function \inline{map}. While the value-level expression \inline{map (isEitherFiction NonFiction) [NonFiction, Fiction]} evaluates to \inline{[False, True]}, the type-level equivalent (\inline{Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ]}) causes a type error. Much of functional programming relies on partial application, but these design patterns are impossible when using Haskell's Type Families.
 
 \subsection{First-Class Families} \label{fcfbackground}
 
@@ -169,7 +169,11 @@ type instance Eval (Map f (x ': xs))
     = Eval (f x) ': Eval (Map f xs)
 \end{lstlisting}
 
-When combined with the above definition of \inline{Map}, mapping (and general Functor behaviour) at the type level becomes possible by calling \inline{Eval}: the expression \inline{Eval (Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ])} evaluates to \inline{'[ 'False, 'True ]}.
+When combined with the above definition of \inline{Map}, mapping (and general Functor behaviour) at the type level becomes possible with the use of \inline{Eval} -- the below expression evaluates to the type \inline{'[ 'False, 'True ]}:
+
+\begin{lstlisting}
+Eval (Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ])   
+\end{lstlisting}
 
 Since we use an open type family for the interpreter, there cannot be any overlapping cases as the instances are not ordered. For instance, GHC fails to compile the following definition because \inline{x} could be \inline{'Fiction} or \inline{'NonFiction} and therefore, if \inline{x} were \inline{'Fiction}, either the first or second instance shown below could apply:
 

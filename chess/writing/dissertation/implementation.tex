@@ -146,7 +146,7 @@ type Row   = Vec Eight (Maybe Piece)
 type Board = Vec Eight Row
 \end{lstlisting}
 
-Although this is the main board type, it is augmented with a \inline{BoardDecorator}, so named because the intention is similar to the decorator design pattern~\cite{decorator}, with the exception that subclassing and superclassing are not features of Haskell. \inline{BoardDecorator} should be used instead of \inline{Board}, since it provides additional information:
+Although this is the main board type, it is augmented with a \inline{BoardDecorator}, so named because the intention is similar to the decorator design pattern~\cite{decorator}, with the exception that subclassing and superclassing are not features of Haskell. In most cases, we use \inline{BoardDecorator} instead of \inline{Board}, since it contains additional information:
 
 \begin{itemize}
     \item The last team to move;
@@ -212,7 +212,7 @@ type TETest = Eval (If ('False)
 
 \subsection{Chess Rules}
 
-In Chesskell, the rules of Chess are expressed as First Class Families that either return a \inline{BoardDecorator} or a type error (as we explain in \cref{chessrules}). Each such rule-check type family has the suffix \inline{-Check}, such as \inline{NotTakingKingCheck} and \inline{NotTakingOwnTeamCheck}. These checks are broadly split into pre-move checks, and post-move checks; each check has a custom error message to make clear to the user where exactly the rule violation occurs.
+In Chesskell, the rules of Chess are expressed as First Class Families that either return a \inline{BoardDecorator} or a type error (as we explain in \cref{chessrules}). Each such rule-check type family has the suffix \inline{-Check}, such as the aptly named \inline{NotTakingKingCheck} and \inline{NotTakingOwnTeamCheck}. These checks are broadly split into pre-move checks, and post-move checks; each check has a custom error message to make clear to the user where exactly the rule violation occurs.
 
 To illustrate, we give the definition of \inline{NotSamePosCheck}, which checks that the described move is between two distinct positions, and generates a type error otherwise:
 
@@ -458,7 +458,7 @@ The EDSL has gone through multiple changes during development, not only in synta
 
 Before the final format and syntax of the EDSL was decided upon, it was important to determine whether the creation of a value-level interface for the type level model was possible at all. The earliest version of the "EDSL" was a set of named Haskell functions, to test if the type-level model was usable by value-level functions.
 
-This Minimum Viable Product version does not include any of the final EDSL's more advanced features (such as board creation), but successfully allows the user to describe a Chess game move by move. A single core function, named \inline{move}, made use of \inline{Proxy} types and a First Class Family version of bind to move a piece on a board from one position to another:
+This Minimum Viable Product version does not include any of the more advanced features of the final EDSLs (such as board creation), but successfully allows the user to describe a Chess game move by move. A single core function, named \inline{move}, made use of \inline{Proxy} types and a First Class Family version of bind to move a piece on a board from one position to another:
 
 \begin{lstlisting}
 move :: Proxy (from :: Position)
@@ -493,7 +493,7 @@ Finally, the \inline{Term t r} type ends the continuation stream by taking no co
 type Term t r = t -> r
 \end{lstlisting}
 
-As an illustrative example of how we use these types, consider the implementation of a sentence-like structure for mathematical operations, such as \inline{to 5 add 7 add 9 increment then print}, which should return a string version of the final result. We can achieve this using the Flat Builders pattern. We define \inline{to} like so, passing a number into a continuation which performs some computation on the input:
+As an illustrative example of how we use these types, consider the implementation of a sentence-like structure for mathematical operations, such as \inline{to 5 add 7 add 9 increment _then _print}, which should return a string version of the final result. We can achieve this using the Flat Builders pattern. We define \inline{to} like so, passing a number into a continuation which performs some computation on the input:
 
 \begin{lstlisting}
 to :: Int -> Spec Int
@@ -514,21 +514,23 @@ increment :: Int -> Spec Int
 increment x cont = cont (x + 1)
 \end{lstlisting}
 
-The continuation \inline{then} is intended purely to clarify operations, not to perform any new computation:
+The continuation \inline{_then} is intended purely to clarify operations, not to perform any new computation:
 
 \begin{lstlisting}
-then :: Int -> Spec Int
-then x cont = cont x
+_then :: Int -> Spec Int
+_then x cont = cont x
 \end{lstlisting}
 
-And finally, we define the \inline{print} continuation, which enables us to end the continuation stream and return a string:
+And finally, we define the \inline{_print} continuation, which enables us to end the continuation stream and return a string:
 
 \begin{lstlisting}
-print :: Term Int String
-print x = show x
+_print :: Term Int String
+_print x = show x
 \end{lstlisting}
 
-Using all of these continuations, the sentence-like expression \inline{to 5 add 7 add 9 increment then print} is well-typed and returns \inline{"22"}, a string. Note that none of these continuations make assumptions about the kinds of operations performed within (only that they take in an integer). Adding new operations, such as multiplication or division, is simple -- just add a new continuation which performs this operation. Such an approach is a natural fit for Chesskell, since the various Chess moves can be (relatively) encapsulated, and the syntax can be modified with extensions (such as those we discuss in \cref{castleextension,numberextension}).
+Using all of these continuations, we can verify that the sentence-like expression \inline{to 5 add 7 add 9 increment _then _print} is well-typed and returns \inline{"22"}, a string.
+
+Note that none of these continuations make assumptions about the kinds of operations performed within the next continuation; only that they take in an integer. Adding new operations, such as multiplication or division, is as simple as adding a new continuation which performs this operation. Such an approach is a natural fit for Chesskell, since the various Chess moves can be (relatively) encapsulated, and it becomes straightforward to extend the EDSL (such as the extensions we discuss in \cref{castleextension,numberextension}).
 
 We combine these Flat Builders continuation types with type-level rule checks, to create a Chess EDSL that operates through passing continuations. Using a combination of proxies, kind signatures, and type applications, we enforce type-level rule checking upon the value-level EDSL.
 
