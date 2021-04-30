@@ -3,16 +3,26 @@
 The project is a success. We have presented Chesskell, a Haskell EDSL for describing Chess games where a full encoding of the FIDE 2018 Laws of Chess in the types rules out illegal moves. Reporting on our work in implementing such a complex set of rules encoded in Haskell's type system serves multiple purposes:
 
 \begin{itemize}
-    \item It provides a stress test for GHC's type system that we hope can be used to build regression tests for the compiler's type checking performance.
-    \item We report on areas of friction in developing such type-level models of complex rule sets where improvements could be made to the compiler.
+    \item It provides a stress test for Haskell's type system, as implemented in GHC, that we hope can be used to build regression tests for the compiler's type checking performance;
+    \item We report on areas of friction in developing such type-level models of complex rule sets where improvements could be made to the compiler;
     \item We identify some techniques for optimising and troubleshooting type-level code.
 \end{itemize}
-
-% TODO: Write about Haskell Symposium 2021 paper!
 
 While our implementation can be considered idiomatic in the sense that the rules are expressed in a human-readable manner and use intuitive representations, the resulting performance does not allow us to describe longer games where memory usage becomes the limiting factor. In our testing, describing a game of around twelve moves will consume more than 20GBs of memory.
 
 Reasoning about our definitions' impact on compile-time performance and memory usage has proved difficult: optimisation techniques we expected to improve performance did not and changes which we expected to make no difference ended up improving performance. These surprising findings make it clear to us that, in order for developers to be able to encode complex business logic in Haskell's type system, it must become more transparent how the compiler will react to a given definition or there must be tools which allow developers to profile and debug their encodings.
+
+\section{Haskell Symposium 2021 Paper}
+
+Towards the end of development, the author and their supervisor co-wrote a paper, of which Chesskell was the subject, for the ACM SIGPLAN Haskell Symposium 2021\footnote{\url{https://www.haskell.org/haskell-symposium/2021/}}. The Haskell Symposium is a well-established convention for original research on Haskell, to which papers can be submitted in an early and a regular track. These two submission tracks give authors the time to edit their papers, as feedback from the early track comes before the submission date for the regular track.
+
+We submitted a paper to the early track, and received feedback for our submission from three anonymous reviewers; we give both the paper and the reviewer comments in \cref{symposiumfeedback}. In this section, we discuss high-level points of feedback, outlining how we will address their comments for the regular track submission.
+
+One of the major points of feedback from all three reviewers was interest in the performance findings of Chesskell, and a desire to see more detailed analysis. While we have performed some preliminary evaluation of the performance of several games (see \cref{performanceanalysis}), there is room for greater detail. As such, before the regular track submission, we aim to perform more comprehensive performance analysis; investigating the compile time and memory usage of more games. Some moves, such as Castling and Pawn Promotion, are unlikely to be part of the opening series of moves -- and so we will broaden the testing process to include moves from the middle of games rather than just the openings of them.
+
+This additional performance analysis will replace certain sections deemed less critical by the reviewers; such as the sections detailing the implementation of specific moves. As the paper is aimed at those already knowledgeable with type-level programming in Haskell, the techniques we explain in those sections are already known.
+
+It should be noted that overall, the feedback was positive; while all three reviewers pointed out areas of improvement, we will address their feedback for the regular submission track and present a Chesskell paper once more.
 
 \section{Session-typed Chesskell}
 
