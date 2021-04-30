@@ -1,4 +1,4 @@
-module Lib where
+module Chesskell where
 
 import qualified GHC.TypeLits as TL
 import FirstClassFunctions
