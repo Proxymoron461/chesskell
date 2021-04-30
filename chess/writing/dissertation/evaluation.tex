@@ -227,7 +227,7 @@ type instance Eval (Move fromPos toPos boardDec) = Eval ((
 
 Removing the \inline{CheckNoCheck} post-move check entirely (from the codebase using the old implementation) reduced memory usage of an 8-move Chesskell game from 22-23GB to 7.5-8GB, and average compile time from 1 minute 37 seconds to 24 seconds, proving that testing for check was a performance bottleneck.
 
-Attempting to optimise the codebase and reduce memory usage as the result of an ``out of memory'' crash, we created the new ray implementation \cref{checksection}. Despite the reduced computation performed by GHC with the new implementation, there was no noticeable decrease in memory usage when compiling Chesskell games -- GHC continued to run out of memory and crash.
+Attempting to optimise the codebase and reduce memory usage as the result of an ``out of memory'' crash, we created the new ray implementation (see \cref{checksection}). Despite the reduced computation performed by GHC with the new implementation, there was no noticeable decrease in memory usage when compiling Chesskell games -- GHC continued to run out of memory and crash.
 
 However, splitting out the pre-move rule checks and the post-move rule checks into separate type families helped GHC to terminate, no longer running out of memory. The new implementation (which we give below) takes less than 1 minute and 30 seconds to compile, and uses an average of 25GB of memory. We put the pre-move checks into a new \inline{MoveWithPreChecks} family:
 
