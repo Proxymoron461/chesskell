@@ -341,9 +341,15 @@ There are no circumstances under which a King is obligated to castle, and so the
 
 \paragraph{Pawn Movement and En Passant} \label{passantsection}
 
-Pawns have the most complex movement rules out of any piece, primarily because their attack patterns are different from their movement patterns. Pawns can move one vertical space forwards, but on their first move can move two spaces instead of one. (For a White Pawn, "forwards" means towards a row of higher number, and for a Black Pawn, it means towards a row of lower number.) However, they cannot capture a piece this way; they can only capture one diagonal space in front of themselves.
+Pawns have the most complex movement rules out of any piece, primarily because their attack patterns are different from their movement patterns. Pawns can move one vertical space forwards, but on their first move can move two spaces instead of one. (For a White Pawn, "forwards" means towards a row of higher number, and for a Black Pawn, it means towards a row of lower number -- see \cref{pawnfirstmovement}.) However, they cannot capture a piece this way; they can only capture one diagonal space in front of themselves.
 
-% TODO: A figure to illustrate this??
+\begin{figure}[h]
+    \centering
+    \fenboard{8/2p5/8/8/8/8/5P2/8 w - - 0 1}
+    \chessboard[showmover=false, pgfstyle=cross, color=black, linewidth=0.15em, shortenstart=0.5ex, shortenend=0.5ex, markfields={c5,c6,f3,f4}]
+    \label{pawnfirstmovement}
+    \caption{A figure demonstrating the positions that a Black and a White Pawn can move to on their first movement.}
+\end{figure}
 
 This means that a Pawn can indeed make a diagonal move, but only if there is a capturable piece there. (For instance, a Black Pawn could move downwards diagonally by a single space to capture a White Bishop, but could not move to that square if it were empty.) Additionally, Pawns have one more special capture rule; that of \emph{en passant}.
 
