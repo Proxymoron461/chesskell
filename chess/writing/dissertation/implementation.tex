@@ -347,9 +347,19 @@ Pawns have the most complex movement rules out of any piece, primarily because t
 
 This means that a Pawn can indeed make a diagonal move, but only if there is a capturable piece there. (For instance, a Black Pawn could move downwards diagonally by a single space to capture a White Bishop, but could not move to that square if it were empty.) Additionally, Pawns have one more special capture rule; that of \emph{en passant}.
 
-A Pawn can perform an \emph{en passant} capture if a Pawn of the opposite team has moved forwards by two spaces last turn (which can only occur if that was the opposite Pawn's first move), and ended up next to the attacking Pawn. In this situation, the original attacking Pawn can move diagonally to the empty space behind the opposite team's Pawn, capturing it.
+A Pawn can perform an \emph{en passant} capture if a Pawn of the opposite team has moved forwards by two spaces last turn (which can only occur if that was the opposite Pawn's first move), and ended up next to the attacking Pawn. In this situation, the original attacking Pawn can move diagonally to the empty space behind the opposite team's Pawn, capturing it. See \cref{enpassantfigure} for a graphical representation, showing a White Pawn performing \emph{en passant} capture on a Black Pawn.
 
-% TODO: Another illustrative figure?? 3 chess boards
+\begin{figure}[h]
+    \centering
+    \fenboard{8/2p5/8/3P4/8/8/8/8 b - - 0 1}
+    \scalebox{0.7}{\chessboard[showmover=false, pgfstyle=straightmove, arrow=to, linewidth=0.1em, shortenstart=0.5ex, markmoves={c7-c5}]}
+    \hidemoves{1... c5}
+    \scalebox{0.7}{\chessboard[showmover=false, pgfstyle=straightmove, arrow=to, linewidth=0.1em, shortenstart=0.5ex, markmoves={d5-c6}]}
+    \fenboard{8/8/2P5/8/8/8/8/8 b - - 0 1}
+    \scalebox{0.7}{\chessboard[showmover=false]}
+    \label{enpassantfigure}
+    \caption{A sequence of three Chess boards, demonstrating an \emph{en passant} capture by White of a Black Pawn.}
+\end{figure}
 
 This capture rule is dependent on several factors; the last move made, as well as the relative positions of the pieces. Furthermore, the capture move does not result in the attacking piece landing on the square of the piece being captured; making it distinct from all other capture rules.
 
@@ -615,9 +625,15 @@ p (dec :: Proxy b) (to :: Proxy toPos) cont
 
 \inline{MoveTo} knows the destination square, and knows the \inline{PieceName} of the piece that moves there. As such, it can calculate the origin square for that move using the piece type's movement rules in reverse. (Remember, for all pieces except Pawns and Kings, if the piece can move from a to b, then it can also move from b to a.)
 
-For example, to determine the potential origin squares for a Bishop moving to destination square c5, the Bishop's movement rules are applied to an empty board to see the squares that the Bishop can move to from c5.
+For example, as we show in \cref{bishopmovement}, to determine the potential origin squares for a Bishop moving to destination square c5, the Bishop's movement rules are applied to an empty board to see the squares that the Bishop can move to from c5.
 
-% TODO: Make a figure
+\begin{figure}[h]
+    \centering
+    \fenboard{8/8/8/2B5/8/8/8/8 w - - 0 1}
+    \chessboard[showmover=false, pgfstyle=cross, color=black, linewidth=0.15em, shortenstart=0.5ex, shortenend=0.5ex, markfields={a3,b4,d6,e7,f8,a7,b6,d4,e3,f2,g1}]
+    \label{bishopmovement}
+    \caption{A figure demonstrating the positions a White Bishop can move to from square c5.}
+\end{figure}
 
 Then, this move list is filtered based on whether there is a valid piece in the original \inline{BoardDecorator} of the correct team in any of those squares. If the resulting filtered list has length 1 (i.e. it contains a single piece), then the position of that single piece extracted; otherwise, there are either no valid origin squares, or multiple valid origin squares, in which case the longer Chesskell syntax should be used.
 
