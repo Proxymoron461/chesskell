@@ -18,7 +18,7 @@ Towards the end of development, the author and their supervisor co-wrote a paper
 
 We submitted a paper to the early track, and received feedback for our submission from three anonymous reviewers; we give both the paper and the reviewer comments in \cref{symposiumfeedback}. In this section, we discuss high-level points of feedback, outlining how we will address their comments for the regular track submission.
 
-One of the major points of feedback from all three reviewers was interest in the performance findings of Chesskell, and a desire to see more detailed analysis. While we have performed some preliminary evaluation of the performance of several games (see \cref{performanceanalysis}), there is room for greater detail. As such, before the regular track submission, we aim to perform more comprehensive performance analysis; investigating the compile time and memory usage of more games. Some moves, such as Castling and Pawn Promotion, are unlikely to be part of the opening series of moves -- and so we will broaden the testing process to include moves from the middle of games rather than just the openings of them.
+All three reviewers had a common interest in the performance findings of Chesskell, as well as a desire to see more detailed analysis. While we show some preliminary evaluation of the performance of several games in \cref{performanceanalysis}, there is room for greater detail. As such, before the regular track submission, we aim to perform more comprehensive performance analysis, and investigate the memory usage and compile time of more games. Some moves, such as Castling and Pawn Promotion, are unlikely to be part of the opening series of moves --- and so we will broaden the testing process to include moves from the middle of games rather than just the openings of them.
 
 This additional performance analysis will replace certain sections deemed less critical by the reviewers; such as the sections detailing the implementation of specific moves. As the paper is aimed at those already knowledgeable with type-level programming in Haskell, the techniques we explain in those sections are already known.
 
@@ -26,13 +26,13 @@ It should be noted that overall, the feedback was positive; while all three revi
 
 \section{Session-typed Chesskell}
 
-The method we have chosen to express Chess at the type-level, as a single function, is just one of many potential methods. During development, we looked into another potential method of expression; implementing Chesskell using session types~\cite{torinosessions}. Session types are formalisms of communications between two or more parties within types; that is, the types define a protocol which communicating parties must adhere to.
+The method by which we express Chess at the type-level, as a single function, is just one of many potential methods. During development, we investigated another potential method of expression; implementing Chesskell using session types~\cite{torinosessions}. Session types are formalisms of communications between two or more parties within types; that is, the types define a protocol which communicating parties must adhere to.
 
-Interestingly, Chess could very naturally be expressed as a communications protocol between two parties, Black and White, who take turns sending messages describing their respective moves. Modelling Chess through such a protocol would enable interesting comparisons with Chesskell as it is today, and would make certain tasks easier. For instance, enforcing that teams alternate moves, and can only make one move each during their turn, would be trivial to ensure with session types.
+Interestingly, Chess could very naturally be expressed as a communication protocol between two parties, Black and White, who take turns sending messages describing their respective moves. Modelling Chess through such a protocol would enable interesting comparisons with Chesskell as it is today, and would make certain tasks easier. For instance, enforcing that teams alternate moves, and can only make one move each during their turn, would be trivial to ensure with session types.
 
-Once Chesskell's feature set was completed, we began work on a session-typed version of Chesskell making use of an existing session types implementation~\cite{sesstypesincloudhaskell}. Early progress seemed promising; however, expressing Chesskell with this session types implementation proved difficult, due to unexpected type errors.
+Once Chesskell's feature set was completed, we began work on a session-typed version of Chesskell making use of an existing session types implementation in Haskell~\cite{sesstypesincloudhaskell}. Early progress was promising; however, expressing Chesskell with this session types implementation proved difficult, due to unexpected type errors.
 
-We created an early draft of a session-typed Chess communications protocol, using values of type \inline{Position}, before attempting to modify this trial version to use \inline{Proxy} values with type \inline{Proxy Position}. This early version involves the sender sending two positions (the destination square and the target square), and then receiving two positions from the other party, before recursively calling the function again to keep the game going for arbitrary length. We give the definition below, which compiles successfully:
+We created an early draft of a session-typed Chess communications protocol, using values of type \inline{Position}, before attempting to modify this trial version to use \inline{Proxy} values with type \inline{Proxy Position}. This early version involves the sender sending two positions (the destination square and the target square), and then receiving two positions from the other party, before recursively calling the function again to continue the game for an arbitrary amount of moves. We give the definition below, which compiles successfully:
 
 \begin{lstlisting}
 chess_recursion :: MonadSession m => Position -> Position
@@ -82,13 +82,13 @@ type family ModifyPos (x :: Position) :: Position where
     ModifyPos (At col row) = At col (S row)
 \end{lstlisting}
 
-The given input argument to the next round of the session typed protocol, a tuple with type \inline{(Proxy (ModifyPos pos3), Proxy (ModifyPos pos4))} cannot be used as the formal input parameter of type \inline{(Proxy pos1, Proxy pos2)} since \inline{pos1 ~ ModifyPos pos3} may not hold. However, it makes sense that the next moves are dependent on the previous moves in the game; and all moves before that point. The use of \inline{ModifyPos}, while a little crude, mimics the structure of the game, whereby each move depends upon the last.
+The given input argument to the next round of the session typed protocol, a tuple with type \inline{(Proxy (ModifyPos pos3), Proxy (ModifyPos pos4))} cannot be used as the formal input parameter of type \inline{(Proxy pos1, Proxy pos2)} since the constraint \inline{pos1 ~ ModifyPos pos3} may not hold. However, it makes sense that the next moves are dependent on the previous moves in the game; and all moves before that point. The use of \inline{ModifyPos}, while a little crude, mimics the structure of the game, whereby each move depends upon the last.
 
 Since this unification constraint cannot be met, expressing a Chess game with session types in this recursive manner is impossible, since there are many valid Chess games in which the moves do not repeat every $N$ terms, for some fixed positive integer $N$.
 
 One possible solution could be to express Chess games of fixed length in this manner, simply writing new definitions for each possible Chess game length (which rarely exceeds 200). While this is technically a working solution, it is not general and would involve much shared code, complicating debugging and ensuring that if you need to remedy an issue in one definition, you must also remedy it in many other places.
 
-Ultimately, due to time constraints, we have been unable to further investigate a potential session-typed implementation of Chesskell. However, there is room for further research into and progress within this area, perhaps through findings ways to circumvent these unification constraints through other methods of implementing recursive session typed protocols.
+Ultimately, due to time constraints, we have been unable to further investigate a potential session-typed implementation of Chesskell. However, there is room for research into and progress within this area, perhaps through finding ways to circumvent these unification constraints through other methods of implementing recursive session typed protocols.
 
 \input{assessment.tex}
 
@@ -98,12 +98,12 @@ Although Chesskell has a full feature set, there is of course room for further w
 
 \subsection{Automated Chess Notation Translation}
 
-We carried out testing of the Chesskell EDSL, as we explain in \cref{testsection}, by manually translating algebraic notation of Chess games into the Chesskell notation. A useful way to simplify this process, as well as to make Chesskell more generally usable, would be to develop an automatic tool to perform this translation.
+We carried out testing of the Chesskell EDSL, as we explain in \cref{testsection}, by manually translating Algebraic Notation descriptions of Chess games into Chesskell notation. A useful way to simplify this process, as well as to make Chesskell more generally usable, would be to develop an automatic tool to perform this translation.
 
 
 \subsection{Type-level Bitboards} \label{bitboardconclusion}
 
-While our implementation uses a board representation based on two-dimensional, length-indexed vectors and we investigated an equivalent representation using type-level finger trees, neither presented any significant improvements in terms of compile-time over the other. However, we believe it would be worthwhile to examine further representations, with the aim of reducing the memory footprint of GHC and the wider Chesskell type-level code.
+While our implementation uses a board representation based on two-dimensional, length-indexed vectors and we investigated an equivalent representation using type-level Finger Trees, neither presented any significant improvements in terms of compile-time over the other. However, we believe it would be worthwhile to examine yet more board representations, with the aim of reducing the memory footprint of GHC and the wider Chesskell type-level code.
 
 One such potential representation is a Bitboard~\cite{bitboard}; using type-level \inline{Nat}-s to potentially reduce the amount of memory and, importantly, number of type variables that must be unified.
 
@@ -120,6 +120,6 @@ type family LeftShift (n :: Nat) :: Nat where
     LeftShift x = TypeError (Text "Given Nat is outside of the range of 8 bits!")
 \end{lstlisting}
 
-This approach is worthy of investigation, and could bring performance improvements; we could determine if either King is under attack with a series of AND operations, rather than the current expensive implementation (see \cref{checksection}). However, it is not without flaws; it makes code considerably less readable and intuitive. The current board representation follows the natural structure of the Chess board itself, where pieces reside in one of the 64 available positions. Debugging these Nat representations would prove more difficult, since the state of the board would no longer be clear at a glance of the type.
+This approach is worthy of investigation, and could bring performance improvements (in the form of reductions in memory usage and compile time); we could determine if either King is under attack with a series of AND operations, rather than the current ray-based implementation (see \cref{checksection}). However, it is not without flaws; it makes code considerably less readable and intuitive. The current board representation follows the natural structure of the Chess board itself, where pieces reside in one of the 64 available positions. Debugging these Nat representations would prove more difficult, since the state of the board would no longer be clear at a glance of the type.
 
-Additionally, while it is likely to bring performance improvements, these "bitwise" operations would not map to hardware bitwise instructions, and so are still likely to be slow when compared to value-level Haskell. The additional complexity incurred through the Bitboard representation would only be worthwhile if it also brought about significant performance improvements. As such, further investigation in this area is warranted, despite its lack of inclusion in Chesskell.
+Additionally, while it is likely to bring performance improvements, these ``bitwise'' operations would not map to hardware bitwise instructions, and so are still likely to be slow when compared with value-level Haskell. The additional complexity incurred through the Bitboard representation would only be worthwhile if it also brought about significant performance improvements. As such, further investigation in this area is warranted, despite its lack of inclusion in Chesskell.

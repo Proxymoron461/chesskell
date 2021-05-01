@@ -1,24 +1,25 @@
-\chapter{Appendix}
+\chapter*{Appendix}
+\addcontentsline{toc}{chapter}{Appendix}
 
-\section{Haskell Symposium 2021 Paper and Feedback} \label{symposiumfeedback}
+\section*{Haskell Symposium 2021 Paper and Reviews} \label{symposiumfeedback}
 
-This section includes the anonymised Haskell Symposium 2021 paper, submitted for the early track, as well as the feedback received from anonymous reviewers.
+This section includes the anonymised Haskell Symposium 2021 paper, submitted for the early track, as well as the feedback received from the reviewers.
 
-\subsection{Review A}
+\subsection*{Review A}
 
-\subsubsection{Overall merit}
+\subsubsection*{Overall merit}
 
 3. Weak accept
 
-\subsubsection{Reviewer expertise}
+\subsubsection*{Reviewer expertise}
 
 4. Expert
 
-\subsubsection{Paper summary}
+\subsubsection*{Paper summary}
 
 The paper describes a type level EDSL for describing chess games in Haskell, using the type system to guarantee that the games are valid according to the rules of chess. It highlights some of the limitations of type level programming in Haskell and proposes some workarounds.
 
-\subsubsection{Comments for author}
+\subsubsection*{Comments for author}
 
 This is an interesting paper, which tests the limits of type level programming in Haskell on a fairly complex problem, representing the rules of Chess. It relies on First Class type families, a technique (or perhaps a workaround) which allows partial application of type level functions.
 
@@ -50,23 +51,23 @@ A few other more specific things:
 
 1321 - I'm surprised to see so few references given how much work there has been in type level programming in recent years, not only in Haskell but in other systems. How does it relate to other systems, especially those with full dependent types, e.g. Idris, Agda, or even Coq? Would using these systems have taken less effort, and does that suggest it's worth pursuing full dependent types in Haskell, or not? It would be good to discuss this in related work. There's also related work just in the history of building up type level programming in Haskell, one relevant example being "Hasochism" from Haskell 2013.
 
-\subsection{Review B}
+\subsection*{Review B}
 
-\subsubsection{Overall merit}
+\subsubsection*{Overall merit}
 
 2. Weak reject
 
-\subsubsection{Reviewer expertise}
+\subsubsection*{Reviewer expertise}
 
 4. Expert
 
-\subsubsection{Paper summary}
+\subsubsection*{Paper summary}
 
 The paper presents an EDSL for chess games which is strongly based on type-level programming. Each game is specified as a sequence of moves using either a shorthand or a longhand notation. The EDSL prevents the occurrence of invalid moves by checking their validity against the chess rules; this checking is fully performed at the type level. This is the result of the data type promotion of all the ingredients that conform a chess game (players, pieces and board), which are given by certain datatype representations, and the type-level implementation of the operations that evaluate (and check) the moves.
 
 In addition to the strong use of type-level programming, the EDSL presents other interesting aspects in its design, like the use of the First Class Families technique (a sort of deep embedding to model higer order type-level functions) for the implementation of the type-level functions or the use of flat combinators in the sense introduced by Okasaki for the shorthand chess notation.
 
-\subsubsection{Comments for author}
+\subsubsection*{Comments for author}
 
 The paper is interesting to read. I found it well-written and clear in its exposition.
 
@@ -104,25 +105,25 @@ Comments/Typos:
             This the
 \end{itemize}
 
-\subsection{Review C}
+\subsection*{Review C}
 
-\subsubsection{Overall merit}
+\subsubsection*{Overall merit}
 
 3. Weak accept
 
-\subsubsection{Reviewer expertise}
+\subsubsection*{Reviewer expertise}
 
 3. Knowledgeable
 
-\subsubsection{Paper summary}
+\subsubsection*{Paper summary}
 
 This paper used type level programming to implement the rules of Chess and a DSL for describing chess games. The paper does push the use of type level programming to unusual limits, with games being limited to approximately 12 moves by each player. The paper makes extensive usage of existing and known techniques, but at a scale not usually attempted.
 
-\subsubsection{Comments for author}
+\subsubsection*{Comments for author}
 
 This was a fun paper to read, and quite well written. I have a few suggestions for improvement.
 
-Providing an overview of a known technique is not a contribution, as such. I'd move this bullet into its own subsubsection, then say something like: using this technique allows use to make the following three contributions…
+Providing an overview of a known technique is not a contribution, as such. I'd move this bullet into its own subsubsection*, then say something like: using this technique allows use to make the following three contributions…
 
 For the example on page 2 that fails, add a comment to highlight this in the code.
 

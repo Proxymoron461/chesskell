@@ -6,7 +6,7 @@ This is just one of the differences between Haskell's type system and a dependen
 
 \section{Types in Haskell}
 
-For a Haskell compiler, such as GHC, to accept a program, it must be well-typed (that is, every expression must have a valid type). In some cases, the type of an expression can be inferred, or it can be manually annotated by the programmer (in which case the compiler must unify the annotated type with the inferred type). If the expression has no permissible type, or if its' inferred type does not match its programmer-annotated type, then the compiler is responsible for generating a type error.
+For a Haskell compiler, such as GHC, to accept a program, it must be well-typed (that is, every expression must have a valid type). In some cases, the type of an expression can be inferred, or it can be manually annotated by the programmer (in which case the compiler must unify the annotated type with the inferred type). If the expression has no permissible type, or if its inferred type does not match its programmer-annotated type, then the compiler is responsible for generating a type error.
 
 For instance, as in many other languages, one of the possible types for \inline{3} is \inline{Int}. It would be incorrect to declare an expression of a different type, and to give it a value of \inline{3}, as below:
 
@@ -19,7 +19,7 @@ However, Haskell has support for \emph{polymorphism}; firstly, parametric polymo
 
 In Haskell, type variables are conventionally named as lowercase single letters in alphabetical order; so the first general type in an type annotation is typically \inline{a}, followed by \inline{b}, \inline{c}, and so on. All Haskell types start with a capital letter, so any lowercase string is a valid type variable name (except for keywords). As such, the polymorphic empty list \inline{[]} has type \inline{[a]}, where the type variable \inline{a} can be unified with other types, such as \inline{Bool} in the example above.
 
-Secondly, Haskell supports ad-hoc polymorphism, whereby functions can be specialised to operate on specific types, with separate function definitions for each type. Haskell achieves this through \emph{type classes}, a feature which is akin to interfaces in object oriented languages. We give an example below, involving the basic equality operator in Haskell (which is a member of the \inline{Eq} typeclass), with definitions for both \inline{Bool} and \inline{Int}:
+Secondly, Haskell supports ad-hoc polymorphism, whereby functions can be specialised to operate on specific types, with separate function definitions for each type. Haskell achieves this through \emph{type classes}, a feature which is akin to interfaces in object-oriented languages. We give an example below, involving the basic equality operator in Haskell (which is a member of the \inline{Eq} typeclass), with definitions for both \inline{Bool} and \inline{Int}:
 
 \begin{lstlisting}
 class Eq a where
@@ -42,7 +42,7 @@ Haskell functions are of the form \inline{a -> b}, for some type variables \inli
 
 All Haskell functions can be curried~\cite{currying}; as an example, assume the definition of a function \inline{and}, which performs logical AND on its two inputs. The type of \inline{and} would be \inline{Bool -> Bool -> Bool}, while the type of \inline{and True} would be \inline{Bool -> Bool}, and the type of \inline{and True False} would just be \inline{Bool}. The expression \inline{and True} is well-typed, and would compile; contrasting with other languages such as C or Java, in which functions cannot be partially applied and an analogous expression (e.g. \inline{and(True)}) would fail with a type error.
 
-Haskell allows the programmer to define their own data type with the keyword \inline{data}. These data types are \emph{algebraic}, meaning that they are types comprised of other types. For instance, to define a "Hand" type, where each finger can hold a value, the definition would be something like as follows:
+Haskell allows the programmer to define their own data type with the keyword \inline{data}. These data types are \emph{algebraic}, meaning that they are types comprised of other types. For instance, to define a ``Hand'' type, where each finger can hold a value, the definition would be something like as follows:
 
 \begin{lstlisting}
 data Hand a = One a
@@ -52,7 +52,7 @@ data Hand a = One a
             | Five a a a a a
 \end{lstlisting}
 
-However, this definition syntax has limitations; all of the return values of the type constructors above must be \inline{Hand a}. A GHC extension allows the definition of \emph{Generalised Algebraic Data Types} (GADTs)~\cite{gadts} which allows more complex type constructor definitions. The above \inline{Hand} datatype could be expressed thus:
+However, this definition syntax has limitations; all the return values of the type constructors above must be \inline{Hand a}. A GHC extension allows the definition of \emph{Generalised Algebraic Data Types} (GADTs)~\cite{gadts} which allows more complex type constructor definitions. The above \inline{Hand} data type could be expressed thus:
 
 \begin{lstlisting}
 data Hand a where
@@ -76,7 +76,7 @@ data Hand a where
 
 \section{Type-level Programming} \label{typelevelprogrammingbackground}
 
-While GADTs are certainly useful, they are not enough to achieve type-level computation. Luckily, there are many more GHC extensions, some of which bring the language closer to have a dependent type system. In this section, we explain those used in Chesskell, to aid understanding.
+While GADTs are certainly useful, they are not enough on their own to achieve type-level computation. Luckily, there are many more GHC extensions, some of which bring the language closer to have a dependent type system. In this section, we explain those used in Chesskell, to aid understanding.
 
 \subsection{Kind Promotion} \label{promotionsection}
 
@@ -101,7 +101,7 @@ With the \inline{-XDataKinds} extension enabled, the above code not only produce
     \caption{A visual representation of the datatype promotion of the \inline{Book} type.}
 \end{figure}
 
-The syntax for "has type" and "has kind" is in both cases \inline{::}, which is unfortunate; however, in the rest of the document, where the distinction is unclear, it shall be made so. Additionally, the prefix \inline{'} for promoted types is optional, and can be left out where the compiler can unambiguously state whether an expression should be a type or a value.
+The syntax for ``has type'' and ``has kind'' is in both cases \inline{::}, which is unfortunate; however, in the rest of the document, where the distinction is unclear, it shall be made so. Additionally, the prefix \inline{'} for promoted types is optional, and can be left out where the compiler can unambiguously state whether an expression should be a type or a value.
 
 \subsection{Type Families}
 
@@ -113,7 +113,7 @@ isFiction Fiction    = True
 isFiction NonFiction = False
 \end{lstlisting}
 
-And the type family analogue is thus, where \inline{::} below means "has kind":
+And the type family analogue is thus, where \inline{::} below means ``has kind'':
 
 \begin{lstlisting}
 type family IsFiction (x :: Book) :: Bool where
@@ -141,7 +141,7 @@ While the function \inline{isEitherFiction} can be partially applied, the corres
 
 \subsection{First-Class Families} \label{fcfbackground}
 
-The above problem is still an open one in type-level programming, but one solution comes from Li-yao Xia, who put together a Haskell library named First Class Families\footnote{\url{https://github.com/Lysxia/first-class-families}}. First Class Families allow the programmer to map over structures, and specialise type families (a la ad-hoc polymorphism), similar to value-level functions. Sadly, First Class Families is not supported by any formal literature on the topic at the time of writing; so we briefly introduce and explain the concept below.
+The above problem is still an open one in type-level programming, but one solution comes from Li-yao Xia, who put together a Haskell library named First Class Families\footnote{\url{https://github.com/Lysxia/first-class-families}}. First Class Families allow the programmer to map over structures, and specialise type families (\`a la ad-hoc polymorphism), similar to value-level functions. Sadly, First Class Families is not supported by any formal literature on the topic at the time of writing; so we briefly introduce and explain the concept below.
 
 The key idea of this approach is the observation that, while type families cannot be partially applied, type constructors can be. Therefore, by defining type constructors along with a type-level interpreter for them, we can simulate partial type application. It relies on a type, \inline{Exp}, and an open type family, \inline{Eval}. They are defined like so:
 
@@ -150,7 +150,7 @@ type Exp a = a -> *
 type family Eval (e :: Exp a) :: a
 \end{lstlisting}
 
-Passing around the types as \inline{Exp} types allows the programmer to partially apply, and to evaluate whenever they choose with a call to \inline{Eval}. For instance, consider the \inline{IsEitherFiction} type family, but defined in "First Class Family" style instead:
+Passing around the types as \inline{Exp} types allows the programmer to partially apply, and to evaluate whenever they choose with a call to \inline{Eval}. For instance, consider the \inline{IsEitherFiction} type family, but defined in ``First Class Family'' style instead:
 
 \begin{lstlisting}
 data IsEitherFiction :: Book -> Book -> Exp Bool
@@ -169,7 +169,7 @@ type instance Eval (Map f (x ': xs))
     = Eval (f x) ': Eval (Map f xs)
 \end{lstlisting}
 
-When combined with the above definition of \inline{Map}, mapping (and general Functor behaviour) at the type level becomes possible with the use of \inline{Eval} -- the below expression evaluates to the type \inline{'[ 'False, 'True ]}:
+When combined with the above definition of \inline{Map}, mapping (and general Functor behaviour) at the type level becomes possible with the use of \inline{Eval} --- the below expression evaluates to the type \inline{'[ 'False, 'True ]}:
 
 \begin{lstlisting}
 Eval (Map (IsEitherFiction 'NonFiction) '[ 'NonFiction, 'Fiction ])   
@@ -214,9 +214,9 @@ Proxy types provide a wrapper to allow arbitrary types to have kind \inline{*}. 
 
 \subsubsection{Singletons}
 
-As helpful as proxy types can be, they have one limitation; since all the value-level code sees are \inline{Proxy} values, all of the relevant information is only available at the type-level. However, singleton types~\cite{singletons} provide an alternative approach. Each singleton type has a single inhabitant value, and each individual value has a single unambiguous type. The types are mirrored in the terms, allowing similar behaviour to dependent types.
+As helpful as proxy types can be, they have one limitation; since all the value-level code sees are \inline{Proxy} values, all the relevant information is only available at the type-level. However, singleton types~\cite{singletons} provide an alternative approach. Each singleton type has a single inhabitant value, and each individual value has a single unambiguous type. The types are mirrored in the terms, allowing similar behaviour to dependent types.
 
-This is achieved through, for each defined type, running it through the \textit{singletons} library's Template Haskell definitions\footnote{\url{https://hackage.haskell.org/package/singletons}}. Template Haskell is a compile-time meta-programming system, similar to macros in that it allows programmers to define programs to modify and generate Haskell source code~\cite{templatehaskell}. The singletons library uses Template Haskell to define new data types, given data type definitions. Should \textit{singletons} be given the definition of the \inline{Book} datatype which we detail in \cref{promotionsection}, it will generate a new \inline{SBook} datatype, defined as below:
+This is achieved through, for each defined type, running it through the \textit{singletons} library's Template Haskell definitions\footnote{\url{https://hackage.haskell.org/package/singletons}}. Template Haskell is a compile-time meta-programming system, similar to macros in that it allows programmers to define programs to modify and generate Haskell source code~\cite{templatehaskell}. The singletons library uses Template Haskell to define new data types, given data type definitions. Should \textit{singletons} be given the definition of the \inline{Book} data type which we detail in \cref{promotionsection}, it will generate a new \inline{SBook} data type, defined as below:
 
 \begin{lstlisting}
 data SBook :: Book -> * where
@@ -224,7 +224,7 @@ data SBook :: Book -> * where
     SNonFiction :: SBook 'NonFiction
 \end{lstlisting}
 
-Due to datatype promotion, this introduces new values, types, and kinds. The runtime value \inline{SFiction} has the type \inline{SBook 'Fiction}, and the type \inline{'SFiction} has kind \inline{SBook Fiction}. These definitions are designed to enable the programmer to access type information through values, and vice versa.
+Due to data type promotion, this introduces new values, types, and kinds. The runtime value \inline{SFiction} has the type \inline{SBook 'Fiction}, and the type \inline{'SFiction} has kind \inline{SBook Fiction}. These definitions are designed to enable the programmer to access type information through values, and vice versa.
 
 The type of \inline{SNonFiction} can only be \inline{SBook 'NonFiction}, and so value-level code now has some intuition of types; and conversely, when given a type \inline{SBook a}, type families can use the type variable \inline{a} which will be either \inline{'Fiction} or \inline{'NonFiction}.
 

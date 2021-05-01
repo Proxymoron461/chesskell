@@ -2,7 +2,7 @@
 \begin{abstract}
     Type-level programming allows programmers to express computation within the types of their programs. Through the use of extensions to Haskell's type system as implemented in the Glasgow Haskell Compiler (GHC), rules can be statically imposed on code to ensure that if it compiles, then it exhibits (or conversely, will not exhibit) specific behaviour. However, for these extensions to see mainstream adoption, their use in complex applications has to be practical.
 
-    We present Chesskell, an EDSL for describing Chess games where a type-level model of the full FIDE ruleset prevents us from expressing games with invalid moves. Custom type errors point out the rule violations, and in some cases suggests corrective action, enabling users to correct mistakes. In this dissertation, we describe the types defined for Chesskell, including details on the implementation of the type-level Chess model, and give comparisons with existing Chess notations and other work.
+    We present Chesskell, an EDSL for describing Chess games where a type-level model of the full FIDE ruleset prevents us from expressing games with invalid moves. Custom type errors point out the rule violations, and in some cases suggest corrective action, enabling users to correct mistakes. In this dissertation, we describe the types defined for Chesskell, including details on the implementation of the type-level Chess model, and give comparisons with existing Chess notations and other work.
 
     Our work highlights current limitations when using GHC to express such complex rules due to the resulting memory usage and compile times, which we report on. We further present some approaches for working around those limitations, where possible.
 
