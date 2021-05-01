@@ -50,12 +50,16 @@ canCastleBlackTest = Refl
 
 canCastleWhiteTest :: '(False, True) :~: CanCastle White CastleDec
 canCastleWhiteTest = Refl
--- ...
+\end{lstlisting}
+
+As we expect these unit tests to type check, we use the \inline{shouldTypecheck} assertion:
+
+\begin{lstlisting}
 shouldTypecheck canCastleBlackTest
 shouldTypecheck canCastleWhiteTest
 \end{lstlisting}
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \fenboard{r3k1pr/8/8/8/8/8/8/RP2K2R w - - 0 1}
     \showboard
