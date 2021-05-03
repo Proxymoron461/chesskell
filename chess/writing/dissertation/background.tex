@@ -94,14 +94,14 @@ data Book where
 
 With the \inline{-XDataKinds} extension enabled, the above code not only produces the two values \inline{Fiction} and \inline{NonFiction} with type \inline{Book}, but also two new \emph{types}: \inline{'Fiction} and \inline{'NonFiction}, of kind \inline{Book}. The key point of understanding is that there are no values of type \inline{'Fiction} or \inline{'NonFiction}---they exist solely at the type level. See \cref{promotiondiagram} for a graphical representation; note that the type \inline{Book} has kind \inline{*}, as it is a type with associated values.
 
+The syntax for ``has type'' and ``has kind'' is in both cases \inline{::}, which is unfortunate; however, in the rest of the document, where the distinction is unclear, it shall be made so. Additionally, the prefix \inline{'} for promoted types is optional, and can be left out where the compiler can unambiguously state whether an expression should be a type or a value.
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth,keepaspectratio]{Promotion.png}
+    \caption{A visual representation of the data type promotion of the \inline{Book} type.}
     \label{promotiondiagram}
-    \caption{A visual representation of the datatype promotion of the \inline{Book} type.}
 \end{figure}
-
-The syntax for ``has type'' and ``has kind'' is in both cases \inline{::}, which is unfortunate; however, in the rest of the document, where the distinction is unclear, it shall be made so. Additionally, the prefix \inline{'} for promoted types is optional, and can be left out where the compiler can unambiguously state whether an expression should be a type or a value.
 
 \subsection{Type Families}
 
