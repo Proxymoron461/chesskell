@@ -37,10 +37,9 @@ While each team has 16 pieces total, there are only 6 types of pieces; Pawns, Ro
 \begin{figure}[h]
     \centering
     \fenboard{8/8/2Q5/8/4p3/8/8/8 w - - 0 1}
-    \showboard
-    \quad
+    \chessboard[showmover=false, pgfstyle=straightmove, arrow=to, linewidth=0.1em, shortenstart=0.85ex, shortenend=0.5ex, markmoves={c6-e4}]
     \hidemoves{1. Qe4}
-    \showboard
+    \chessboard[showmover=false]
     \caption{The White Queen captures a Black Pawn by moving to its position, and removing it from play.}
     \label{capture}
 \end{figure}
