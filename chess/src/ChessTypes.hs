@@ -169,6 +169,9 @@ type instance Eval (PieceType (MkPiece _ name _)) = name
 data NoOfPieces :: Board -> Exp Nat
 type instance Eval (NoOfPieces board) = Eval (Foldr FCFPlus Nat0 (Eval ((VFilterCount IsJust) <$> board)))
 
+data NoOfPiecesDec :: BoardDecorator -> Exp Nat
+type instance Eval (NoOfPiecesDec boardDec) = Eval (NoOfPieces (GetBoard boardDec))
+
 data IsPiece :: PieceName -> Piece -> Exp Bool
 type instance Eval (IsPiece name (MkPiece _ pcName _)) = Eval (name :==: pcName)
 
