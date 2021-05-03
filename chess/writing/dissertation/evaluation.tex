@@ -179,6 +179,8 @@ Attempting to optimise the codebase and reduce memory usage as the result of an 
 
 However, splitting out the pre-move rule checks and the post-move rule checks into separate type family definitions helped GHC to terminate and no longer run out of memory. The new implementation (which we give below) takes less than 1 minute and 30 seconds to compile, and uses an average of 25 GB of memory. We put the pre-move checks into a new \inline{MoveWithPreChecks} family:
 
+\newpage  % Avoid an orphan of the below listing
+
 \begin{lstlisting}
 data MoveWithPreChecks :: Position
                        -> Position

@@ -412,6 +412,8 @@ Pawns have one last complex movement rule; that of promotion. When a Pawn makes 
 
 Implementing Pawn promotion proved difficult, since the core \inline{Move} family we describe in \cref{examplegame} does not hold enough information to determine what piece type a Pawn should be promoted to. While one potential solution is to hold this information as a \inline{Maybe PieceName} in the \inline{BoardDecorator}, promotion is infrequent and never occurs in many games. Therefore, instead of using the base \inline{Move} First Class Family, we define a new First Class Family called \inline{PromotePawnMove} to be used when promotion is necessary:
 
+\enlargethispage{\baselineskip}  % Avoid widow in listing below
+
 \begin{lstlisting}
 data PromotePawnMove :: Position -> Position -> PieceName -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (PromotePawnMove fromPos toPos promoteTo boardDec)
@@ -736,6 +738,8 @@ data Fen (n :: Nat) where
     Bb  :: Fen n -> Fen (S n)
     Rb  :: Fen n -> Fen (S n)
 \end{lstlisting}
+
+\enlargethispage{\baselineskip}  % Avoid widow in paragraph below
 
 This \inline{Fen} type is used to create a type-level stack of elements; for example, \inline{F5 (Nw (Qw (F1 FF)))}. Each of these \inline{Fen} type constructors can be pattern-matched on to create a list (or vector) of items.
 
