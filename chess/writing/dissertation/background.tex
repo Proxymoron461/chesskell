@@ -94,7 +94,7 @@ data Book where
 
 With the \inline{-XDataKinds} extension enabled, the above code not only produces the two values \inline{Fiction} and \inline{NonFiction} with type \inline{Book}, but also two new \emph{types}: \inline{'Fiction} and \inline{'NonFiction}, of kind \inline{Book}. The key point of understanding is that there are no values of type \inline{'Fiction} or \inline{'NonFiction}---they exist solely at the type level. See \cref{promotiondiagram} for a graphical representation; note that the type \inline{Book} has kind \inline{*}, as it is a type with associated values.
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth,keepaspectratio]{Promotion.png}
     \label{promotiondiagram}
