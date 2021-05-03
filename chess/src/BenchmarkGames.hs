@@ -8,6 +8,10 @@ import FirstClassFunctions
 import Chesskell
 
 -- /usr/bin/time -v stack ghc -- src/BenchmarkGames.hs -freduction-depth=0
+-- Or: stack ghc -- src/BenchmarkGames.hs -freduction-depth=0 -Rghc-timing -fforce-recomp
+-- Try the following options:
+    -- -Rghc-timing
+    -- -fforce-recomp
 
 -- kholmovVsBronsteinShort = chess
 --     p e4 p c5
