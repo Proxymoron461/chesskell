@@ -40,16 +40,15 @@ type BlackCastleRightDec = Eval (Move (At E Nat8) (At G Nat8) (SetLastTeam Castl
 castleTestSuite = describe "Castle Tests" $ do
     castleHelperTestSuite
     canCastleTestSuite
-   --  -- FIXME: Nasty, awful, horrible memory usage.
-   --  describe "Castling tests" $ do
-   --      it "1: If White castles to the left, the White King should be at C1, with the Rook at D1." $
-   --          shouldTypeCheck castleTest1
-   --      it "2: If White castles to the right, the White King should be at G1, with the Rook at F1." $
-   --          shouldTypeCheck castleTest2
-   --      it "3: If Black castles to the left, the Black King should be at C8, with the Rook at D8." $
-   --          shouldTypeCheck castleTest3
-   --      it "4: If Black castles to the right, the Black King should be at G8, with the Rook at F8." $
-   --          shouldTypeCheck castleTest4
+--     describe "Castling tests" $ do
+--         it "1: If White castles to the left, the White King should be at C1, with the Rook at D1." $
+--             shouldTypeCheck castleTest1
+--         it "2: If White castles to the right, the White King should be at G1, with the Rook at F1." $
+--             shouldTypeCheck castleTest2
+--         it "3: If Black castles to the left, the Black King should be at C8, with the Rook at D8." $
+--             shouldTypeCheck castleTest3
+--         it "4: If Black castles to the right, the Black King should be at G8, with the Rook at F8." $
+--             shouldTypeCheck castleTest4
 
 -------------------------------------------------------------------------------------------------------
 -- MESSY DECLARATIONS

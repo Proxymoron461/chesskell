@@ -30,37 +30,37 @@ type PromotionBoard = EmptyRow
 type BlackLastPromDec = Dec PromotionBoard Black (At C Nat2) '(At F Nat7, At H Nat8) Nat2
 type WhiteLastPromDec = Dec PromotionBoard White (At B Nat3) '(At F Nat7, At H Nat8) Nat2
 
-whitePawnMustPromote :: Proxy (a :: BoardDecorator)
-whitePawnMustPromote = Proxy @(Eval (Move (At A Nat7) (At A Nat8) BlackLastPromDec))
+-- whitePawnMustPromote :: Proxy (a :: BoardDecorator)
+-- whitePawnMustPromote = Proxy @(Eval (Move (At A Nat7) (At A Nat8) BlackLastPromDec))
 
-blackPawnMustPromote :: Proxy (a :: BoardDecorator)
-blackPawnMustPromote = Proxy @(Eval (Move (At C Nat2) (At C Nat1) WhiteLastPromDec))
+-- blackPawnMustPromote :: Proxy (a :: BoardDecorator)
+-- blackPawnMustPromote = Proxy @(Eval (Move (At C Nat2) (At C Nat1) WhiteLastPromDec))
 
-whiteKingPromotion :: Proxy (a :: BoardDecorator)
-whiteKingPromotion = Proxy @(Eval (PromotePawnMove (At A Nat7) (At A Nat8) King BlackLastPromDec))
+-- whiteKingPromotion :: Proxy (a :: BoardDecorator)
+-- whiteKingPromotion = Proxy @(Eval (PromotePawnMove (At A Nat7) (At A Nat8) King BlackLastPromDec))
 
-blackKingPromotion :: Proxy (a :: BoardDecorator)
-blackKingPromotion = Proxy @(Eval (PromotePawnMove (At C Nat2) (At C Nat1) King WhiteLastPromDec))
+-- blackKingPromotion :: Proxy (a :: BoardDecorator)
+-- blackKingPromotion = Proxy @(Eval (PromotePawnMove (At C Nat2) (At C Nat1) King WhiteLastPromDec))
 
-whitePawnPromotion :: Proxy (a :: BoardDecorator)
-whitePawnPromotion = Proxy @(Eval (PromotePawnMove (At A Nat7) (At A Nat8) Pawn BlackLastPromDec))
+-- whitePawnPromotion :: Proxy (a :: BoardDecorator)
+-- whitePawnPromotion = Proxy @(Eval (PromotePawnMove (At A Nat7) (At A Nat8) Pawn BlackLastPromDec))
 
-blackPawnPromotion :: Proxy (a :: BoardDecorator)
-blackPawnPromotion = Proxy @(Eval (PromotePawnMove (At C Nat2) (At C Nat1) Pawn WhiteLastPromDec))
+-- blackPawnPromotion :: Proxy (a :: BoardDecorator)
+-- blackPawnPromotion = Proxy @(Eval (PromotePawnMove (At C Nat2) (At C Nat1) Pawn WhiteLastPromDec))
 
-failedPromotionTestSuite = describe "Failed Promotion Tests" $ do
-    describe "Must Promote Tests" $ do
-        it "1: A White Pawn must promote when it is moving from row 7 to row 8" $
-            shouldNotTypecheck whitePawnMustPromote
-        it "2: A Black Pawn must promote when it is moving from row 2 to row 1" $
-            shouldNotTypecheck blackPawnMustPromote
-    describe "Disallowed Promotion Tests" $ do
-        it "1: White Pieces cannot promote to Kings" $
-            shouldNotTypecheck whiteKingPromotion
-        it "2: Black Pieces cannot promote to Kings" $
-            shouldNotTypecheck blackKingPromotion
-        it "3: White Pieces cannot promote to Pawns" $
-            shouldNotTypecheck whitePawnPromotion
-        it "4: Black Pieces cannot promote to Pawns" $
-            shouldNotTypecheck blackPawnPromotion
+-- failedPromotionTestSuite = describe "Failed Promotion Tests" $ do
+--     describe "Must Promote Tests" $ do
+--         it "1: A White Pawn must promote when it is moving from row 7 to row 8" $
+--             shouldNotTypecheck whitePawnMustPromote
+--         it "2: A Black Pawn must promote when it is moving from row 2 to row 1" $
+--             shouldNotTypecheck blackPawnMustPromote
+--     describe "Disallowed Promotion Tests" $ do
+--         it "1: White Pieces cannot promote to Kings" $
+--             shouldNotTypecheck whiteKingPromotion
+--         it "2: Black Pieces cannot promote to Kings" $
+--             shouldNotTypecheck blackKingPromotion
+--         it "3: White Pieces cannot promote to Pawns" $
+--             shouldNotTypecheck whitePawnPromotion
+--         it "4: Black Pieces cannot promote to Pawns" $
+--             shouldNotTypecheck blackPawnPromotion
         

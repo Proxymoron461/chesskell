@@ -36,30 +36,30 @@ type PawnTakeBoard = EmptyRow
 type BlackLastPromDec = Dec PawnTakeBoard Black (At C Nat2) '(At F Nat7, At H Nat8) Nat2
 type WhiteLastPromDec = Dec PawnTakeBoard White (At B Nat3) '(At F Nat7, At H Nat8) Nat2
 
-blackCannotTakeInFront :: Proxy (a :: BoardDecorator)
-blackCannotTakeInFront = Proxy @(Eval (Move (At A Nat8) (At A Nat7) WhiteLastPromDec))
+-- blackCannotTakeInFront :: Proxy (a :: BoardDecorator)
+-- blackCannotTakeInFront = Proxy @(Eval (Move (At A Nat8) (At A Nat7) WhiteLastPromDec))
 
-blackCannotMoveOver :: Proxy (a :: BoardDecorator)
-blackCannotMoveOver = Proxy @(Eval (Move (At A Nat8) (At A Nat6) WhiteLastPromDec))
+-- blackCannotMoveOver :: Proxy (a :: BoardDecorator)
+-- blackCannotMoveOver = Proxy @(Eval (Move (At A Nat8) (At A Nat6) WhiteLastPromDec))
 
-blackCannotTakeTwoInFront :: Proxy (a :: BoardDecorator)
-blackCannotTakeTwoInFront = Proxy @(Eval (Move (At B Nat8) (At B Nat6) WhiteLastPromDec))
+-- blackCannotTakeTwoInFront :: Proxy (a :: BoardDecorator)
+-- blackCannotTakeTwoInFront = Proxy @(Eval (Move (At B Nat8) (At B Nat6) WhiteLastPromDec))
 
-whiteCannotTakeInFront :: Proxy (a :: BoardDecorator)
-whiteCannotTakeInFront = Proxy @(Eval (Move (At A Nat2) (At A Nat3) BlackLastPromDec))
+-- whiteCannotTakeInFront :: Proxy (a :: BoardDecorator)
+-- whiteCannotTakeInFront = Proxy @(Eval (Move (At A Nat2) (At A Nat3) BlackLastPromDec))
 
-whiteCannotMoveOver :: Proxy (a :: BoardDecorator)
-whiteCannotMoveOver = Proxy @(Eval (Move (At A Nat2) (At A Nat4) BlackLastPromDec))
+-- whiteCannotMoveOver :: Proxy (a :: BoardDecorator)
+-- whiteCannotMoveOver = Proxy @(Eval (Move (At A Nat2) (At A Nat4) BlackLastPromDec))
 
-pawnTakeTestSuite :: Test.Hspec.Spec
-pawnTakeTestSuite = describe "Pawn Take Tests" $ do
-    it "1: A Black Pawn should not be able to take the piece directly below it" $
-        shouldNotTypecheck blackCannotTakeInFront
-    it "2: A Black Pawn cannot jump over a piece directly below it on its' first move" $
-        shouldNotTypecheck blackCannotMoveOver
-    it "3: A Black Pawn should not be able to take the piece two moves below it on its first move" $
-        shouldNotTypecheck blackCannotTakeTwoInFront
-    it "4: A White Pawn should not be able to take the piece directly above it" $
-        shouldNotTypecheck whiteCannotTakeInFront
-    it "5: A White Pawn cannot jump over a piece directly above it on its' first move" $
-        shouldNotTypecheck whiteCannotMoveOver
+-- pawnTakeTestSuite :: Test.Hspec.Spec
+-- pawnTakeTestSuite = describe "Pawn Take Tests" $ do
+--     it "1: A Black Pawn should not be able to take the piece directly below it" $
+--         shouldNotTypecheck blackCannotTakeInFront
+--     it "2: A Black Pawn cannot jump over a piece directly below it on its' first move" $
+--         shouldNotTypecheck blackCannotMoveOver
+--     it "3: A Black Pawn should not be able to take the piece two moves below it on its first move" $
+--         shouldNotTypecheck blackCannotTakeTwoInFront
+--     it "4: A White Pawn should not be able to take the piece directly above it" $
+--         shouldNotTypecheck whiteCannotTakeInFront
+--     it "5: A White Pawn cannot jump over a piece directly above it on its' first move" $
+--         shouldNotTypecheck whiteCannotMoveOver

@@ -38,15 +38,15 @@ type BlackNoLeftRight = (Just (MkPiece White Rook (Info Z (At A Nat1))) :-> Noth
 type WhiteNoLeftRightDec = Dec WhiteNoLeftRight Black (At D Nat7) '(At E Nat1, At E Nat8) Nat1
 type BlackNoLeftRightDec = Dec BlackNoLeftRight White (At D Nat2) '(At E Nat1, At E Nat8) Nat1
 
-whiteKingCannotMoveIntoCheck :: Proxy (a :: BoardDecorator)
-whiteKingCannotMoveIntoCheck = Proxy @(Eval (Move (At E Nat1) (At F Nat1) WhiteNoLeftRightDec))
+-- whiteKingCannotMoveIntoCheck :: Proxy (a :: BoardDecorator)
+-- whiteKingCannotMoveIntoCheck = Proxy @(Eval (Move (At E Nat1) (At F Nat1) WhiteNoLeftRightDec))
 
-blackKingCannotMoveIntoCheck :: Proxy (a :: BoardDecorator)
-blackKingCannotMoveIntoCheck = Proxy @(Eval (Move (At E Nat8) (At D Nat8) BlackNoLeftRightDec))
+-- blackKingCannotMoveIntoCheck :: Proxy (a :: BoardDecorator)
+-- blackKingCannotMoveIntoCheck = Proxy @(Eval (Move (At E Nat8) (At D Nat8) BlackNoLeftRightDec))
 
-cannotMoveIntoCheckTestSuite :: Test.Hspec.Spec
-cannotMoveIntoCheckTestSuite = describe "Cannot Move Into Check Tests" $ do
-    it "1: A White King cannot move into the attack path of another piece" $
-        shouldNotTypecheck whiteKingCannotMoveIntoCheck
-    it "2: A Black King cannot move into the attack path of another piece" $
-        shouldNotTypecheck blackKingCannotMoveIntoCheck
+-- cannotMoveIntoCheckTestSuite :: Test.Hspec.Spec
+-- cannotMoveIntoCheckTestSuite = describe "Cannot Move Into Check Tests" $ do
+--     it "1: A White King cannot move into the attack path of another piece" $
+--         shouldNotTypecheck whiteKingCannotMoveIntoCheck
+--     it "2: A Black King cannot move into the attack path of another piece" $
+--         shouldNotTypecheck blackKingCannotMoveIntoCheck

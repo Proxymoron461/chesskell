@@ -20,12 +20,6 @@ import TestTypes
 pawnTest1 :: '[ At D Nat3, At D Nat2] :~: Eval (PawnReachableBelow TestDec2 (At D Nat4) 2)
 pawnTest1 = Refl
 
--- whitePawnToQueenTest :: Just (MkPiece White Queen (Info (S Z) (At D Nat8))) :~: Eval ((Flip GetPieceAtDec) (At D Nat8) (Eval (Move (At D Nat7) (At D Nat8) (Eval (SetPieceAtDec (MkPiece White Pawn TestInfo) KingDec (At D Nat7))))))
--- whitePawnToQueenTest = Refl
-
--- blackPawnToQueenTest :: Just (MkPiece Black Queen (Info (S Z) (At D Nat1))) :~: Eval ((Flip GetPieceAtDec) (At D Nat1) (Eval (Move (At D Nat2) (At D Nat1) (Eval (SetPieceAtDec (MkPiece Black Pawn TestInfo) KingDec (At D Nat2))))))
--- blackPawnToQueenTest = Refl
-
 getReachableLeftTest1 :: '[ At C Nat2, At B Nat2, At A Nat2] :~: Eval (AllReachableLeft Black TestDec2 (At D Nat2))
 getReachableLeftTest1 = Refl
 
@@ -56,10 +50,6 @@ getPieceAtTest1 = Refl
 -- :k VecAtR Z :: Vec n a -> Exp (Maybe a)
 getPieceAtTest2 :: Just TestPiece :~: Eval (Join (Eval ((Eval (TestBoard !! Nat0)) >>= ((Flip (!!) (Nat0))))))
 getPieceAtTest2 = Refl
-
--- :kind! VecAt (Z :<> (S Z)) :: Nat -> Exp (Maybe Nat)
-getPieceAtTest3 :: Just Z :~: Eval (Join (Eval ((Eval ((CW (!!)) <$> Just (Z :<> (S Z)))) <*> Just Z)))
-getPieceAtTest3 = Refl
 
 canMoveToTest1 :: True :~: Eval (CanMoveTo (At A Nat7) (At A Nat6) (Eval (SetPieceAtDec (MkPiece Black Pawn (Info (S Z) TestPosition)) EmptyDec (At A Nat7))))
 canMoveToTest1 = Refl
@@ -153,11 +143,6 @@ pawnTestSuite = describe "Pawn Tests" $ do
       shouldTypecheck pawnTakePositionsBlackTest
     it "4: A White Pawn should not be able to take off the board, or take a space occupied by another White piece." $
       shouldTypecheck pawnTakePositionsWhiteTest
-    -- -- FIXME: These tests are expensive, and cause GHC crashes!
-    -- it "5: A White Pawn that reaches the bottom of the board should transform into a White Queen, having moved an additional time." $
-    --   shouldTypecheck whitePawnToQueenTest
-    -- it "6: A Black Pawn that reaches the bottom of the board should transform into a Black Queen, having moved an additional time." $
-    --   shouldTypecheck blackPawnToQueenTest
 
 miscTestSuite = describe "Misc Tests" $ do
     describe "List Equality Tests" $ do
@@ -206,8 +191,6 @@ miscTestSuite = describe "Misc Tests" $ do
             shouldTypecheck getPieceAtTest1
         it "2" $
             shouldTypecheck getPieceAtTest2
-        it "3" $
-            shouldTypecheck getPieceAtTest3
     describe "CanMoveTo and CanReach Tests" $ do
         describe "CanMoveTo Tests" $ do
             it "1: A black pawn should be able to move to the space directly below it (if it is empty)." $

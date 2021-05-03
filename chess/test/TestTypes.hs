@@ -39,7 +39,6 @@ fromProxyTrue :: Proxy True -> True :~: True
 fromProxyTrue (Proxy :: Proxy b) = Refl @(b)
 
 -- TEST TYPES
--- TODO: Remove these and replace with EDSL stuff
 -- NOTE: These boards are upside-down - the first row is the bottom one visually
 type TestPosition = At A Nat1  -- i.e. bottom left
 type TestPiece    = MkPiece Black Pawn (Info Z TestPosition)
@@ -76,4 +75,3 @@ type TestPieceList = '[MkPiece Black Pawn TestInfo, MkPiece White Pawn TestInfo,
 
 type KingBoard = Eval (SetPiecesAt '[ '(MkPiece White King TestInfo, At A Nat1), '(MkPiece Black King TestInfo, At H Nat8) ] EmptyBoard)
 type KingDec = Dec KingBoard Black (At H Nat8) '(At A Nat1, At H Nat8) Nat2
-type EmptyDec = Dec EmptyBoard Black (At A Nat1) '(At E Nat1, At E Nat8) Nat1

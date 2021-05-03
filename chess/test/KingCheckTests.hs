@@ -31,11 +31,9 @@ kingCheckTest3 = Refl
 kingCheckTest4 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAtDec '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Rook TestInfo, At F Nat8), '(MkPiece Black Pawn TestInfo, At F Nat6) ] EmptyDec)))
 kingCheckTest4 = Refl
 
-
 kingCheckTest5 :: False :~: Eval (IsKingInCheck White (Eval (SetPiecesAtDec '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Pawn TestInfo, At F Nat6) ] EmptyDec)))
 kingCheckTest5 = Refl
 
--- TODO: Set white king position in kingCheckTest6??
 type CheckTest6Board = Eval (SetPiecesAtDec '[ '(MkPiece White King TestInfo, At F Nat5), '(MkPiece Black Pawn TestInfo, At E Nat6) ] EmptyDec)
 kingCheckTest6 :: Eval (IsKingInCheck White CheckTest6Board) :~: Eval ((GetKingPosition White CheckTest6Board) `In` Eval (GetUnderAttackPositions (Eval (OppositeTeam White)) CheckTest6Board))
 kingCheckTest6 = Refl

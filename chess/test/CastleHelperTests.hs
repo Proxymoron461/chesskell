@@ -17,7 +17,9 @@ import MakeProxies
 
 import TestTypes
 
--- data AnySpaceInCheck :: BoardDecorator -> [Position] -> Exp Bool
+data AnySpaceInCheck :: Team -> BoardDecorator -> [Position] -> Exp Bool
+type instance Eval (AnySpaceInCheck team boardDec xs) = Eval (Any (IsSpaceInCheck team boardDec) xs)
+
 anySpaceInCheckTest1 :: False :~: Eval (AnySpaceInCheck White JustKingsDec (SpacesBetweenInc (At A Nat5) (At H Nat5)))
 anySpaceInCheckTest1 = Refl
 
@@ -97,98 +99,87 @@ haveRooksMovedTest6 :: Proxy (b :: BoardDecorator) -> Proxy (Eval ('(True, True)
 haveRooksMovedTest6 (Proxy :: Proxy (b :: BoardDecorator))
     = Proxy @(Eval ('(True, True) :==: (HaveRooksMoved Black b)))
 
-a1 :: Test.Hspec.Spec
-a1 = it "1" $
+alpha1 :: Test.Hspec.Spec
+alpha1 = it "1" $
       shouldTypeCheck anySpaceInCheckTest1
 
-a2 :: Test.Hspec.Spec
-a2 = it "2: A space above a White Pawn should NOT be in check" $
+alpha2 :: Test.Hspec.Spec
+alpha2 = it "2: A space above a White Pawn should NOT be in check" $
       shouldTypeCheck $ fromProxyFalse (anySpaceInCheckTest2 aSICT2Board)
 
-a3 :: Test.Hspec.Spec
-a3 = it "3: The spaces diagonally above a White Pawn should be in check" $
+alpha3 :: Test.Hspec.Spec
+alpha3 = it "3: The spaces diagonally above a White Pawn should be in check" $
       shouldTypeCheck $ fromProxyTrue (anySpaceInCheckTest3 aSICT2Board) 
 
 alpha :: Test.Hspec.Spec
 alpha = describe "AnySpaceInCheck Tests" $ do
-      a1 
-      a2 
-      a3 
+      alpha1 
+      alpha2 
+      alpha3 
 
-b1 :: Test.Hspec.Spec
-b1 = it "1: An empty row should be registered as free" $
+beta1 :: Test.Hspec.Spec
+beta1 = it "1: An empty row should be registered as free" $
       shouldTypeCheck allSpacesFreeTest1
 
-b2 :: Test.Hspec.Spec
-b2 = it "2: A position with a Pawn in should NOT be registered as free" $
+beta2 :: Test.Hspec.Spec
+beta2 = it "2: A position with a Pawn in should NOT be registered as free" $
       shouldTypeCheck $ fromProxyFalse (allSpacesFreeTest2 aSICT2Board)
 
-b3 :: Test.Hspec.Spec 
-b3 = it "3: A list of positions, with both White King and Black King in, should not be registered as free" $
+beta3 :: Test.Hspec.Spec 
+beta3 = it "3: A list of positions, with both White King and Black King in, should not be registered as free" $
       shouldTypecheck allSpacesFreeTest3
 
 beta :: Test.Hspec.Spec
 beta = describe "AllSpacesFree Tests" $ do
-      b1 
-      b2 
-      b3 
+      beta1 
+      beta2 
+      beta3 
 
-g1 :: Test.Hspec.Spec
-g1 = it "1: If the White King has not moved, HasKingMoved White should return False" $
+gamma1 :: Test.Hspec.Spec
+gamma1 = it "1: If the White King has not moved, HasKingMoved White should return False" $
       shouldTypecheck hasKingMovedTest1
 
-g2 :: Test.Hspec.Spec
-g2 = it "2: If the Black King has not moved, HasKingMoved Black should return False" $
+gamma2 :: Test.Hspec.Spec
+gamma2 = it "2: If the Black King has not moved, HasKingMoved Black should return False" $
       shouldTypeCheck hasKingMovedTest2
 
-g3 :: Test.Hspec.Spec
-g3 = it "3: If the White King has moved, HasKingMoved White should return True" $
+gamma3 :: Test.Hspec.Spec
+gamma3 = it "3: If the White King has moved, HasKingMoved White should return True" $
       shouldTypecheck hasKingMovedTest3
 
-g4 :: Test.Hspec.Spec
-g4 = it "4: If the Black King has moved, HasKingMoved Black should return True" $
+gamma4 :: Test.Hspec.Spec
+gamma4 = it "4: If the Black King has moved, HasKingMoved Black should return True" $
       shouldTypeCheck hasKingMovedTest4
 
 gamma :: Test.Hspec.Spec
 gamma = describe "HasKingMoved Tests" $ do
-      g1 
-      g2 
-      g3 
-      g4 
+      gamma1 
+      gamma2 
+      gamma3 
+      gamma4 
 
-d1 :: Test.Hspec.Spec
-d1 = it "1: If neither White Rook has moved, HaveRooksMoved White should return '(False, False)" $
+delta1 :: Test.Hspec.Spec
+delta1 = it "1: If neither White Rook has moved, HaveRooksMoved White should return '(False, False)" $
       shouldTypeCheck haveRooksMovedTest1
 
-d2 :: Test.Hspec.Spec
-d2 = it "2: If neither Black Rook has moved, HaveRooksMoved Black should return '(False, False)" $
+delta2 :: Test.Hspec.Spec
+delta2 = it "2: If neither Black Rook has moved, HaveRooksMoved Black should return '(False, False)" $
       shouldTypeCheck haveRooksMovedTest2
 
-d3 :: Test.Hspec.Spec
-d3 = it "3: If the left Rook has moved, but the right one hasn't, HaveRooksMoved should return '(True, False)" $
+delta3 :: Test.Hspec.Spec
+delta3 = it "3: If the left Rook has moved, but the right one hasn't, HaveRooksMoved should return '(True, False)" $
       shouldTypeCheck haveRooksMovedTest3
 
-d4 :: Test.Hspec.Spec
-d4 = it "4: If the right Rook has moved, but the left one hasn't, HaveRooksMoved should return '(False, True)" $
+delta4 :: Test.Hspec.Spec
+delta4 = it "4: If the right Rook has moved, but the left one hasn't, HaveRooksMoved should return '(False, True)" $
       shouldTypeCheck haveRooksMovedTest4
-
--- -- TODO: Find a way to include??
--- d5 :: Test.Hspec.Spec
--- d5 = it "5: If both Rooks have moved, HaveRooksMoved should return '(True, True)" $
---       shouldTypeCheck $ fromProxyTrue (haveRooksMovedTest5 bothWhiteRooksMovedBoard)
-
--- d6 :: Test.Hspec.Spec
--- d6 = it "6: If the left rook moves back to its start position, and if the right rook is not present, then HaveRooksMoved should return '(True, True)" $
---       shouldTypeCheck $ fromProxyTrue (haveRooksMovedTest6 rookBackToStartBoard)
 
 delta :: Test.Hspec.Spec
 delta = describe "HaveRooksMoved Tests" $ do
-      d1 
-      d2
-      d3
-      d4
-      -- d5
-      -- d6    
+      delta1 
+      delta2
+      delta3
+      delta4    
       
 castleHelperTestSuite :: Test.Hspec.Spec
 castleHelperTestSuite = describe "Castle Helper Function Tests" $ do

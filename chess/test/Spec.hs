@@ -35,19 +35,19 @@ import CannotCauseCheckTests
 -- TODO: Multiple test suites over multiple files??
 main :: IO ()
 main = hspec $ do
-  enPassantTestSuite -- Defined in SideCases.hs
+  -- enPassantTestSuite -- Defined in SideCases.hs
   miscTestSuite -- Defined in MiscTests.hs
   kingTestSuite  -- Defined in KingTests.hs
   -- movementTestSuite -- Defined in Movement.hs
   castleTestSuite -- Defined in CastleTests.hs
-  promotionTestSuite -- Defined in PromotionTests.hs
+  -- promotionTestSuite -- Defined in PromotionTests.hs
   describe "FIDE Laws Tests" $ do
-    pawnTakeTestSuite -- Defined in PawnTakeTests.hs
-    knightMoveTestSuite -- Defined in KnightMoveTests.hs
+    -- pawnTakeTestSuite -- Defined in PawnTakeTests.hs
+    -- knightMoveTestSuite -- Defined in KnightMoveTests.hs
     noCastleUnderAttackTestSuite -- Defined in NoUnderAttackCastleTests.hs
-    cannotMoveThroughTestSuite -- Defined in CannotMoveThroughTests.hs
-    cannotTakeOwnTeamTestSuite -- Defined in CannotTakeOwnTeamTests.hs
-    cannotMoveIntoCheckTestSuite -- Defined in CannotMoveIntoCheckTests.hs
+    -- cannotMoveThroughTestSuite -- Defined in CannotMoveThroughTests.hs
+    -- cannotTakeOwnTeamTestSuite -- Defined in CannotTakeOwnTeamTests.hs
+    -- cannotMoveIntoCheckTestSuite -- Defined in CannotMoveIntoCheckTests.hs
     cannotStayInCheckTestSuite -- Defined in CannotStayInCheckTests.hs
     cannotCauseCheckTestSuite -- defined in CannotCauseCheckTests.hs
 
