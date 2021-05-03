@@ -1,6 +1,6 @@
 \chapter{Implementation} \label{examplegame}
 
-The final version of Chesskell enables us to describe games of chess, move-by-move. For example, we express a simple 3-move checkmate by White as follows in Chesskell:
+The final version of Chesskell enables us to describe games of chess, move-by-move. For example, we express a simple 3-move checkmate by the White team as follows:
 
 \begin{lstlisting}
 game = chess
@@ -16,7 +16,14 @@ Note that the spacing is purely for style reasons; the above game could also be 
 game = chess p e4 p f5 q f3 p g5 q h5 end
 \end{lstlisting}
 
-Each move in the Chess game is described with a type family, which takes as input the current state of the board, and outputs the board after the move has been processed (in line with the approach we describe in \cref{chesswithfunctions}). The core movement First Class Family, aptly named \inline{Move}, takes in the position to move from, the position to move to, and the current state of the board, using this information to return a new board state in which the move has been made. Additionally, it updates relevant piece information for the pieces that have moved, which we further detail below:
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{Movefigure.png}
+    \caption{A figure demonstrating the chaining of \inline{Move} calls, with each output \inline{BoardDecorator} passed into the next call.}
+    \label{movefigure}
+\end{figure}
+
+Each move in the Chess game is described with a type family, which takes as input the current state of the board, and outputs the board after the move has been processed (in line with the approach we describe in \cref{chesswithfunctions}). The core movement First Class Family, aptly named \inline{Move}, takes in the position to move from, the position to move to, and the current state of the board, using this information to return a new board state in which the move has been made. Additionally, it updates relevant piece information for the pieces that have moved, which we further detail in this chapter. We give a graphical representation of the process in \cref{movefigure}, and the First Class Family data type for \inline{Move} below:
 
 \begin{lstlisting}
 data Move :: Position -> Position -> BoardDecorator -> Exp BoardDecorator
@@ -59,7 +66,7 @@ type instance Eval (Foldr f z (x ': xs))
     = Eval (f x (Eval (Foldr f z xs)))
 \end{lstlisting}
 
-Now, type-level versions of common \inline{Foldable} functions, such as \inline{sum} and \inline{length}, can be implemented using this definition of \inline{Foldr}. We give the definition of \inline{Sum} below, along with a simple First Class Family version of natural number addition:
+Now, type-level versions of common \inline{Foldable} functions, such as \inline{sum} and \inline{length}, can be implemented using this definition of \inline{Foldr}. We give a type-level First Class Family definition of \inline{Sum} below, along with a simple First Class Family version of natural number addition:
 
 \begin{lstlisting}
 data Sum :: f Nat -> Nat
@@ -69,7 +76,7 @@ data (:+) :: Nat -> Nat -> Exp Nat
 type instance Eval (x :+ y) = x + y
 \end{lstlisting}
 
-Mimicing type classes in this manner allows us to implement behaviour akin to Monads and Applicative Functors~\cite{applicatives}. There are certain rules in Chess that would require excessive amounts of pattern-matching to express with closed type families, prompting this effort. In addition to Foldr, Chesskell also includes First Class Family versions of FMap \inline{(<\$>)}, Apply \inline{<*>}, and Bind \inline{(>>=)} (among others), to enable Functor, Applicative Functor, and Monad-like behaviour at the type level. We give the definitions of \inline{Bind} and \inline{(>>=)} below, with an \inline{Eval} instance for \inline{Maybe} types, to illustrate:
+Mimicking type classes in this manner allows us to implement behaviour akin to Monads and Applicative Functors~\cite{applicatives}. There are certain rules in Chess that would require excessive amounts of pattern-matching to express with closed type families, prompting this effort. In addition to Foldr, Chesskell also includes First Class Family versions of FMap \inline{(<\$>)}, Apply \inline{<*>}, and Bind \inline{(>>=)} (among others), to enable Functor, Applicative Functor, and Monadic behaviour at the type level. We give the definitions of \inline{Bind} and \inline{(>>=)} below, with an \inline{Eval} instance for \inline{Maybe} types, to illustrate:
 
 \begin{lstlisting}
 data Bind :: m a -> (a -> Exp (m b)) -> Exp (m b)
@@ -104,7 +111,7 @@ data PieceName = Pawn
 
 \subsubsection{Position}
 
-The \inline{Position} type holds the positions of pieces on the chess board. It makes use of two more types; one for columns and the other for rows (We explain details on columns and rows in \cref{boarddetails}). The \inline{Column} type is another simple algebraic data type enumerating all columns that a piece can reside within. The row type is a type-level implementation of Peano natural numbers, named \inline{Nat}. Early versions of Chesskell had a custom implementation, but the final version uses definitions provided in \inline{Data.Type.Nat}.
+The \inline{Position} type holds the positions of pieces on the chess board. It makes use of two more types; one for columns and the other for rows (we explain details on columns and rows in \cref{boarddetails}). The \inline{Column} type is another simple algebraic data type enumerating all columns that a piece can reside within. The row type is a type-level implementation of Peano natural numbers, named \inline{Nat}. Early versions of Chesskell had a custom implementation, but the final version uses definitions provided in \inline{Data.Type.Nat}. We give a definition of \inline{Nat} below, for understanding:
 
 \begin{lstlisting}
 data Column = A | B | C | D | E | F | G | H
@@ -113,7 +120,7 @@ data Nat where
     S :: Nat -> Nat
 \end{lstlisting}
 
-Note that the \inline{Position} kind has a potentially infinite number of valid types, but only 64 of these types are valid chess positions. As such, there is a type family, \inline{IsValidPosition}, which outputs \inline{True} if the given position is a valid chess position, and \inline{False} otherwise. We give the definition of the \inline{Position} type below:
+Note that the \inline{Position} kind has a potentially infinite number of valid types, but only 64 of these types are valid chess positions. As such, we define an associated type family, \inline{IsValidPosition}, which outputs \inline{True} if the given position is a valid chess position, and \inline{False} otherwise. We give the definition of the \inline{Position} type below:
 
 \begin{lstlisting}
 data Position where
@@ -138,7 +145,7 @@ There are several utility Type Families defined for the \inline{PieceInfo} type 
 
 \subsubsection{The Board} \label{boardtypesection}
 
-We explain in \cref{lengthindexedvectors} that length-indexed vectors are an ideal choice for representing the Chess board, as Chess boards have a fixed constant size; with length-indexed vectors, we can enforce the length of the vector in its type, ensuring that the Chess board does not change size. We express the board as a vector of 8 vectors of 8 \inline{Maybe Piece}-s. We use \inline{Maybe Piece} instead of just \inline{Piece} because a board square does not necessarily contain a piece (in fact, the majority of board squares are empty):
+We explain in \cref{lengthindexedvectors} that length-indexed vectors are an ideal choice for representing the Chess board, as Chess boards have a fixed constant size; with length-indexed vectors, we can enforce the length of the vector in its type, ensuring that the Chess board does not change size. Therefore, it is appropriate to express the board as a vector of 8 vectors of 8 \inline{Maybe Piece}-s. We use \inline{Maybe Piece} instead of just \inline{Piece} because a board square does not necessarily contain a piece:
 
 \begin{lstlisting}
 type Eight = (S (S (S (S (S (S (S (S Z))))))))
@@ -146,7 +153,7 @@ type Row   = Vec Eight (Maybe Piece)
 type Board = Vec Eight Row
 \end{lstlisting}
 
-Although this is the main board type, it is augmented with a \inline{BoardDecorator}, so named because the intention is similar to the decorator design pattern~\cite{decorator}, with the exception that subclassing and superclassing are not features of Haskell. In most cases, we use \inline{BoardDecorator} instead of \inline{Board}, since it contains additional information:
+Although this is the main board type, it is augmented with a \inline{BoardDecorator}, so named because the intention is similar to the decorator design pattern~\cite{decorator}, with the exception that sub-classing and super-classing are not features of Haskell. In most cases, we use \inline{BoardDecorator} instead of \inline{Board}, since it contains additional information:
 
 \begin{itemize}
     \item The last team to move;
@@ -155,7 +162,7 @@ Although this is the main board type, it is augmented with a \inline{BoardDecora
     \item The number of moves in the game thus far.
 \end{itemize}
 
-Previous versions of the program, to find the King positions (for the frequent operation of determining if either King is in check), would pass repeatedly over the \inline{Board}. Having their positions available in the decorator avoids the performance cost of making these passes. While there is the overhead that the \inline{BoardDecorator} must be updated at each move, the code is much conceptually clearer with the use of the decorator. We give the definition of \inline{BoardDecorator} below:
+Previous versions of the program, to find the King positions (for the frequent operation of determining if either King is in check), would pass repeatedly over the \inline{Board}. Having their positions available in the decorator avoids the performance cost of making these passes. While this approach introduces overhead (the \inline{BoardDecorator} must be updated each move), the code is much conceptually clearer with the use of the decorator. We give the definition of \inline{BoardDecorator} below:
 
 \begin{lstlisting}
 data BoardDecorator where
@@ -199,7 +206,7 @@ type TETest = Eval (If ('True)
     (TE' (Text "Some error"))) -- else
 \end{lstlisting}
 
-Assuming that the \inline{If} First Class Family behaves similarly to if-then-else expressions in Haskell, we expect \inline{TETest} to unify with \inline{'Just 5}. This is the case -- it compiles successfully. However, if we pass in a \inline{'False} type instead of a \inline{'True} type, as expected, the custom type error is thrown:
+Assuming that the \inline{If} First Class Family behaves similarly to if-then-else expressions in Haskell, we expect \inline{TETest} to unify with \inline{'Just 5}. This is the case --- it compiles successfully. However, if we pass in a \inline{'False} type instead of a \inline{'True} type as the if condition, the custom type error is thrown:
 
 \begin{lstlisting}
 -- Below results in the following type error:
@@ -212,7 +219,7 @@ type TETest = Eval (If ('False)
 
 \subsection{Chess Rules}
 
-In Chesskell, the rules of Chess are expressed as First Class Families that either return a \inline{BoardDecorator} or a type error (as we explain in \cref{chessrules}). Each such rule-check type family has the suffix \inline{-Check}, such as the aptly named \inline{NotTakingKingCheck} and \inline{NotTakingOwnTeamCheck}. These checks are broadly split into pre-move checks, and post-move checks; each check has a custom error message to make clear to the user where exactly the rule violation occurs.
+In Chesskell, the rules of Chess are expressed as First Class Families that either return a \inline{BoardDecorator} or a type error (as we explain in \cref{chessrules}). Each such rule-check type family has the suffix \inline{-Check}, such as the aptly named \inline{NotTakingKingCheck} and \inline{NotTakingOwnTeamCheck}. These checks are broadly split into pre-move checks, and post-move checks; each check includes a custom error message to make clear to the user where exactly the rule violation occurs.
 
 To illustrate, we give the definition of \inline{NotSamePosCheck}, which checks that the described move is between two distinct positions, and generates a type error otherwise:
 
@@ -245,7 +252,7 @@ type instance Eval (PieceMoveList (MkPiece team Bishop info) boardDec)
     = Eval (AllReachableDiag team boardDec (Eval (GetPosition info)))
 \end{lstlisting}
 
-Bishops can move diagonally in a straight line by any number of spaces. The type family \inline{AllReachableDiag} is used to get a list of all diagonally "reachable" positions. It takes in the \inline{Position} of the relevant piece, that piece's \inline{Team}, and the current state of the board as a \inline{BoardDecorator}. It outputs all diagonal positions that piece can move to.
+Bishops can move diagonally in a straight line by any number of spaces. The type family \inline{AllReachableDiag} is used to get a list of all diagonally ``reachable'' positions. It takes in the \inline{Position} of the relevant piece, that piece's \inline{Team}, and the current state of the board as a \inline{BoardDecorator}. It outputs all diagonal positions that piece can move to.
 
 Reachability for a given direction is defined in Chesskell as all the empty spaces in that direction, stopping at either the first occupied space or the edge of the board. That space is included or excluded depending on whether that space is occupied by a piece of the opposite team, since an attacking piece could move to that space and take the piece there.
 
@@ -253,11 +260,11 @@ We ensure correctness of movement with a pre-move rule-check, named \inline{CanM
 
 The move list, in most cases, prunes all invalid moves for that piece so that any position in the move list for that piece is a valid movement destination. However, there is one important exception: King movement. The move list for a King can include invalid King movement positions, as the move list generation does not check that the King does not move into the attack path of other pieces (i.e. that it doesn't move into check).
 
-This is deliberate, since check is determined on a position-by-position basis, and checking 8 potential positions for check would be expensive. Instead, a post-move rule-check named \inline{CheckNoCheck} (which we detail in \cref{checksection}) is used to ensure that neither King moves into check.
+This is deliberate, since check is determined on a position-by-position basis, and checking 8 potential positions for check would be expensive. Instead, we make use of a post-move rule-check named \inline{CheckNoCheck} (which we detail in \cref{checksection}) to ensure that neither King moves into check.
 
 \subsubsection{Attack/Capture Rules}
 
-Although they are similar, the list of spaces that a piece can attack and the list of spaces that a piece can move to are not the same. While it is true that every space a piece can attack is one that it can move to, the opposite does not hold; for example, pieces can attack the King of the opposite team, but cannot directly move to that King's position and capture it. There are other differences as well, most notably for Pawns and Kings; so \inline{PieceMoveList} cannot be used to determine which squares a piece can attack. To address these shortcomings, we define another type family, \inline{PieceAttackList}, which gives the list of all squares that a piece can attack.
+Although they are similar, the list of spaces that a piece can attack and the list of spaces that a piece can move to are not the same. It is neither true that every position a piece can attack is one that it can move to, nor that every position that can be moved to is under attack; for example, pieces can attack the King of the opposite team, but cannot directly move to that King's position and capture it. There are other differences as well, most notably for Pawns and Kings; so \inline{PieceMoveList} cannot be used in general to determine which squares a piece can attack. To address these shortcomings, we define another type family, \inline{PieceAttackList}, which gives the list of all squares that a piece can attack.
 
 \paragraph{Checking for Check} \label{checksection}
 
@@ -265,9 +272,11 @@ One of the most important rules in Chess, that of placing the opposite King in c
 
 However, the only time that check is relevant is after each move. A move by a piece is invalid when it places that piece's King in check, or if it leaves that piece's King in check. We can express this rule with a post-move check, implemented as a First Class Family \inline{CheckNoCheck}.
 
-Early versions of Chesskell naively computed and combined all attack lists for all pieces, and simply checked if the King's position was a member of that combined list. A more efficient approach, found in Chesskell today, is to emulate other pieces' movement code from the King's position. It is worth noting that for all pieces except Kings and Pawns, if they can move from a to b, then they can also move from b to a. As an illustration, if a Queen at the King's position (of the same team as the King) would be able to reach a Queen of the opposite team, then the King would be in check.
+Early versions of Chesskell naively computed and combined all attack lists for all pieces, and simply checked if the King's position was a member of that combined list. A more efficient approach, found in Chesskell today, is to emulate other pieces' movement code from the King's position.
 
-We leverage this behaviour to detect when a King is in check. Several "rays" are sent out from the King's position in horizontal, vertical, and diagonal directions (8 in total). These rays detect Queens of the opposite team, as well as Bishops (for diagonal rays) and Rooks (for horizontal and vertical rays). Attacking Pawns are also checked here, for the immediate diagonal positions either above the King (if the King is White) or below the King. If the ray reaches an attacking piece, the ray function returns true; otherwise, it returns false. The ray will immediately stop being cast, and report back with no check possible in that direction, if a piece of the same team is encountered (since they would block the attack path of a piece of the opposite team).
+This approach is based off of the observation that for all pieces except Kings and Pawns, if they can move from position a to position b, then they can also move from b to a. As an illustration, if a Queen at the King's position (of the same team as the King) would be able to reach a Queen of the opposite team, then the King would be in check.
+
+We leverage this behaviour to detect when a King is in check. Several ``rays'' are sent out from the King's position in horizontal, vertical, and diagonal directions (8 in total). These rays detect Queens of the opposite team, as well as Bishops (for diagonal rays) and Rooks (for horizontal and vertical rays). Attacking Pawns are also checked here, for the immediate diagonal positions either above the King (if the King is White) or below the King. If the ray reaches an attacking piece, the ray function returns true; otherwise, it returns false. The ray will immediately stop being cast, and report back with no check possible in that direction (i.e. a \inline{False} type), if a piece of the same team as the King is encountered (since they would block the attack path of a piece of the opposite team).
 
 In addition to the ray approach, we apply Knight movement rules (from the King's position) to check if there are any Knights that could reach the King and place them in check.
 
@@ -296,7 +305,7 @@ There are a few Chess rules that are dissimilar from all other Chess rules; and 
 
 \paragraph{Castling} \label{castlesection}
 
-Most Chess rules move a single piece, and can capture another piece to remove it from play. However, the \emph{Castling} move involves the movement of two pieces; the King, and one of their Rooks. Castling can only occur if neither the King nor the Rooks have moved, and as long as none of the positions the King would move through are under check and there are no other pieces between the King and the Rook. It is one of the most complex rules of Chess, and requires many tests before it can proceed.
+Most Chess rules move a single piece, and can capture another piece to remove it from play. However, the \emph{Castling} move involves the movement of two pieces; the King, and one of their Rooks. Castling can only occur if neither the King nor the Rooks have moved, as long as none of the positions the King would move through are under check, and there are no other pieces between the King and the Rook. It is one of the most complex rules of Chess, and requires many tests before it can proceed.
 
 There are two varieties of Castle; Queen-side Castle and King-side Castle, depending on the direction that the King moves in (either left or right, respectively). Both varieties are shown for the White team in \cref{queensidecastle,kingsidecastle}. Essentially, the King moves either 2 or 3 spaces towards the Rook, and the Rook wraps around to the other side of the King.
 
@@ -309,7 +318,7 @@ type family CanCastle (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
         (ID '(False, False))
 \end{lstlisting}
 
-The above code first checks if the King has moved; if they have not, then it checks if both Rooks have not moved. If they have not moved either, then it determines if any of the spaces the King would move through are in check, and then if there are any pieces between the King and the Rook. This logical AND chaining is performed using a type family \inline{PairAnd}, which performs element-wise logical AND on each pair.
+The above code first checks if the King has moved; if they have not, then it checks if both Rooks have not moved. If they have not moved either, then it determines if any of the spaces the King would move through are in check, and then if there are any pieces between the King and the Rook. This logical AND chaining is performed using a type family \inline{PairAnd}, which performs element-wise logical AND on ordered pairs of Boolean types.
 
 These checks must pass for the King to be able to castle in that direction; and a pair of Booleans is returned signifying if the King can castle in either direction. For instance, if the King can castle left but not right, then \inline{CanCastle} will return \inline{'(True, False)}.
 
@@ -341,9 +350,9 @@ There are no circumstances under which a King is obligated to castle, and so the
 
 \paragraph{Pawn Movement and En Passant} \label{passantsection}
 
-Pawns have the most complex movement rules out of any piece, primarily because their attack patterns are different from their movement patterns. Pawns can move one vertical space forwards, but on their first move can move two spaces instead of one. (For a White Pawn, "forwards" means towards a row of higher number, and for a Black Pawn, it means towards a row of lower number -- see \cref{pawnfirstmovement}.) However, they cannot capture a piece this way; they can only capture one diagonal space in front of themselves.
+Pawns have the most complex movement rules out of any piece, primarily because their attack patterns are different from their movement patterns. Pawns can move one vertical space forwards, but on their first move can move two spaces instead of one. (For a White Pawn, ``forwards'' means towards a row of higher number, and for a Black Pawn, it means towards a row of lower number --- see \cref{pawnfirstmovement}.) However, they cannot capture a piece this way; they can only capture one diagonal space in front of themselves.
 
-\begin{figure}[h]
+\begin{figure}
     \centering
     \fenboard{8/2p5/8/8/8/8/5P2/8 w - - 0 1}
     \chessboard[showmover=false, pgfstyle=cross, color=black, linewidth=0.15em, shortenstart=0.5ex, shortenend=0.5ex, markfields={c5,c6,f3,f4}]
@@ -351,11 +360,11 @@ Pawns have the most complex movement rules out of any piece, primarily because t
     \caption{A figure demonstrating the positions that a Black and a White Pawn can move to on their first movement.}
 \end{figure}
 
-This means that a Pawn can indeed make a diagonal move, but only if there is a capturable piece there. (For instance, a Black Pawn could move downwards diagonally by a single space to capture a White Bishop, but could not move to that square if it were empty.) Additionally, Pawns have one more special capture rule; that of \emph{en passant}.
+This means that a Pawn can indeed make a diagonal move, but only if there is a capturable piece there. (For instance, a Black Pawn could move downwards diagonally by a single space to capture a White Bishop, but could not move to that square if it were empty or if it were occupied by a White King.) Additionally, Pawns have one more special capture rule; that of \emph{en passant}.
 
 A Pawn can perform an \emph{en passant} capture if a Pawn of the opposite team has moved forwards by two spaces last turn (which can only occur if that was the opposite Pawn's first move), and ended up next to the attacking Pawn. In this situation, the original attacking Pawn can move diagonally to the empty space behind the opposite team's Pawn, capturing it. See \cref{enpassantfigure} for a graphical representation, showing a White Pawn performing \emph{en passant} capture on a Black Pawn.
 
-\begin{figure}[h]
+\begin{figure}
     \centering
     \fenboard{8/2p5/8/3P4/8/8/8/8 b - - 0 1}
     \scalebox{0.7}{\chessboard[showmover=false, pgfstyle=straightmove, arrow=to, linewidth=0.1em, shortenstart=0.5ex, markmoves={c7-c5}]}
@@ -383,7 +392,7 @@ type instance Eval (GetEnPassantPosition pos boardDec)
         (ID '[])  --else
 \end{lstlisting}
 
-First, the type family checks if the position moved to last turn (fetched from the \inline{BoardDecorator} with \inline{GetLastPosition}) is either to the left or the right of the given pawn position. This is the check to determine whether any piece moved last turn to the left or right of the current Pawn. If this check passes, then there is another check; whether the piece that made that move was a Pawn, and whether it moved two spaces. If that check passes, then the piece's position is fetched and the row is either incremented or decremented (depending on the attacking team) by \inline{EnPassantPosition} to get the single space either above or below that piece---the target square to perform \emph{en passant} capture.
+First, the type family checks if the position moved to last turn (fetched from the \inline{BoardDecorator} with \inline{GetLastPosition}) is either to the left or the right of the given pawn position. This is the check to determine whether any piece just moved to the left or right of the current Pawn. If this check passes, then there is another check; whether the piece that made that move was a Pawn, and whether it moved two spaces. If that check passes, then the piece's position is fetched and the row is either incremented or decremented (depending on the attacking team) by the type family \inline{EnPassantPosition} to get the single space either above or below that piece --- the target square to perform \emph{en passant} capture.
 
 We use First Class Families to simplify these logical checks. \inline{GetPieceAtWhichDec} returns a \inline{Maybe Piece} depending on whether there is a piece at a given position which fulfils a given predicate, returning \inline{Nothing} if the predicate does not evaluate to true, and the \inline{Just}-wrapped piece otherwise. Additionally, a type-level First Class Family version of \inline{FromMaybe} is used to either transform the \inline{Nothing} type into an empty list \inline{'[]}, or to transform the wrapped value into a singleton list containing the \emph{en passant} capture position.
 
@@ -401,7 +410,7 @@ end
 
 Pawns have one last complex movement rule; that of promotion. When a Pawn makes it to the opposite side of the Board, they must be promoted to another piece type; either a Queen, a Bishop, a Rook, or a Knight. Pawns must be promoted; they cannot opt out of promotion.
 
-Implementing Pawn promotion proved difficult, since the core \inline{Move} family we describe in \cref{examplegame} does not hold enough information to determine what a Pawn should be promoted to. While one potential solution is to hold this information as a \inline{Maybe PieceName} in the \inline{BoardDecorator}, promotion is infrequent and never occurs in many games. Therefore, instead of using the base \inline{Move} First Class Family, we define a new First Class Family called \inline{PromotePawnMove} to be used when promotion is necessary:
+Implementing Pawn promotion proved difficult, since the core \inline{Move} family we describe in \cref{examplegame} does not hold enough information to determine what piece type a Pawn should be promoted to. While one potential solution is to hold this information as a \inline{Maybe PieceName} in the \inline{BoardDecorator}, promotion is infrequent and never occurs in many games. Therefore, instead of using the base \inline{Move} First Class Family, we define a new First Class Family called \inline{PromotePawnMove} to be used when promotion is necessary:
 
 \begin{lstlisting}
 data PromotePawnMove :: Position -> Position -> PieceName -> BoardDecorator -> Exp BoardDecorator
@@ -415,7 +424,7 @@ type instance Eval (PromotePawnMove fromPos toPos promoteTo boardDec)
 
 \inline{PromotePawnMove} is similar to \inline{Move}, and indeed calls it internally; but in addition to promoting the piece after it has moved, it ensures that the position to be moved from contains a Pawn (since it is the only piece type that can be promoted).
 
-The type family \inline{PromotePieceTo} of kind \inline{PieceName -> Position -> BoardDecorator -> Exp BoardDecorator} is responsible for changing the \inline{PieceName} of the Pawn piece once it has reached the opposite end of the board. It applies a First Class Family, \inline{PromoteTo}, to the piece at the given position to change its \inline{PieceName} to some given one. Additionally, it generates type errors if the user attempts to promote the Pawn to a King or another Pawn.
+The type family \inline{PromotePieceTo} of kind \inline{PieceName -> Position -> BoardDecorator -> Exp BoardDecorator} is responsible for changing the \inline{PieceName} of the Pawn piece once it has reached the opposite end of the board. It applies a First Class Family, \inline{PromoteTo}, to the piece at the given position to change its \inline{PieceName} to some given one. Additionally, it generates a type error if the user attempts to promote the Pawn to a King or another Pawn.
 
 However, \inline{PromotePieceTo} and \inline{PromotePawnMove} alone are not enough; because a Pawn must always promote when it reaches the opposite end of the board. To enforce this rule, we define a post-move check named \inline{ShouldHavePromotedCheck}, which is responsible for determining whether a promotion should have occurred at the last move or not. The First Class Family definition simply calls a type family:
 
@@ -438,7 +447,7 @@ type family ShouldHavePromotedCheck' (t :: Position) (b :: BoardDecorator) :: Bo
     -- ...
 \end{lstlisting}
 
-Pawn promotion is successfully implemented in Chesskell -- if a pawn should fail to promote during a game of Chess, then a descriptive type error is generated:
+Pawn promotion is successfully implemented in Chesskell --- if a pawn should fail to promote during a game of Chess, then a descriptive type error is generated:
 
 \begin{lstlisting}
 -- Below results in the following type error:
@@ -456,7 +465,7 @@ The EDSL has gone through multiple changes during development, not only in synta
 
 \subsection{Minimum Viable Product}
 
-Before the final format and syntax of the EDSL was decided upon, it was important to determine whether the creation of a value-level interface for the type level model was possible at all. The earliest version of the "EDSL" was a set of named Haskell functions, to test if the type-level model was usable by value-level functions.
+Before the final format and syntax of the EDSL was decided upon, it was important to determine whether the creation of a value-level interface for the type level model was possible at all. The earliest version of the ``EDSL'' was a set of named Haskell functions, to test if the type-level model was usable by value-level functions.
 
 This Minimum Viable Product version does not include any of the more advanced features of the final EDSLs (such as board creation), but successfully allows the user to describe a Chess game move by move. A single core function, named \inline{move}, made use of \inline{Proxy} types and a First Class Family version of bind to move a piece on a board from one position to another:
 
@@ -469,7 +478,7 @@ move (sFrom :: Proxy from) (sTo :: Proxy to) (pBoard :: Proxy (b :: Maybe Board)
     = Proxy @(Eval (b >>= Move from to))
 \end{lstlisting}
 
-Despite its simple nature, \inline{move} alone is sufficient for a user to interact with the type-level model of Chess and describe a game. It is a viable and minimal version of Chesskell -- if not much of an EDSL.
+Despite its simple nature, \inline{move} alone is sufficient for a user to interact with the type-level model of Chess and describe a game. It is a viable and minimal version of Chesskell --- if not much of an EDSL.
 
 \subsection{Flat Builders}
 
@@ -481,7 +490,7 @@ The type \inline{Spec t} is the type of functions which take in a continuation t
 type Spec t = forall m. (t -> m) -> m
 \end{lstlisting}
 
-A function with type \inline{Int -> Spec Int} can be represented with \inline{Conv Int Int}---the \inline{Conv s t} type represents functions which convert a value of type \inline{s} to a value of type \inline{Spec t}.
+A function with type \inline{Int -> Spec Int} can be represented with \inline{Conv Int Int} --- the \inline{Conv s t} type represents functions which convert a value of type \inline{s} to a value of type \inline{Spec t}.
 
 \begin{lstlisting}
 type Conv s t = s -> Spec t
@@ -538,14 +547,14 @@ We combine these Flat Builders continuation types with type-level rule checks, t
 
 In this section, we discuss the rationale behind and definitions created for Chesskell's long-form syntax. For details on the shorthand syntax, see \cref{shorthandexplanation}.
 
-The chess game starts with a \inline{Proxy} value, whose \inline{Proxy} type is parameterised with a \inline{BoardDecorator} type (i.e. it has type \inline{Proxy BoardDecorator}). We apply continuations, transforming that value, until the chess game ends\footnote{Note that users can still express games which break rules; these games are just not well-typed.}. Chess games begin with the board in a set configuration; and so we define a type \inline{StartDec} of kind \inline{BoardDecorator} to contain all of this information.
+The chess game starts with a \inline{Proxy} value, whose \inline{Proxy} type is parameterised with a \inline{BoardDecorator} type (i.e. the value has type \inline{Proxy BoardDecorator}). We apply continuations, transforming that value, until the chess game ends\footnote{Note that users can still express games which break rules; these games are just not well-typed.}. Chess games begin with the board in a set configuration; and so we define a type \inline{StartDec} of kind \inline{BoardDecorator} to contain all of this information.
 
 \begin{lstlisting}
 chess :: Spec (Proxy StartDec)
 chess cont = cont (Proxy @StartDec)
 \end{lstlisting}
 
-Each core continuation is named after a piece type, such as \inline{pawn} or \inline{king}. All take in a \inline{Proxy (a :: Position)}, a \inline{Proxy} value whose type is parameterised with the relevant \inline{Position} type. We define a new datatype, \inline{MoveArgs}, in order to simplify the process of passing information between the continuations; while the \inline{Move} family is a First Class Family, and can be partially applied, it takes in no \inline{PieceName} argument, and so cannot contain all the relevant types which must pass between the continuations.
+Each core continuation is named after a piece type, such as \inline{pawn} or \inline{king}. All take in a \inline{Proxy (a :: Position)}, a \inline{Proxy} value whose type is parameterised with the relevant \inline{Position} type. We define a new data type, \inline{MoveArgs}, in order to simplify the process of passing information between the continuations; while the \inline{Move} family is a First Class Family, and can be partially applied, it takes in no \inline{PieceName} argument, and so cannot contain all the relevant types which must pass between the continuations.
 
 \begin{lstlisting}
 data MoveArgs where
@@ -556,7 +565,7 @@ data MoveArgs where
        -> MoveArgs
 \end{lstlisting}
 
-We give the definition of the \inline{pawn} continuation below as an example; however, all of the piece continuations are similar, and only differ in the \inline{PieceName} type passed to the continuation via \inline{MoveArgs}.
+We give the definition of the \inline{pawn} continuation below as an example; however, all piece continuations are similar, and only differ in the \inline{PieceName} type passed to the continuation via \inline{MoveArgs}.
 
 \begin{lstlisting}
 pawn :: Proxy (b :: BoardDecorator)
@@ -583,7 +592,7 @@ end :: Term (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 end = id
 \end{lstlisting}
 
-Using the above continuations, we can lay out a chess game, move by move. Consider the game expressed in the EDSL which we describe in \cref{examplegame}. It compiles successfully; but should we modify the game so that Black attempts to move after checkmate, an error will be logged, since no moves by Black will be valid:
+Using the above continuations, we can lay out a chess game, move by move. Consider the game expressed in the EDSL which we describe in \cref{examplegame}. It compiles successfully; but should we modify the game such that Black attempts to move after checkmate, GHC generates a type error, since no moves by Black will be valid:
 
 \begin{lstlisting}
 -- Below results in the following type error:
@@ -643,7 +652,7 @@ For example, as we show in \cref{bishopmovement}, to determine the potential ori
     \caption{A figure demonstrating the positions a White Bishop can move to from square c5.}
 \end{figure}
 
-Then, this move list is filtered based on whether there is a valid piece in the original \inline{BoardDecorator} of the correct team in any of those squares. If the resulting filtered list has length 1 (i.e. it contains a single piece), then the position of that single piece extracted; otherwise, there are either no valid origin squares, or multiple valid origin squares, in which case the longer Chesskell syntax should be used.
+Then, this move list is filtered based on whether there is a valid piece in the original \inline{BoardDecorator} of the correct team in any of those squares. If the resulting filtered list has length 1 (i.e. it contains a single piece), then we extract and return the position of that single piece; otherwise, there are either no valid origin squares, or multiple valid origin squares, in which case the longer Chesskell syntax should be used.
 
 \begin{figure}
     \centering
@@ -653,7 +662,7 @@ Then, this move list is filtered based on whether there is a valid piece in the 
     \label{twobishops}
 \end{figure}
 
-As an example of the latter case, consider the board state in \cref{twobishops}. There are two bishops who could potentially move to square c5, and as such Chesskell will not be able to tell which bishop should move to that location, and will fail to compile with a type error:
+As an example of the latter case, consider the board state in \cref{twobishops}. There are two bishops that could potentially move to square c5, and as such Chesskell will not be able to tell which bishop should move to that location, and will fail to compile with a type error:
 
 \begin{lstlisting}
 -- Below results in the following type error:
@@ -686,13 +695,13 @@ Despite the late introduction of this shorthand syntax, it fits into Chesskell a
 
 \subsection{Creating Chess Boards} \label{boardcreation}
 
-While Chesskell was originally intended only to describe complete games of Chess, testing of the project was complicated through the fact that Chess games always start in a fixed configuration. To test something like Castling or Check required many moves before these game states became possible. We extended Chesskell to include arbitrary board creation syntax, to simplify this process.
+While Chesskell was originally intended only to describe complete games of Chess, the fact that Chess games always start in a fixed configuration complicated testing. To test something like Castling or Check required many moves before these game states became possible. We extended Chesskell to include arbitrary board creation syntax, to simplify this process.
 
 Individual pieces can be placed down on the board using the \inline{put} and \inline{at} continuations, which are used in combination with \inline{Proxy}-wrapped piece names, teams, and positions to modify a \inline{BoardDecorator} type wrapped within the \inline{Proxy} type constructor. Placing a Black Pawn on square a4 is done like so: \inline{put _Bl _P at a4}.
 
 These commands are paired with a new start continuation, \inline{create}, which passes a \inline{Proxy JustKingsDec} value to a continuation. \inline{JustKingsDec} is a \inline{BoardDecorator} type where the board only contains the Black and White King in their start positions; nothing else.
 
-We use these continuations to build custom boards, along with utility continuations for purposes such as setting the last position moved to. The below Chesskell snippet describes the board seen in \cref{twobishops}:
+We use these continuations to build custom boards, along with utility continuations for purposes such as setting the last position moved to. The below Chesskell snippet describes the board seen in \cref{twobishops}, by placing down two White Bishops:
 
 \begin{lstlisting}
 create put _Wh _B at d6 put _Wh _B at b4 end
@@ -700,7 +709,7 @@ create put _Wh _B at d6 put _Wh _B at b4 end
 
 \subsubsection{FEN board creation}
 
-However, Chesskell board creation syntax becomes overly lengthy when dealing with placing down a large number of pieces. FEN board creation syntax (which we detail in \cref{fensection}) is notably more concise, able to express an entire row of pieces in a maximum of eight characters. To achieve more compact board creation notation, we implemented new syntax based on FEN notation.
+However, Chesskell board creation syntax becomes overly lengthy when dealing with the placement of many pieces. FEN board creation syntax (which we detail in \cref{fensection}) is notably more concise, able to express an entire row of pieces in a maximum of eight characters. To achieve more compact board creation notation, we implemented new syntax based on FEN notation.
 
 Just like real FEN notation, this Chesskell variant of FEN notation (henceforth abbreviated to CFEN) specifies the chess board line by line. We define a new data type, named \inline{Fen}, to encapsulate the idea of a row of 8 items. Each type constructor represents some amount of empty spaces in the row (much like the numbers in FEN notation), such that they increase the length of the row by that amount:
 
@@ -730,14 +739,14 @@ data Fen (n :: Nat) where
 
 This \inline{Fen} type is used to create a type-level stack of elements; for example, \inline{F5 (Nw (Qw (F1 FF)))}. Each of these \inline{Fen} type constructors can be pattern-matched on to create a list (or vector) of items.
 
-The type family \inline{FenToRow} does exactly that; given a type of kind \inline{Fen n}, it outputs a \inline{Vec n (Maybe Piece)}, essentially transforming it into the row of a board. It also takes another \inline{Nat}, so that each piece's position can be set correctly. Below, the type family \inline{FenReverse'} reverses a \inline{Fen} stack. Since stacks are LIFO structures, and we want the input piece types to be places left-to-right, the stack must be reversed before use:
+The type family \inline{FenToRow} does exactly that; given a type of kind \inline{Fen n}, it outputs a \inline{Vec n (Maybe Piece)}, essentially transforming it into the row of a board. It also takes another \inline{Nat}, so that each piece's position can be set correctly. Below, the type family \inline{FenReverse'} reverses a \inline{Fen} stack. Since stacks are LIFO structures, and we want the input piece types to be placed left-to-right, the stack must be reversed before use:
 
 \begin{lstlisting}
 type family FenToRow (f :: Fen Eight) (r :: Nat) :: Row where
     FenToRow x r = FenHelper (FenReverse' x) r A
 \end{lstlisting}
 
-The definition of \inline{FenHelper} is lengthy, but it exists to, given some \inline{Fen} stack of length $n$, a natural number, and a column, return a \inline{Vec n (Maybe Piece)} by transforming the stack elements into a Chess board row. For instance, given an empty stack, it should return a vector of size 0, and given a stack describing 8 empty spaces, it should return a vector of length 8, populated with \inline{Nothing} types:
+The definition of \inline{FenHelper} is lengthy, but it exists to, given some \inline{Fen} stack of length $n$, a natural number, and a column, return a \inline{Vec n (Maybe Piece)} by transforming the stack elements into a vector of pieces. For instance, given an empty stack, it should return a vector of size 0, and given a stack describing 8 empty spaces, it should return a vector of length 8, populated with \inline{Nothing} types:
 
 \begin{lstlisting}
 type family FenHelper (f :: Fen n) (r :: Nat) (c :: Column) :: Vec n (Maybe Piece) where
@@ -746,7 +755,7 @@ type family FenHelper (f :: Fen n) (r :: Nat) (c :: Column) :: Vec n (Maybe Piec
     -- ...
 \end{lstlisting}
 
-For each type constructor representing $n$ empty spaces, \inline{FenHelper} returns a vector with those empty spaces pushed to the front. Note that the \inline{Column} argument is incremented to the right by the amount of empty spaces -- knowing the exact column being operated on is helpful for giving pieces correct starting positions:
+For each type constructor representing $n$ empty spaces, \inline{FenHelper} returns a vector with those empty spaces pushed to the front. Note that the \inline{Column} argument is incremented to the right by the amount of empty spaces --- knowing the exact column being operated on is helpful for giving pieces correct starting positions:
 
 \begin{lstlisting}
 type family FenHelper (f :: Fen n) (r :: Nat) (c :: Column) :: Vec n (Maybe Piece) where
@@ -804,7 +813,7 @@ fn0 :: Term (Proxy (b :: Fen n)) (Proxy (b :: Fen n))
 fn0 = id
 \end{lstlisting}
 
-Stacks of \inline{Fen} types can now be created like so: \inline{ff fn1 wQ wN fn5 fn0}. Now that users can create these stacks via value-level constructs, we provide functionality to make use of them. Using \inline{FenToRow}, we define a series of continuations for setting each row of the board with CFEN notation. Each continuation has naming convention "fen-n", where $n$ is the row being populated: \inline{fen1}, \inline{fen2}, and so on. To illustrate, we give the definition of \inline{fen5} below:
+Stacks of \inline{Fen} types can now be created like so: \inline{ff fn1 wQ wN fn5 fn0}. Now that users can create these stacks via value-level constructs, we provide functionality to make use of them. Using \inline{FenToRow}, we define a series of continuations for setting each row of the board with CFEN notation. Each continuation has naming convention ``fen-n'', where $n$ is the row being populated: \inline{fen1}, \inline{fen2}, and so on. To illustrate, we give the definition of \inline{fen5} below:
 
 \begin{lstlisting}
 fen5 :: (Proxy (b :: BoardDecorator))
