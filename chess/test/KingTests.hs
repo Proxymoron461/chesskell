@@ -22,15 +22,12 @@ isKingTest1 = Refl
 isKingTest2 :: False :~: Eval (Eval (IsKing (MkPiece Black Pawn TestInfo)) :||: (IsKing (MkPiece White Queen TestInfo)))
 isKingTest2 = Refl
 
--- TODO: Slow, but doesn't crash compiler
 getUnderAttackPositions1 :: True :~: Eval (Eval (GetAdjacent (At F Nat5)) :=:=: Eval (GetUnderAttackPositions White (Eval (SetPieceAtDec (MkPiece White King TestInfo) EmptyDec (At F Nat5)))))
 getUnderAttackPositions1 = Refl
 
--- TODO: Slow, but doesn't crash compiler
 getUnderAttackPositions2 :: False :~: Eval ((At F Nat3) `In` (Eval (GetUnderAttackPositions White (Eval (SetPiecesAtDec '[ '(MkPiece White Rook TestInfo, At F Nat5), '(MkPiece Black Pawn TestInfo, At F Nat4) ] EmptyDec)))))
 getUnderAttackPositions2 = Refl
 
--- TODO: Slow, but doesn't crash compiler
 getUnderAttackPositions3 :: ('[] :: [Position]) :~: Eval (GetUnderAttackPositions Black (Eval (SetPieceAtDec (MkPiece White King TestInfo) EmptyDec (At F Nat5))))
 getUnderAttackPositions3 = Refl
 

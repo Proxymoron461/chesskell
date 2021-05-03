@@ -35,11 +35,9 @@ type instance Eval (GetNAbove n (At col row)) = Eval (Filter IsValidPosition (Ev
 data GetNRight :: TL.Nat -> Position -> Exp [Position]
 type instance Eval (GetNRight n pos) = Eval (Filter IsValidPosition (Eval (GetNRightPositionsNoChecks n pos)))
 
--- TODO: Combine with GetNLeftMaybes to achieve DRY?
 data GetNRightMaybes :: TL.Nat -> Position -> Exp [Maybe Column]
 type instance Eval (GetNRightMaybes n (At col row)) = Eval (Filter IsJust (Eval (Map ((Flip (:+)) col) (Eval (Map TLNatToNat (Eval (RangeBetween 0 n)))))))
 
--- TODO: Combine with GetNLeftPositionsNoChecks to achieve DRY?
 data GetNRightPositionsNoChecks :: TL.Nat -> Position -> Exp [Position]
 type instance Eval (GetNRightPositionsNoChecks n (At col row)) = Eval (Map (((Flip (CW2 At)) row) . FromJust) (Eval (GetNRightMaybes n (At col row))))
 
@@ -324,8 +322,6 @@ type family EagerAny (x :: [Bool]) :: Bool where
 -- That is in the other function, named Move.
 -- Returns an empty list if the boardDec is empty at that position!
 -- NOTE: This allows pieces to state that they can move to the King's position; but this is just for check purposes. They can't actually take the king.
--- TODO: Check that the piece's reported position is its' actual position
--- TODO: Test all this!!! Near-urgently!
 data PieceMoveList :: Piece -> BoardDecorator -> Exp [Position]
 type instance Eval (PieceMoveList (MkPiece team Pawn info) boardDec)   = If' (Eval ((IsZero . GetMoveCount) info)) (PawnStartMove (MkPiece team Pawn info) boardDec) (PawnPostStart (MkPiece team Pawn info) boardDec)
 type instance Eval (PieceMoveList (MkPiece team Bishop info) boardDec) = Eval (AllReachableDiag team boardDec (GetPosition' info))
@@ -354,16 +350,12 @@ type family CanCastle (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
         (ID (CanCastleToEitherRook team boardDec))
         (ID '(False, False))
 
-
--- TODO: Optimise - use new Check check + only check the space the King moves through
--- TODO: Check that King is not in Check before movement
 type family CanCastleToEitherRook (t :: Team) (b :: BoardDecorator) :: (Bool, Bool) where
     CanCastleToEitherRook team boardDec = (Eval (PairAnd (HaveRooksNotMoved team boardDec)
         (Eval (PairAnd
             (Eval (PairPredicate (Eval (CastleSpacesToTest team boardDec)) (Not . IsSpaceInCheck team boardDec)))
             (Eval (PairPredicate (BetweenKingAndRook team) (AllSpacesFree boardDec)))))))
 
--- TODO: Replace with RangeBetweenExclusive or something like that??
 type family BetweenKingAndRook (t :: Team) :: ([Position], [Position]) where
     BetweenKingAndRook White = '( '[ (At D Nat1), (At C Nat1), (At B Nat1) ], '[ (At F Nat1), (At G Nat1) ])
     BetweenKingAndRook Black = '( '[ (At D Nat8), (At C Nat8), (At B Nat8) ], '[ (At F Nat8), (At G Nat8) ])
@@ -410,7 +402,6 @@ type family HaveRooksMovedHelper (r :: (Position, Position)) (b :: BoardDecorato
 data IsSpaceInCheck :: Team -> BoardDecorator -> Position -> Exp Bool
 type instance Eval (IsSpaceInCheck team boardDec pos) = Eval (IsKingInCheckHelper pos team boardDec)
 
--- TODO: Pattern match over Rook + King positions??
 data AllSpacesFree :: BoardDecorator -> [Position] -> Exp Bool
 type instance Eval (AllSpacesFree boardDec xs) = Eval (All (Not . IsPieceAt boardDec) xs)
 
@@ -462,7 +453,6 @@ data CanReach :: Position -> Position -> BoardDecorator -> Exp Bool
 type instance Eval (CanReach fromPos toPos boardDec) = Eval (FromMaybe False ((FlipToLast PieceCanReach) toPos boardDec) (Eval (GetPieceAtDec boardDec fromPos)))
 
 -- Type family for where a pawn can move when it is in its' starting position
--- TODO: Throw a type error if the Pawn has already moved??
 data PawnStartMove :: Piece -> BoardDecorator -> Exp [Position]
 type instance Eval (PawnStartMove pawn boardDec) = (Eval (PawnMove pawn boardDec 2)) ++ (Eval (PawnTakePositions True pawn boardDec))
 
@@ -471,7 +461,6 @@ data PawnMove :: Piece -> BoardDecorator -> TL.Nat -> Exp [Position]
 type instance Eval (PawnMove (MkPiece Black Pawn info) boardDec n) = Eval (PawnReachableBelow boardDec (GetPosition' info) n)
 type instance Eval (PawnMove (MkPiece White Pawn info) boardDec n) = Eval (PawnReachableAbove boardDec (GetPosition' info) n)
 
--- TODO: Check that the opposing piece is not a king??
 type family PawnReachableDiagNE (c :: Bool) (t :: Team) (p :: Position) (b :: BoardDecorator) :: [Position] where
     PawnReachableDiagNE _ _ (At H _) boardDec = '[]
     PawnReachableDiagNE _ _ (At _ Nat8) boardDec = '[]
@@ -510,7 +499,6 @@ type family PawnReachableDiagSW (c :: Bool) (t :: Team) (p :: Position) (b :: Bo
 
 -- Pawns can take diagonally in front of themselves: so this gets those positions if a take is possible!
 -- Boolean argument is for if the pawn should perform the IsPieceAt check.
--- TODO: Replace (++) with something a lil more efficient??
 data PawnTakePositions :: Bool -> Piece -> BoardDecorator -> Exp [Position]
 type instance Eval (PawnTakePositions doIsPieceCheck (MkPiece Black Pawn info) boardDec) = (PawnReachableDiagSE doIsPieceCheck Black (GetPosition' info) boardDec)
     ++ (PawnReachableDiagSW doIsPieceCheck Black (GetPosition' info) boardDec)
@@ -519,7 +507,6 @@ type instance Eval (PawnTakePositions doIsPieceCheck (MkPiece White Pawn info) b
     ++ (PawnReachableDiagNW doIsPieceCheck White (GetPosition' info) boardDec)
     ++ (Eval (GetEnPassantPosition (GetPosition' info) boardDec))
 
--- TODO: Make it Position, not [Position] - only one space at a time is vulnerable to en passant!
 -- Given a position and a board decorator, output a list of positions that can be moved to
 -- which would perform en passant takes.
 data GetEnPassantPosition :: Position -> BoardDecorator -> Exp [Position]
@@ -536,7 +523,6 @@ type family EnPassantPosition' (t :: Team) (p :: Position) :: [Position] where
     EnPassantPosition' White (At col row)     = '[ At col (S row) ]
     EnPassantPosition' Black (At col (S row)) = '[ At col row ]
 
--- TODO: Non-FCF type family version??
 data GetLeftRightPositions :: Position -> Exp [Position]
 type instance Eval (GetLeftRightPositions pos) = Eval (FilterMap IsJust FromJust (Eval ('[GetOneLeft, GetOneRight] <*> '[ pos ])))
 
@@ -550,7 +536,6 @@ type instance Eval (PawnPostStart pawn boardDec) = (Eval (PawnMove pawn boardDec
 type family MoveTo (n :: PieceName) (p :: Position) (b :: BoardDecorator) :: BoardDecorator where
     MoveTo piece toPos boardDec = Eval (IfPieceThenMove piece (GetMoveable piece toPos boardDec) toPos boardDec)
 
--- TODO: Write a bunch of tests!
 type family GetMoveable (n :: PieceName) (p :: Position) (b :: BoardDecorator) :: Position where
     GetMoveable King  toPos boardDec = GetKingPosition (GetMovingTeam boardDec) boardDec
     GetMoveable Pawn  toPos boardDec = MoveablePawn toPos (GetMovingTeam boardDec) boardDec
@@ -560,7 +545,6 @@ type family GetMoveable (n :: PieceName) (p :: Position) (b :: BoardDecorator) :
             (Eval (PieceMoveList (MkPiece (GetMovingTeam boardDec) piece (Info Z toPos)) EmptyDec))))
           (GetMovingTeam boardDec) piece toPos
 
--- FIXME: Currently it's getting their positions - instead, should check that toPos is in their movelist
 type family MoveablePawn (p :: Position) (t :: Team) (b :: BoardDecorator) :: Position where
     MoveablePawn (At A (S (S row))) White boardDec = IsListSingleton (Eval (
         ((Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPawn .&. ((PosInMoveList (At A (S (S row))) boardDec))))

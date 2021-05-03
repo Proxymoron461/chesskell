@@ -46,7 +46,7 @@ prog_recursion_dual = recurse $ go 0
         (weaken0 >> eps n) <&> (var $ go (n + 1))
 
 -- recurse :: MonadSession m => m ('Cap (s : ctx) s) r a -> m ('Cap ctx ('R s)) r a
--- TODO: Explain that this doesn't work since ModifyPos pos3 ~ pos1 may not hold
+-- NOTE: This doesn't work since ModifyPos pos3 ~ pos1 may not hold
   -- R and V are responsible for repeating the body of the recursive session type description - and so ensuring that the input to this session typed call must unify with its output
 -- chess_recursion :: MonadSession m => Proxy (pos1 :: Position)
 --     -> Proxy (pos2 :: Position)
@@ -68,7 +68,6 @@ prog_recursion_dual = recurse $ go 0
 --     ModifyPos (At col row) = At col (S row)
 
 -- recurse :: MonadSession m => m ('Cap (s : ctx) s) r a -> m ('Cap ctx ('R s)) r a
--- TODO: This is successful, include this in the report
 -- chess_recursion :: MonadSession m => Position -> Position
 --     -> m ('Cap '[] (R ((Position, Position) :!> (Position, Position) :?> Off '[V, Wk Eps])))
 --          ('Cap '[] Eps) ()

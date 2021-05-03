@@ -4,7 +4,6 @@ import qualified GHC.TypeLits as TL
 import FirstClassFunctions
 import Data.Type.Nat hiding (SNat(..))
 
--- FIXME: a -> Vec n -> Vec (n + 1) a causes issues. Why??
 data Vec (n :: Nat) (a :: Type) where
     VEnd   :: Vec Z a
     (:->)  :: a -> Vec n a -> Vec (S n) a

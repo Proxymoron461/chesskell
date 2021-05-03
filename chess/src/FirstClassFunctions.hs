@@ -338,7 +338,6 @@ data Find :: (a -> Exp Bool) -> f a -> Exp (Maybe a)
 type instance Eval (Find f '[])       = Nothing
 type instance Eval (Find f (x ': xs)) = Eval (If (Eval (f x)) (ID (Just x)) (Find f xs))
 
--- TODO: Make more type safe?? Currently 1 ++ 2 compiles without issues (maybe)
 type family (++) (x :: a) (y :: a) :: a
 type instance ('[] ++ ys) = ys
 type instance ((x ': xs) ++ ys) = x ': (xs ++ ys)

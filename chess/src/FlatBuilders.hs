@@ -132,14 +132,8 @@ startMoves :: Conv (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 startMoves (dec :: Proxy b) cont = cont dec
 startmoves = startMoves
 
--- TODO: Introduce a bunch of different EDSL endings that you need!
 endGetBoard :: Term (Proxy (a :: BoardDecorator)) (Proxy (GetBoard a))
 endGetBoard (Proxy :: Proxy (b :: BoardDecorator)) = Proxy @(GetBoard b)
-
--- TODO: Code should deal with:
-    -- Checkmate (compile or don't compile?)
-    -- Draw (can only move into check)
-    -- Trapped pieces
 
 data Fen (n :: Nat) where
     FF  :: Fen Nat0

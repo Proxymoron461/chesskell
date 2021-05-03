@@ -14,7 +14,6 @@ type Grid8x8 = Vec Eight Row
 data TE' :: TL.ErrorMessage -> Exp a
 type instance Eval (TE' msg) = TL.TypeError msg
 
--- TODO: Dimensions of board in kind??
 type Board = Grid8x8
 
 data Piece where
@@ -68,7 +67,6 @@ type instance TypeShow King   = "King"
 -- Holds the number of moves they've made, plus their current position.
 -- While their position is implicit from where they are in the board, it's
 -- helpful!
--- TODO: Remove Bool entry!!
 data PieceInfo where
     Info :: Nat -> Position -> PieceInfo
 
@@ -129,7 +127,6 @@ type family SetKings (x :: (Position, Position)) (y :: BoardDecorator) :: BoardD
 type family GetNoOfMoves (x :: BoardDecorator) :: Nat where
    GetNoOfMoves (Dec _ _ _ _ x) = x
 
--- TODO: Validity check??
 data SetPosition :: PieceInfo -> Position -> Exp PieceInfo
 type instance Eval (SetPosition (Info n _) pos) = Info n pos
 
@@ -299,11 +296,9 @@ type instance Eval (ClearPieceAt (At col row) board) = Eval (SetRow board row (E
 data ClearPieceAtDec :: Position -> BoardDecorator -> Exp BoardDecorator
 type instance Eval (ClearPieceAtDec pos boardDec) = SetBoard (Eval (ClearPieceAt pos (GetBoard boardDec))) boardDec
 
--- TODO: Optimise to not use GetRow??
 data SetPieceAtNoChecks :: Piece -> Board -> Position -> Exp Board
 type instance Eval (SetPieceAtNoChecks piece board (At col row)) = Eval (SetRow board row (Eval (PutAt (Just (Eval (SetPiecePosition piece (At col row)))) (ColToIndex col) (Eval (FromJust (Eval (GetRow board row)))))))
 
--- TODO: Optimise to work in one fell swoop, rather than one by one?
 data SetPiecesAt :: [(Piece, Position)] -> Board -> Exp Board
 type instance Eval (SetPiecesAt pps board) = Eval (Foldr (Uncurry2 SetPieceAtSwapped) board pps)
 

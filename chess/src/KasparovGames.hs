@@ -86,7 +86,6 @@ import Chesskell
 --  q e3 k d7 r g8 r g8 e5 q e5 r f7 k e6 q f2 q g5 r c7 
 -- q c1 k h2 
 
--- FIXME: One of these moves results in check??
 -- game = chess p d4 n f6 p c4 p e6 n c3 b b4 q c2 k g8 p a3 b c3 end --q c3 p d5 n f3 
 -- p c4 q c4 p b6 p h4 b b7 b g5 q d5 r c1 n d7 q d5 b d5 n e5 
 -- p c5 b f6 n f6 c5 p c5 p f3 r b8 p e4 b a2 r c2 b b1 r d2 

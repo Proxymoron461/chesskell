@@ -102,14 +102,12 @@ type family ToNode (d1 :: Digit a) (d2 :: Digit a) :: Digit (Node a) where
     ToNode (Four x y z w) (Three a b c) = Three (Node3 x y z) (Node2 w a) (Node2 b c)
     ToNode (Four x y z w) (Four a b c d) = Three (Node3 x y z) (Node3 w a b) (Node2 c d)
 
--- TODO: More base cases!
 type family AddDigitLeft (x :: Digit a) (y :: FingerTree a) :: FingerTree a where
     AddDigitLeft (One x)        tree  = x :< tree
     AddDigitLeft (Two x y)      tree  = x :< y :< tree
     AddDigitLeft (Three x y z)  tree  = x :< y :< z :< tree
     AddDigitLeft (Four x y z w) tree  = x :< y :< z :< w :< tree
 
--- TODO: More base cases!
 type family AddDigitRight (x :: FingerTree a) (y :: Digit a) :: FingerTree a where
     AddDigitRight tree (One x)        = tree :> x
     AddDigitRight tree (Two x y)      = tree :> y :> x
@@ -123,5 +121,3 @@ type family AddTree1Digit (t1 :: FingerTree a) (d1 :: Digit a) (t2 :: FingerTree
     AddTree1Digit (Deep leftL leftM leftR) dig (Single y) = AddDigitRight (Deep leftL leftM leftR) dig :> y
     AddTree1Digit (Deep leftL leftM leftR) dig (Deep rightL rightM rightR)
         = Deep leftL (AddTree1Digit leftM (ToNode leftR rightL) rightM) rightR
-
--- TODO: FingerTree instance of (<*>)

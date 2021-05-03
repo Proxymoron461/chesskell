@@ -32,7 +32,6 @@ import CannotCauseCheckTests
 ----------------------------------------------------------------------------------------------
 -- ACTUAL TESTS
 
--- TODO: Multiple test suites over multiple files??
 main :: IO ()
 main = hspec $ do
   -- enPassantTestSuite -- Defined in SideCases.hs

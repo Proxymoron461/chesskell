@@ -15,11 +15,11 @@ import Chesskell
 --     knight b1 to c3
 --     pawn d7 to d6 -- end  -- Successfully compiles, with <= 22GB memory usage.
 --     pawn d2 to d4 -- end
---     pawn c5 to d4 -- end  -- FIXME: Too much memory usage.
+--     pawn c5 to d4 -- end 
 --     knight f3 to d4
 --     pawn a7 to a6 -- end  -- Finishes compiling in about 3 minutes!
 --     bishop c1 to g5 -- end
---     pawn e7 to e6 end  -- FIXME: Crashes after 2m57
+--     pawn e7 to e6 end 
     -- pawn f2 to f4
     -- bishop f8 to e7
     -- queen d1 to f3
@@ -36,8 +36,8 @@ import Chesskell
 --     n c3 p d6
 --     p d4 p d4
 --     n d4 p a6 -- end
---     b g5 p e6 end  -- Successfully compiles in 1m44 - WHAT
-    -- p f4 b e7 end -- FIXME: Also crashes
+--     b g5 p e6 end  -- Successfully compiles in 1m44
+    -- p f4 b e7 end
 
  
 -- zunigaVsMarch = chess
@@ -46,14 +46,14 @@ import Chesskell
 --     p d4 p d4
 --     n d4 n f6
 --     n c3 n c6 end  -- Compiles successfully
-    -- b c4 q b6 end  -- FIXME: Crashes
+    -- b c4 q b6 end
 
 -- rubinsteinVsVidmar = chess
 --     p d4 n f6
 --     p c4 p e5
 --     p e5 n g4
 --     b f4 n c6 end
-    -- n f3 b b4 end -- FIXME: Crashes
+    -- n f3 b b4 end
 --     n c3 q e7 end
 
 -- nadtocheevVsKrodgius = chess
@@ -81,4 +81,4 @@ import Chesskell
 -- lauVsBastian = chess
 --     p e4 p e5
 --     n f3 n c6
---     b b5 b c5 end -- FIXME: Fails now, but compiles when removing the last bishop move. Why??
+--     b b5 b c5 end
