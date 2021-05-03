@@ -58,7 +58,8 @@ type instance Eval (IsZero Z)     = True
 type instance Eval (IsZero (S n)) = False
 
 data FCFPlus :: Nat -> Nat -> Exp Nat
-type instance Eval (FCFPlus x y) = x + y
+type instance Eval (FCFPlus Z y) = y
+type instance Eval (FCFPlus (S n) y) = S (Eval (FCFPlus n y))
 
 data Equal :: Nat -> Nat -> Exp Bool
 type instance Eval (Equal (S m) (S n)) = Eval (Equal m n)
@@ -119,7 +120,7 @@ type instance Eval (CW2 f a b) = f a b
 
 -- Curry-able add function!
 data Add :: Nat -> Nat -> Exp Nat
-type instance Eval (Add x y)    = x + y
+type instance Eval (Add x y) = x + y
 
 -- Type-level functors! (Almost)
 data Map :: (a -> Exp b) -> f a -> Exp (f b)
@@ -277,8 +278,9 @@ type instance Eval (Any p xs) = Eval (Foldr (OrPred p) False xs)
 data All :: (a -> Exp Bool) -> f a -> Exp Bool
 type instance Eval (All p xs) = Eval (Foldr (AndPred p) True xs)
 
-data Length :: t a -> Exp Nat
-type instance Eval (Length xs) = Eval (Foldr Add Nat0 xs)
+data Length :: [a] -> Exp Nat
+type instance Eval (Length '[]) = Nat0
+type instance Eval (Length (x ': xs)) = S (Eval (Length xs))
 
 data Tail :: [a] -> Exp [a]
 type instance Eval (Tail '[])       = '[]
