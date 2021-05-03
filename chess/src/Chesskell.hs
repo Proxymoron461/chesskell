@@ -712,20 +712,14 @@ type family SendLeftRay' (p :: Position) (t :: Team) (b :: BoardDecorator) :: Bo
 
 -- The team is for the team BEING ATTACKED
 type family IsLeftUnderAttack (p :: Position) (t :: Team) (d :: Nat) (b :: BoardDecorator) :: Bool where
-    IsLeftUnderAttack _ _ Z _ = False 
+    IsLeftUnderAttack _ _ Z _ = False
     IsLeftUnderAttack (At A row) team _ boardDec
         = Eval (IsPieceAtWhichDec boardDec (At A row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsRook)))
-    IsLeftUnderAttack (At col row) team (S Z) boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam team)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsRook))))
-                (ID 'True)
-                (ID (IsLeftUnderAttack (At (L col) row) team Nat2 boardDec)))
     IsLeftUnderAttack (At col row) team depth boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam team)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col row) (IsQueen .|. IsRook)))
-                (ID 'True)
+        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsRook))))
+            (ID 'True)
+            (If (Eval (IsPieceAt boardDec (At col row)))
+                (ID 'False)
                 (ID (IsLeftUnderAttack (At (L col) row) team (S depth) boardDec)))
 
 data SendRightRay :: Position -> Team -> BoardDecorator -> Exp Bool
@@ -739,17 +733,11 @@ type family IsRightUnderAttack (p :: Position) (t :: Team) (d :: Nat) (b :: Boar
     IsRightUnderAttack _ _ Z _ = False 
     IsRightUnderAttack (At H row) team _ boardDec
         = Eval (IsPieceAtWhichDec boardDec (At H row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsRook)))
-    IsRightUnderAttack (At col row) team (S Z) boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam team)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsRook))))
-                (ID 'True)
-                (ID (IsRightUnderAttack (At (R col) row) team Nat2 boardDec)))
     IsRightUnderAttack (At col row) team depth boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam team)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col row) (IsQueen .|. IsRook)))
-                (ID 'True)
+        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsRook))))
+            (ID 'True)
+            (If (Eval (IsPieceAt boardDec (At col row)))
+                (ID 'False)
                 (ID (IsRightUnderAttack (At (R col) row) team (S depth) boardDec)))
 
 data SendAboveRay :: Position -> Team -> BoardDecorator -> Exp Bool
@@ -765,17 +753,11 @@ type family IsAboveUnderAttack (p :: Position) (t :: Team) (d :: Nat) (b :: Boar
     IsAboveUnderAttack _ _ Z _ = False 
     IsAboveUnderAttack (At col Nat8) team _ boardDec
         = Eval (IsPieceAtWhichDec boardDec (At col Nat8) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsRook)))
-    IsAboveUnderAttack (At col row) team (S Z) boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam team)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsRook))))
-                (ID 'True)
-                (ID (IsAboveUnderAttack (At col (S row)) team Nat2 boardDec)))
     IsAboveUnderAttack (At col row) team depth boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam team)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col row) (IsQueen .|. IsRook)))
-                (ID 'True)
+        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsRook))))
+            (ID 'True)
+            (If (Eval (IsPieceAt boardDec (At col row)))
+                (ID 'False)
                 (ID (IsAboveUnderAttack (At col (S row)) team (S depth) boardDec)))
 
 data SendBelowRay :: Position -> Team -> BoardDecorator -> Exp Bool
@@ -791,17 +773,11 @@ type family IsBelowUnderAttack (p :: Position) (t :: Team) (d :: Nat) (b :: Boar
     IsBelowUnderAttack _ _ Z _ = False
     IsBelowUnderAttack (At col Nat1) team _ boardDec
         = Eval (IsPieceAtWhichDec boardDec (At col Nat1) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsRook)))
-    IsBelowUnderAttack (At col (S row)) team (S Z) boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (HasTeam team)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col (S row)) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsRook))))
-                (ID 'True)
-                (ID (IsBelowUnderAttack (At col row) team Nat2 boardDec)))
     IsBelowUnderAttack (At col (S row)) team depth boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (HasTeam team)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (IsQueen .|. IsRook)))
-                (ID 'True)
+        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsRook))))
+            (ID 'True)
+            (If (Eval (IsPieceAt boardDec (At col (S row))))
+                (ID 'False)
                 (ID (IsBelowUnderAttack (At col row) team (S depth) boardDec)))
 
 data SendNWRay :: Position -> Team -> BoardDecorator -> Exp Bool
@@ -822,22 +798,16 @@ type family IsNWUnderAttack (p :: Position) (t :: Team) (d :: Nat) (b :: BoardDe
     IsNWUnderAttack (At A row) team _ boardDec
         = Eval (IsPieceAtWhichDec boardDec (At A row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsBishop)))
     IsNWUnderAttack (At col row) White (S Z) boardDec  -- Check if a Black Pawn is positioned to attack the White King
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam White)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam Black) .&. (IsPawn .|. (IsQueen .|. IsBishop)))))
-                (ID 'True)
+        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam Black) .&. (IsPawn .|. (IsQueen .|. IsBishop)))))
+            (ID 'True)
+            (If (Eval (IsPieceAt boardDec (At col row)))
+                (ID 'False)
                 (ID (IsNWUnderAttack (At (L col) (S row)) White Nat2 boardDec)))
-    IsNWUnderAttack (At col row) Black (S Z) boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam Black)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam White) .&. (IsQueen .|. IsBishop))))
-                (ID 'True)
-                (ID (IsNWUnderAttack (At (L col) (S row)) Black Nat2 boardDec)))
     IsNWUnderAttack (At col row) team depth boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam team)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col row) (IsQueen .|. IsBishop)))
-                (ID 'True)
+        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsBishop))))
+            (ID 'True)
+            (If (Eval (IsPieceAt boardDec (At col row)))
+                (ID 'False)
                 (ID (IsNWUnderAttack (At (L col) (S row)) team (S depth) boardDec)))
 
 data SendNERay :: Position -> Team -> BoardDecorator -> Exp Bool
@@ -858,22 +828,16 @@ type family IsNEUnderAttack (p :: Position) (t :: Team) (d :: Nat) (b :: BoardDe
     IsNEUnderAttack (At H row) team _ boardDec
         = Eval (IsPieceAtWhichDec boardDec (At H row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsBishop)))
     IsNEUnderAttack (At col row) White (S Z) boardDec  -- Check if a Black Pawn is positioned to attack the White King
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam White)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam Black) .&. (IsPawn .|. (IsQueen .|. IsBishop)))))
-                (ID 'True)
+        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam Black) .&. (IsPawn .|. (IsQueen .|. IsBishop)))))
+            (ID 'True)
+            (If (Eval (IsPieceAt boardDec (At col row)))
+                (ID 'False)
                 (ID (IsNEUnderAttack (At (R col) (S row)) White Nat2 boardDec)))
-    IsNEUnderAttack (At col row) Black (S Z) boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam Black)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam White) .&. (IsQueen .|. IsBishop))))
-                (ID 'True)
-                (ID (IsNEUnderAttack (At (R col) (S row)) Black Nat2 boardDec)))
     IsNEUnderAttack (At col row) team depth boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) (HasTeam team)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col row) (IsQueen .|. IsBishop)))
-                (ID 'True)
+        = If' (Eval (IsPieceAtWhichDec boardDec (At col row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsBishop))))
+            (ID 'True)
+            (If (Eval (IsPieceAt boardDec (At col row)))
+                (ID 'False)
                 (ID (IsNEUnderAttack (At (R col) (S row)) team (S depth) boardDec)))
 
 data SendSWRay :: Position -> Team -> BoardDecorator -> Exp Bool
@@ -893,23 +857,17 @@ type family IsSWUnderAttack (p :: Position) (t :: Team) (d :: Nat) (b :: BoardDe
         = Eval (IsPieceAtWhichDec boardDec (At col Nat1) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsBishop)))
     IsSWUnderAttack (At A row) team _ boardDec
         = Eval (IsPieceAtWhichDec boardDec (At A row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsBishop)))
-    IsSWUnderAttack (At col (S row)) Black (S Z) boardDec  -- Check if a Black Pawn is positioned to attack the Black King
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (HasTeam Black)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col (S row)) ((HasTeam White) .&. (IsPawn .|. (IsQueen .|. IsBishop)))))
-                (ID 'True)
+    IsSWUnderAttack (At col (S row)) Black (S Z) boardDec  -- Check if a White Pawn is positioned to attack the Black King
+        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) ((HasTeam White) .&. (IsPawn .|. (IsQueen .|. IsBishop)))))
+            (ID 'True)
+            (If (Eval (IsPieceAt boardDec (At col (S row))))
+                (ID 'False)
                 (ID (IsSWUnderAttack (At (L col) row) Black Nat2 boardDec)))
-    IsSWUnderAttack (At col (S row)) White (S Z) boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (HasTeam White)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col (S row)) ((HasTeam Black) .&. (IsQueen .|. IsBishop))))
-                (ID 'True)
-                (ID (IsSWUnderAttack (At (L col) row) White Nat2 boardDec)))
     IsSWUnderAttack (At col (S row)) team depth boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (HasTeam team)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (IsQueen .|. IsBishop)))
-                (ID 'True)
+        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsBishop))))
+            (ID 'True)
+            (If (Eval (IsPieceAt boardDec (At col (S row))))
+                (ID 'False)
                 (ID (IsSWUnderAttack (At (L col) row) team (S depth) boardDec)))
 
 data SendSERay :: Position -> Team -> BoardDecorator -> Exp Bool
@@ -929,23 +887,17 @@ type family IsSEUnderAttack (p :: Position) (t :: Team) (d :: Nat) (b :: BoardDe
         = Eval (IsPieceAtWhichDec boardDec (At col Nat1) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsBishop)))
     IsSEUnderAttack (At H row) team _ boardDec
         = Eval (IsPieceAtWhichDec boardDec (At H row) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsBishop)))
-    IsSEUnderAttack (At col (S row)) Black (S Z) boardDec  -- Check if a Black Pawn is positioned to attack the Black King
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (HasTeam Black)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col (S row)) ((HasTeam White) .&. (IsPawn .|. (IsQueen .|. IsBishop)))))
-                (ID 'True)
+    IsSEUnderAttack (At col (S row)) Black (S Z) boardDec  -- Check if a White Pawn is positioned to attack the Black King
+        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) ((HasTeam White) .&. (IsPawn .|. (IsQueen .|. IsBishop)))))
+            (ID 'True)
+            (If (Eval (IsPieceAt boardDec (At col (S row))))
+                (ID 'False)
                 (ID (IsSEUnderAttack (At (R col) row) Black Nat2 boardDec)))
-    IsSEUnderAttack (At col (S row)) White (S Z) boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (HasTeam White)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col (S row)) ((HasTeam Black) .&. (IsQueen .|. IsBishop))))
-                (ID 'True)
-                (ID (IsSEUnderAttack (At (R col) row) White Nat2 boardDec)))
     IsSEUnderAttack (At col (S row)) team depth boardDec
-        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (HasTeam team)))
-            (ID 'False)
-            (If (Eval (IsPieceAtWhichDec boardDec (At col (S row)) (IsQueen .|. IsBishop)))
-                (ID 'True)
+        = If' (Eval (IsPieceAtWhichDec boardDec (At col (S row)) ((HasTeam (OppositeTeam' team)) .&. (IsQueen .|. IsBishop))))
+            (ID 'True)
+            (If (Eval (IsPieceAt boardDec (At col (S row))))
+                (ID 'False)
                 (ID (IsSEUnderAttack (At (R col) row) team (S depth) boardDec)))
 
 data IsKnightAttacking :: Position -> Team -> BoardDecorator -> Exp Bool
