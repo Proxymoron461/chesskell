@@ -165,6 +165,8 @@ Since the EDSL is for describing games of Chess, it makes sense that it should d
 
 One possible way to express such a style in Haskell is through monadic computation. If the board information were stored in a custom monad, then we could use the \emph{bind} operator (written as \inline{(>>=)}) to chain together these chess moves, in some way akin to below:
 
+\newpage % Avoid orphan in below listing
+
 \begin{lstlisting}
 game = chessStart
     >>= move e2 e4
