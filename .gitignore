@@ -27,3 +27,5 @@ chess/writing/dissertation/diss.pdf
 .vscode/*
 chess/project-code.zip
 chess/project.pdf
+*.o
+*.hi
