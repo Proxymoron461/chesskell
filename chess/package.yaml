@@ -34,7 +34,6 @@ default-extensions:
   - ScopedTypeVariables
   - TypeApplications
   - FlexibleInstances
-  # - AllowAmbiguousTypes
   - RankNTypes
   - TemplateHaskell
 
