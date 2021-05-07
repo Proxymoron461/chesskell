@@ -2,8 +2,7 @@ module FlatBuilders where
 
 import MakeProxies
 import ChessTypes
-import Data.Singletons
-import Data.Singletons.Prelude.Bool
+import Data.Proxy
 import Data.Type.Nat hiding (SNat(..))
 import Chesskell
 import Vec

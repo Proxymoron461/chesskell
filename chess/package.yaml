@@ -21,8 +21,6 @@ description: Please see the README on GitHub at <https://github.com/githubuser/c
 
 dependencies:
   - base >= 4.7 && < 5
-  - singletons
-  - template-haskell
   - fin
   - sessiontypes
 
@@ -74,4 +72,3 @@ tests:
       - should-not-typecheck
       - deepseq
       - HUnit
-      - singletons

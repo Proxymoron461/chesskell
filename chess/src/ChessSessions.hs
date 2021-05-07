@@ -6,7 +6,6 @@ import Control.SessionTypes hiding (Nat(..))
 import Control.SessionTypes.Indexed
 
 import Data.Proxy
-import Data.Singletons
 import Data.Type.Nat hiding (SNat(..))
 
 import MakeProxies
