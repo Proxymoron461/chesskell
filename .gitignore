@@ -25,3 +25,5 @@ chess/writing/dissertation/diss.pdf
 *.markdown.lua
 *.out.ps
 .vscode/*
+chess/project-code.zip
+chess/project.pdf
