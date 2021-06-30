@@ -127,6 +127,12 @@ lastMoved (dec :: Proxy b) (t :: Proxy (pos :: Position)) cont
 
 lastmoved = lastMoved
 
+kingsAt :: Proxy (b :: BoardDecorator) -> Proxy (pos1 :: Position) -> Proxy (pos2 :: Position) -> Spec (Proxy (SetKings '(pos1, pos2) b))
+kingsAt (dec :: Proxy b) (p1 :: Proxy (pos1 :: Position)) (p2 :: Proxy (pos2 :: Position)) cont
+    = cont (Proxy @(SetKings '(pos1, pos2) b))
+
+kingsat = kingsAt
+
 startMoves :: Conv (Proxy (b :: BoardDecorator)) (Proxy (b :: BoardDecorator))
 startMoves (dec :: Proxy b) cont = cont dec
 startmoves = startMoves
