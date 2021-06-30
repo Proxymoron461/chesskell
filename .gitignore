@@ -29,4 +29,11 @@ chess/project-code.zip
 chess/project.pdf
 *.o
 *.hi
-chess/src/.benchmarks/*
+chess/src/.benchmarks/6
+chess/src/.benchmarks/8
+chess/src/.benchmarks/10
+chess/src/.benchmarks/backandforth
+chess/src/.benchmarks/bastianvariations
+chess/src/.benchmarks/last4of10
+chess/src/.benchmarks/middlesegments
+chess/src/.benchmarks/README.md
