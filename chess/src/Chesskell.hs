@@ -444,10 +444,39 @@ data PieceCanReachKingCheck :: Bool -> Piece -> Position -> BoardDecorator -> Ex
 type instance Eval (PieceCanReachKingCheck True piece pos boardDec) = Eval (PieceCanReachPos piece pos boardDec :&&: ((Not . IsKingAt (Eval (OppositeTeam (Eval (PieceTeam piece)))) boardDec) pos))
 type instance Eval (PieceCanReachKingCheck False piece pos boardDec) = PieceCanReachPos piece pos boardDec
 
--- TODO: This
 type family PieceCanReachPos (x :: Piece) (y :: Position) (z :: BoardDecorator) :: Bool where
-    -- PieceCanReachPos (MkPiece team Rook (Info n (At col row))) (At col row2) boardDec =  
+    PieceCanReachPos (MkPiece team Rook (Info n piecePos)) targetPos boardDec
+        = Eval (piecePos `In` (VerticalRays targetPos (OppositeTeam' team) boardDec))
+    PieceCanReachPos (MkPiece team Bishop (Info n piecePos)) targetPos boardDec
+        = Eval (piecePos `In` (DiagonalRays targetPos (OppositeTeam' team) boardDec))
+    PieceCanReachPos (MkPiece team Queen (Info n piecePos)) targetPos boardDec
+        = Eval (piecePos `In` (VertAndDiagRays targetPos (OppositeTeam' team) boardDec))
     PieceCanReachPos piece pos boardDec = Eval (pos `In` Eval (PieceMoveList piece boardDec)) 
+
+type family VerticalRays (p :: Position) (t :: Team) (b :: BoardDecorator) :: [Position] where
+    VerticalRays pos team boardDec = Eval (FilterMap IsJust FromJust
+        '[ SendLeftRay' pos team boardDec,
+           SendRightRay' pos team boardDec, 
+           SendAboveRay' pos team boardDec, 
+           SendBelowRay' pos team boardDec ])
+
+type family DiagonalRays (p :: Position) (t :: Team) (b :: BoardDecorator) :: [Position] where
+    DiagonalRays pos team boardDec = Eval (FilterMap IsJust FromJust
+        '[ SendNWRay' pos team boardDec,
+           SendNERay' pos team boardDec, 
+           SendSWRay' pos team boardDec, 
+           SendSERay' pos team boardDec ])
+
+type family VertAndDiagRays (p :: Position) (t :: Team) (b :: BoardDecorator) :: [Position] where
+    VertAndDiagRays pos team boardDec = Eval (FilterMap IsJust FromJust
+        '[ SendLeftRay' pos team boardDec,
+           SendRightRay' pos team boardDec, 
+           SendAboveRay' pos team boardDec, 
+           SendBelowRay' pos team boardDec,
+           SendNWRay' pos team boardDec,
+           SendNERay' pos team boardDec, 
+           SendSWRay' pos team boardDec, 
+           SendSERay' pos team boardDec ])
 
 data PieceCanMoveTo :: Piece -> Position -> BoardDecorator -> Exp Bool
 type instance Eval (PieceCanMoveTo piece pos boardDec) = Eval (PieceCanReachKingCheck True piece pos boardDec)
@@ -548,11 +577,26 @@ type family MoveTo (n :: PieceName) (p :: Position) (b :: BoardDecorator) :: Boa
 type family GetMoveable (n :: PieceName) (p :: Position) (b :: BoardDecorator) :: Position where
     GetMoveable King  toPos boardDec = GetKingPosition (GetMovingTeam boardDec) boardDec
     GetMoveable Pawn  toPos boardDec = MoveablePawn toPos (GetMovingTeam boardDec) boardDec
-    GetMoveable piece toPos boardDec -- Uses EmptyDec to ensure no weird piece collisions 
+    GetMoveable Knight toPos boardDec
         = IsListSingleton (Eval (
-            Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsPiece piece .&. HasTeam (GetMovingTeam boardDec)))
-            (Eval (PieceMoveList (MkPiece (GetMovingTeam boardDec) piece (Info Z toPos)) EmptyDec))))
-          (GetMovingTeam boardDec) piece toPos
+            Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsKnight .&. HasTeam (GetMovingTeam boardDec)))
+            (Eval (GetAllKnightPositions toPos))))
+          (GetMovingTeam boardDec) Knight toPos
+    GetMoveable Bishop toPos boardDec
+        = IsListSingleton (Eval (
+            Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsBishop .&. HasTeam (GetMovingTeam boardDec)))
+            (DiagonalRays toPos (GetLastTeam boardDec) boardDec)))
+          (GetMovingTeam boardDec) Bishop toPos
+    GetMoveable Rook toPos boardDec
+        = IsListSingleton (Eval (
+            Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsRook .&. HasTeam (GetMovingTeam boardDec)))
+            (VerticalRays toPos (GetLastTeam boardDec) boardDec)))
+          (GetMovingTeam boardDec) Rook toPos
+    GetMoveable Queen toPos boardDec
+        = IsListSingleton (Eval (
+            Filter ((Flip (IsPieceAtWhichDec boardDec)) (IsQueen .&. HasTeam (GetMovingTeam boardDec)))
+            (VertAndDiagRays toPos (GetLastTeam boardDec) boardDec)))
+          (GetMovingTeam boardDec) Queen toPos
 
 type family MoveablePawn (p :: Position) (t :: Team) (b :: BoardDecorator) :: Position where
     MoveablePawn (At A (S (S row))) White boardDec = IsListSingleton (Eval (
