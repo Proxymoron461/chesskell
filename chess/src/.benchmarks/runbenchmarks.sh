@@ -2,44 +2,43 @@
 
 for n in {1..5}; do
 
-# cd 6
+cd 6
 
-# ../benchmark.sh
+../benchmark.sh
 
-# cd ../8
+cd ../8
 
-# ../benchmark.sh
+../benchmark.sh
 
-# cd ../10
+cd ../10
 
-# ../benchmark.sh
+../benchmark.sh
 
-# cd ../middlesegments  # TODO: Replace with this when uncommenting the above
-cd middlesegments
+cd ../middlesegments
 
-# ../benchmark.sh
+../benchmark.sh
 
-# cd 4
-
-# ../../benchmark.sh
-
-cd 0
+cd 4
 
 ../../benchmark.sh
+
+# cd 0
+
+# ../../benchmark.sh
 
 cd ../2
 
 ../../benchmark.sh
 
-# cd ../../last4of10
+cd ../../last4of10
 
-# ../benchmark.sh
+../benchmark.sh
 
-# cd ../bastianvariations
+cd ../bastianvariations
 
-# ../benchmark.sh
+../benchmark.sh
 
-cd ../../backandforth # TODO: Replace with ../ when uncommenting the above
+cd ../backandforth
 
 cd 0
 

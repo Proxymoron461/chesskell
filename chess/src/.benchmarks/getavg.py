@@ -72,7 +72,7 @@ def get_avgs_for_file(file):
     info = get_file_info(file)
 
     # Fetch info for that specific configuration
-    pattern = r"(?:\.\/(.*?)\/)?([A-Za-z0-9]*)\.hs\.([0-9]{2}\.[0-9]{1,2})\.(?:(compactgc|newgc)(?:\.))?(?:(a[0-9]+[a-z])\.)?(g[0-9])"
+    pattern = r"(?:\.\/(.*?)\/)?([A-Za-z0-9]*)\.hs\.([0-9]{2}\.[0-9]{1,2})\.(?:(compactgc|newgc)(?:\.))?(?:(a[0-9]+[a-z])\.)?(g[0-9])(?:\.(newapproach)?)?"
     match = re.search(pattern, file.path)
 
     file_info = {
@@ -81,7 +81,8 @@ def get_avgs_for_file(file):
         "resolver": match.group(3),
         "gc_type": match.group(4) or "oldgc",
         "memory_allocated": match.group(5) or "a1m",
-        "generations": match.group(6)
+        "generations": match.group(6),
+        "newapproach": match.group(7) or "old"
     }
     for key in info:
         file_info[key] = info[key]
